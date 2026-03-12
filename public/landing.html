@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MuslimOS — Your Complete Islamic Companion</title>
+<meta name="description" content="Prayer times, full Quran with audio, hadith collections, dhikr counter, and qibla compass. Beautiful, ad-free, and open.">
+<link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/favicon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{--emerald:#0B6B4F;--emerald-deep:#064A37;--emerald-800:#03301F;--emerald-light:#E8F5F0;--gold:#C9A84C;--gold-dark:#8B7330;--gold-light:#F5EDD6;--cream:#FBF8F1;--cream-dark:#EDE8DD;--ink:#1A1A1A;--ink-soft:#4A4A4A;--ink-muted:#8A8A8A;--white:#FFFFFF;--border:rgba(255,255,255,0.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;color:var(--ink);overflow-x:hidden;background:var(--cream)}
+
+/* Geometric pattern */
+.geo-pattern{position:absolute;inset:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='.5'%3E%3Cpolygon points='30,0 60,15 60,45 30,60 0,45 0,15'/%3E%3Cpolygon points='30,8 52,19 52,41 30,52 8,41 8,19'/%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+
+/* Noise texture */
+.noise{position:absolute;inset:0;opacity:.04;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");pointer-events:none}
+
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+section{position:relative;overflow:hidden}
+
+/* ========== NAV ========== */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;transition:all .3s}
+nav.scrolled{background:rgba(251,248,241,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,168,76,.12);box-shadow:0 2px 16px rgba(0,0,0,.04)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:0 24px}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo svg{width:32px;height:32px}
+.nav-logo span{font-family:'Amiri',serif;font-size:1.3rem;font-weight:700;color:var(--emerald-deep)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{font-size:.85rem;color:var(--ink-soft);text-decoration:none;font-weight:500;transition:color .2s;letter-spacing:.3px}
+.nav-links a:hover{color:var(--emerald)}
+.nav-cta{padding:10px 24px;background:var(--emerald-deep);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
+.nav-cta:hover{background:var(--emerald);transform:translateY(-1px);box-shadow:0 4px 16px rgba(11,107,79,.25)}
+
+/* ========== HERO ========== */
+.hero{min-height:100vh;display:flex;align-items:center;background:linear-gradient(160deg,var(--cream) 0%,#F0EDE4 40%,var(--cream-dark) 100%);padding:120px 0 80px;position:relative}
+.hero-content{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.hero-text{max-width:540px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--gold-light);border-radius:99px;font-size:.72rem;font-weight:600;color:var(--gold-dark);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:24px}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite}
+.hero h1{font-family:'Amiri',serif;font-size:clamp(2.8rem,5.5vw,4.2rem);color:var(--emerald-deep);font-weight:700;line-height:1.1;margin-bottom:8px}
+.hero h1 .arabic-accent{display:block;font-size:.6em;color:var(--gold);margin-top:4px}
+.hero .tagline{font-size:1.1rem;color:var(--ink-soft);line-height:1.7;margin:20px 0 36px;max-width:440px}
+.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:var(--emerald-deep);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .25s;text-decoration:none}
+.btn-primary:hover{background:var(--emerald);transform:translateY(-2px);box-shadow:0 8px 24px rgba(11,107,79,.25)}
+.btn-primary svg{width:20px;height:20px}
+.btn-secondary{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);color:var(--ink);border:1.5px solid var(--border);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .25s;text-decoration:none}
+.btn-secondary:hover{background:white;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.06)}
+
+.hero-visual{position:relative;display:flex;justify-content:center;align-items:center}
+.phone-mockup{width:280px;height:580px;background:var(--emerald-deep);border-radius:36px;padding:12px;box-shadow:0 32px 64px rgba(6,74,55,.2),0 8px 16px rgba(0,0,0,.08);position:relative;overflow:hidden;border:2px solid rgba(255,255,255,.1)}
+.phone-screen{width:100%;height:100%;background:var(--cream);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:12px 10px}
+.phone-glow{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(11,107,79,.12) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:-1}
+.floating-verse{position:absolute;top:60px;right:-40px;background:rgba(255,255,255,.85);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.4);border-radius:16px;padding:16px 20px;max-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.06);animation:float 4s ease-in-out infinite}
+.floating-verse .fv-ar{font-family:'Amiri',serif;font-size:.9rem;color:var(--emerald-deep);text-align:right;direction:rtl;line-height:1.8}
+.floating-verse .fv-ref{font-size:.6rem;color:var(--gold);margin-top:4px}
+.floating-count{position:absolute;bottom:80px;left:-30px;background:rgba(255,255,255,.85);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.4);border-radius:16px;padding:12px 20px;box-shadow:0 8px 32px rgba(0,0,0,.06);animation:float 4s ease-in-out 1s infinite}
+.floating-count .fc-num{font-family:'Amiri',serif;font-size:1.4rem;color:var(--emerald-deep);font-weight:700}
+.floating-count .fc-label{font-size:.6rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:1px}
+
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ========== STATS BAR ========== */
+.stats-bar{padding:64px 0;background:var(--emerald-deep);position:relative;overflow:hidden}
+.stats-bar::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='.5'%3E%3Cpolygon points='30,0 60,15 60,45 30,60 0,45 0,15'/%3E%3Cpolygon points='30,8 52,19 52,41 30,52 8,41 8,19'/%3E%3C/g%3E%3C/svg%3E");opacity:.03;pointer-events:none}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.stat-card{background:rgba(255,255,255,.06);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-top:1px solid rgba(255,255,255,.12);border-radius:16px;padding:24px 16px;text-align:center;transition:all .3s}
+.stat-card:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+.stat-num{font-family:'Amiri',serif;font-size:2.2rem;color:white;font-weight:700;line-height:1}
+.stat-label{font-size:.68rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:1.5px;margin-top:6px;font-weight:500}
+.stat-accent{width:24px;height:2px;background:var(--gold);border-radius:1px;margin:10px auto 0;opacity:.6}
+
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(3,1fr)}.stats-grid .stat-card:nth-child(4),.stats-grid .stat-card:nth-child(5){grid-column:span 1}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr)}.stats-grid .stat-card:last-child{grid-column:span 2}}
+
+/* ========== FEATURES ========== */
+.features{padding:100px 0;background:linear-gradient(160deg,var(--cream),#F0EDE4)}
+.section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:600;margin-bottom:8px}
+.section-title{font-family:'Amiri',serif;font-size:clamp(2rem,4vw,2.8rem);color:var(--emerald-deep);font-weight:700;margin-bottom:12px}
+.section-desc{font-size:.95rem;color:var(--ink-soft);line-height:1.7;max-width:520px;margin-bottom:48px}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feature-card{background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.35);border-top:1px solid rgba(255,255,255,.5);border-radius:20px;padding:32px 28px;transition:all .25s;cursor:default}
+.feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.06)}
+.feature-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.feature-icon svg{width:24px;height:24px;stroke-width:1.5}
+.feature-icon.em{background:var(--emerald-light)}
+.feature-icon.em svg{stroke:var(--emerald)}
+.feature-icon.gd{background:var(--gold-light)}
+.feature-icon.gd svg{stroke:var(--gold-dark)}
+.feature-card h3{font-family:'Amiri',serif;font-size:1.15rem;color:var(--emerald-deep);font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:.82rem;color:var(--ink-soft);line-height:1.6}
+
+/* ========== QURAN SHOWCASE ========== */
+.quran-showcase{padding:100px 0;background:var(--emerald-deep);color:white;position:relative}
+.quran-showcase .geo-pattern{opacity:.04}
+.qs-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.qs-text .section-label{color:var(--gold)}
+.qs-text .section-title{color:white}
+.qs-text .section-desc{color:rgba(255,255,255,.7)}
+.qs-features{list-style:none;margin-top:32px}
+.qs-features li{display:flex;align-items:start;gap:14px;margin-bottom:20px}
+.qs-features li .check{width:24px;height:24px;border-radius:8px;background:rgba(201,168,76,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qs-features li .check svg{width:14px;height:14px;stroke:var(--gold);fill:none;stroke-width:2}
+.qs-features li div strong{font-size:.88rem;display:block;margin-bottom:2px}
+.qs-features li div span{font-size:.78rem;color:rgba(255,255,255,.5)}
+.qs-visual{display:flex;justify-content:center}
+.ayah-card-demo{background:rgba(255,255,255,.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 24px;max-width:340px;width:100%}
+.ayah-card-demo .acd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.ayah-card-demo .acd-num{font-family:'Amiri',serif;font-size:.8rem;color:var(--gold);padding:4px 12px;border:1px solid rgba(201,168,76,.3);border-radius:6px}
+.ayah-card-demo .acd-pills{display:flex;gap:6px}
+.ayah-card-demo .acd-pill{font-size:.65rem;padding:4px 12px;border-radius:6px;font-weight:500}
+.ayah-card-demo .acd-pill.active{background:rgba(201,168,76,.2);color:var(--gold)}
+.ayah-card-demo .acd-pill.inactive{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)}
+.ayah-card-demo .acd-arabic{font-family:'Amiri',serif;font-size:1.5rem;color:white;text-align:center;direction:rtl;line-height:2.2;margin:20px 0;padding:16px;background:rgba(255,255,255,.04);border-radius:12px}
+.ayah-card-demo .acd-trans{font-size:.85rem;color:rgba(255,255,255,.6);line-height:1.6;font-style:italic}
+.ayah-card-demo .acd-ref{font-size:.7rem;color:rgba(255,255,255,.3);margin-top:12px}
+
+/* ========== PRAYER TIMES ========== */
+.prayer-section{padding:100px 0;background:linear-gradient(160deg,var(--cream),#F0EDE4)}
+.prayer-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.prayer-visual{position:relative}
+.prayer-demo{background:rgba(255,255,255,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:28px;max-width:360px}
+.pd-hero{background:linear-gradient(135deg,var(--emerald-deep),var(--emerald));border-radius:16px;padding:24px;color:white;text-align:center;margin-bottom:20px;position:relative;overflow:hidden}
+.pd-hero::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(201,168,76,.1)}
+.pd-hero .pd-label{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;opacity:.6}
+.pd-hero .pd-name{font-family:'Amiri',serif;font-size:1.4rem;font-weight:700;margin:4px 0}
+.pd-hero .pd-countdown{font-family:'Amiri',serif;font-size:2rem;font-weight:700}
+.pd-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.pd-row:last-child{border:none}
+.pd-row .pd-pname{font-size:.82rem;color:var(--ink-soft)}
+.pd-row .pd-ptime{font-family:'Amiri',serif;font-size:.88rem;color:var(--emerald-deep);font-weight:700}
+
+/* ========== HADITH ========== */
+.hadith-section{padding:100px 0;background:var(--white)}
+.hadith-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
+.hadith-coll{background:rgba(255,255,255,.7);backdrop-filter:blur(12px);border:1px solid var(--cream-dark);border-radius:16px;padding:28px 20px;text-align:center;transition:all .25s}
+.hadith-coll:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.06)}
+.hadith-coll .hc-ar{font-family:'Amiri',serif;font-size:1.3rem;color:var(--emerald-deep);font-weight:700;margin-bottom:6px}
+.hadith-coll .hc-en{font-size:.78rem;color:var(--ink-soft);margin-bottom:4px}
+.hadith-coll .hc-count{font-family:'Amiri',serif;font-size:.72rem;color:var(--gold)}
+
+/* ========== WORSHIP ========== */
+.worship-section{padding:100px 0;background:linear-gradient(160deg,var(--cream),var(--cream-dark));position:relative}
+.worship-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.worship-card{background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:36px 28px;text-align:center;transition:all .25s}
+.worship-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.06)}
+.worship-card .wc-icon{width:64px;height:64px;border-radius:50%;background:var(--emerald-light);display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.worship-card .wc-icon svg{width:28px;height:28px;stroke:var(--emerald);fill:none;stroke-width:1.5}
+.worship-card h3{font-family:'Amiri',serif;font-size:1.1rem;color:var(--emerald-deep);font-weight:700;margin-bottom:8px}
+.worship-card p{font-size:.82rem;color:var(--ink-soft);line-height:1.6}
+
+/* ========== DESIGN PHILOSOPHY ========== */
+.philosophy{padding:100px 0;background:var(--emerald-deep);color:white;text-align:center;position:relative}
+.philosophy .geo-pattern{opacity:.03}
+.phil-quote{font-family:'Amiri',serif;font-size:clamp(1.5rem,3.5vw,2.4rem);line-height:1.5;max-width:700px;margin:0 auto 16px;color:rgba(255,255,255,.9)}
+.phil-ref{font-size:.82rem;color:var(--gold)}
+.phil-features{display:flex;justify-content:center;gap:48px;margin-top:56px;flex-wrap:wrap}
+.phil-item{text-align:center;max-width:200px}
+.phil-item .pi-icon{width:48px;height:48px;border-radius:50%;background:rgba(201,168,76,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.phil-item .pi-icon svg{width:22px;height:22px;stroke:var(--gold);fill:none;stroke-width:1.5}
+.phil-item h4{font-size:.88rem;font-weight:600;margin-bottom:4px}
+.phil-item p{font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.5}
+
+/* ========== COMPARISON ========== */
+.comparison{padding:100px 0;background:var(--cream)}
+.comp-table{display:grid;grid-template-columns:2fr 1fr 1fr;gap:0;margin-top:48px;background:rgba(255,255,255,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.35);border-radius:20px;overflow:hidden}
+.comp-header{padding:16px 24px;background:var(--emerald-deep);color:white;font-size:.82rem;font-weight:600}
+.comp-header:first-child{border-radius:0}
+.comp-cell{padding:14px 24px;font-size:.85rem;border-bottom:1px solid rgba(0,0,0,.04)}
+.comp-cell.feature{color:var(--ink-soft);font-weight:500}
+.comp-cell.mos{color:var(--emerald);font-weight:600}
+.comp-cell.others{color:var(--ink-muted)}
+
+/* ========== HADITH QUOTE ========== */
+.hadith-quote-section{padding:64px 0 80px;background:var(--cream);text-align:center;position:relative}
+.hq-divider{width:120px;margin:0 auto 32px;display:flex;align-items:center;gap:8px}
+.hq-divider .hq-line{flex:1;height:1px;background:var(--gold);opacity:.2}
+.hq-divider .hq-diamond{width:6px;height:6px;background:var(--gold);opacity:.25;transform:rotate(45deg);flex-shrink:0}
+.hq-arabic{font-family:'Amiri',serif;font-size:1.15rem;color:var(--ink-muted);opacity:.5;direction:rtl;text-align:center;max-width:500px;margin:0 auto 16px;line-height:2}
+.hq-english{font-family:'DM Sans',sans-serif;font-size:1.05rem;color:var(--ink-muted);line-height:1.8;max-width:500px;margin:0 auto;font-style:italic}
+.hq-ref{font-family:'DM Sans',sans-serif;font-size:.72rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-top:14px}
+.opensource{padding:80px 0;background:var(--white);text-align:center}
+.os-badge{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:var(--emerald-light);border-radius:99px;font-size:.82rem;font-weight:600;color:var(--emerald);margin-bottom:24px}
+.os-badge svg{width:18px;height:18px}
+
+/* ========== TESTIMONIALS ========== */
+.testimonials{padding:100px 0;background:linear-gradient(160deg,var(--cream),var(--cream-dark))}
+.test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.test-card{background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:28px}
+.test-card .tc-text{font-size:.88rem;color:var(--ink-soft);line-height:1.7;margin-bottom:16px;font-style:italic}
+.test-card .tc-author{font-weight:600;font-size:.82rem;color:var(--ink)}
+.test-card .tc-loc{font-size:.72rem;color:var(--ink-muted)}
+.test-card .tc-stars{color:var(--gold);font-size:.75rem;margin-bottom:8px;letter-spacing:2px}
+
+/* ========== CTA ========== */
+.final-cta{padding:100px 0;background:var(--emerald-deep);color:white;text-align:center;position:relative}
+.final-cta .geo-pattern{opacity:.04}
+.cta-title{font-family:'Amiri',serif;font-size:clamp(2rem,4.5vw,3.2rem);font-weight:700;margin-bottom:12px}
+.cta-arabic{font-family:'Amiri',serif;font-size:1.3rem;color:var(--gold);margin-bottom:24px}
+.cta-desc{font-size:.95rem;color:rgba(255,255,255,.6);max-width:480px;margin:0 auto 40px;line-height:1.7}
+.cta-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-white{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:white;color:var(--emerald-deep);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .25s;text-decoration:none}
+.btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.btn-ghost{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:transparent;color:white;border:1.5px solid rgba(255,255,255,.25);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .25s;text-decoration:none}
+.btn-ghost:hover{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.05)}
+
+/* ========== FOOTER ========== */
+footer{padding:48px 0 32px;background:var(--emerald-800);color:rgba(255,255,255,.5)}
+.footer-inner{display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:32px}
+.footer-brand .fb-name{font-family:'Amiri',serif;font-size:1.1rem;color:white;font-weight:700;margin-bottom:4px}
+.footer-brand .fb-desc{font-size:.75rem;line-height:1.6;max-width:280px}
+.footer-links h4{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.3);margin-bottom:12px}
+.footer-links a{display:block;font-size:.82rem;color:rgba(255,255,255,.5);text-decoration:none;margin-bottom:8px;transition:color .2s}
+.footer-links a:hover{color:white}
+.footer-bottom{text-align:center;margin-top:40px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);font-size:.72rem}
+.footer-bottom .bismillah{font-family:'Amiri',serif;font-size:.95rem;color:var(--gold);margin-bottom:8px}
+
+/* ========== RESPONSIVE ========== */
+@media(max-width:1024px){
+  .features-grid,.worship-grid{grid-template-columns:repeat(2,1fr)}
+  .hadith-grid{grid-template-columns:repeat(2,1fr)}
+  .test-grid{grid-template-columns:1fr}
+  .qs-grid,.prayer-grid{grid-template-columns:1fr;text-align:center}
+  .qs-text,.prayer-text{order:1}
+  .qs-visual,.prayer-visual{order:2;display:flex;justify-content:center}
+}
+@media(max-width:768px){
+  .hero-content{grid-template-columns:1fr;text-align:center}
+  .hero-text{max-width:100%}
+  .hero .tagline{margin-left:auto;margin-right:auto}
+  .hero-buttons{justify-content:center}
+  .hero-visual{margin-top:32px}
+  .features-grid,.worship-grid{grid-template-columns:1fr}
+  .comp-table{grid-template-columns:1.5fr 1fr 1fr;font-size:.78rem}
+  .nav-links{display:none}
+  .floating-verse,.floating-count{display:none}
+  .phil-features{gap:24px}
+  .section-desc{margin-left:auto;margin-right:auto}
+  .hadith-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Scroll animations */
+.reveal{opacity:0;transform:translateY(20px);transition:all .6s cubic-bezier(.4,0,.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo" style="text-decoration:none">
+      <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" fill="#064A37"/><circle cx="20" cy="18" r="8" fill="#C9A84C"/><circle cx="23" cy="16" r="6.5" fill="#064A37"/><polygon points="26,12 27,14 29,12 27,13 26,12" fill="#C9A84C"/></svg>
+      <span>MuslimOS</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#quran">Quran</a>
+      <a href="#hadith">Hadith</a>
+      <a href="#worship">Worship</a>
+      <a href="#philosophy">About</a>
+      <a href="#download" class="nav-cta">Download</a>
+    </div>
+  </div>
+</nav>
+
+<!-- FOLD 1: HERO -->
+<section class="hero" id="top">
+  <div class="geo-pattern"></div>
+  <div class="noise"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-text">
+        <div class="hero-badge"><span class="dot"></span> Free · No Ads · Open Source</div>
+        <h1>Your Complete Islamic Companion <span class="arabic-accent">بِسْمِ اللَّهِ</span></h1>
+        <p class="tagline">Prayer times, full Quran with audio and translation, hadith collections, dhikr counter, and qibla compass — crafted with the beauty Islam deserves.</p>
+        <div class="hero-buttons">
+          <a href="#download" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18V6M12 18l-4-4M12 18l4-4M4 21h16"/></svg>
+            Download App
+          </a>
+          <a href="#features" class="btn-secondary">
+            Explore Features
+          </a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="phone-glow"></div>
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <!-- Surah header bar -->
+            <div style="width:100%;background:linear-gradient(135deg,var(--emerald-deep),var(--emerald));border-radius:14px 14px 0 0;padding:14px 16px;color:white;position:relative;overflow:hidden">
+              <div style="position:absolute;top:-10px;right:-10px;width:50px;height:50px;border-radius:50%;background:rgba(201,168,76,.08)"></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:.5rem">‹</div><div style="flex:1;text-align:center"><div style="font-family:'Amiri',serif;font-size:1.1rem;font-weight:700">البقرة</div><div style="font-size:.45rem;opacity:.6">Al-Baqarah · 286 verses · Medinan</div></div><div style="font-size:.45rem;opacity:.5;padding:2px 6px;border:1px solid rgba(255,255,255,.2);border-radius:4px">#286</div></div>
+            </div>
+            <!-- Bismillah -->
+            <div style="width:100%;background:rgba(6,74,55,.06);padding:10px 8px;text-align:center;border-radius:0 0 14px 14px;margin-bottom:8px">
+              <div style="font-family:'Amiri',serif;font-size:.75rem;color:var(--emerald-deep)">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+              <div style="font-size:.38rem;color:var(--ink-muted);margin-top:2px">In the name of Allah, the Most Gracious, the Most Merciful</div>
+            </div>
+            <!-- Ayah card 1 -->
+            <div style="width:100%;background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.4);border-radius:12px;padding:10px 12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.03)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:4px"><span style="font-size:.4rem;padding:2px 6px;background:var(--emerald-light);color:var(--emerald);border-radius:4px;font-weight:600">Translation</span><span style="font-size:.4rem;padding:2px 6px;background:rgba(0,0,0,.03);color:var(--ink-muted);border-radius:4px">Tafseer</span></div><div style="font-family:'Amiri',serif;font-size:.5rem;color:var(--emerald);padding:2px 6px;border:1px solid var(--emerald-light);border-radius:4px">2.1</div></div>
+              <div style="font-family:'Amiri',serif;font-size:.95rem;color:var(--emerald-deep);text-align:center;direction:rtl;line-height:2;padding:6px 0">الٓمٓ ﴿١﴾</div>
+              <div style="font-size:.42rem;color:var(--ink-soft);line-height:1.5;font-style:italic;padding-top:4px;border-top:1px solid rgba(0,0,0,.04)">"Alif, Lam, Meem."</div>
+              <div style="margin-top:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+            <!-- Ayah card 2 -->
+            <div style="width:100%;background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.4);border-left:2px solid var(--gold);border-radius:12px;padding:10px 12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.03)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="display:flex;gap:4px"><span style="font-size:.4rem;padding:2px 6px;background:var(--emerald-light);color:var(--emerald);border-radius:4px;font-weight:600">Translation</span></div><div style="font-family:'Amiri',serif;font-size:.5rem;color:var(--emerald);padding:2px 6px;border:1px solid var(--emerald-light);border-radius:4px">2.2</div></div>
+              <div style="font-family:'Amiri',serif;font-size:.82rem;color:var(--emerald-deep);text-align:center;direction:rtl;line-height:1.9;padding:6px 0">ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ ﴿٢﴾</div>
+              <div style="font-size:.42rem;color:var(--ink-soft);line-height:1.5;font-style:italic;padding-top:4px;border-top:1px solid rgba(0,0,0,.04)">"This is the Book about which there is no doubt, a guidance for those conscious of Allah."</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--emerald)" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg><div style="font-size:.35rem;color:var(--gold)">Now playing</div></div>
+            </div>
+            <!-- Ayah card 3 partial -->
+            <div style="width:100%;background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.4);border-radius:12px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.03);opacity:.7">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:4px"><div style="font-family:'Amiri',serif;font-size:.5rem;color:var(--emerald);padding:2px 6px;border:1px solid var(--emerald-light);border-radius:4px">2.3</div></div>
+              <div style="font-family:'Amiri',serif;font-size:.82rem;color:var(--emerald-deep);text-align:center;direction:rtl;line-height:1.9">الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ ...</div>
+            </div>
+            <!-- Bottom audio bar -->
+            <div style="width:100%;margin-top:auto;background:var(--emerald-deep);border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:8px;color:white;margin-top:8px">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--gold)"></div>
+              <div style="flex:1"><div style="font-size:.45rem;font-weight:600">Al-Baqarah · Ayah 2</div><div style="height:2px;background:rgba(255,255,255,.15);border-radius:1px;margin-top:3px"><div style="height:100%;width:35%;background:var(--gold);border-radius:1px"></div></div></div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="floating-verse">
+          <div style="font-size:.5rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:600;margin-bottom:6px">Hadith of the Day</div>
+          <div class="fv-ar" style="font-size:.8rem">إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ</div>
+          <div style="font-size:.45rem;color:var(--ink-soft);font-style:italic;margin-top:4px">"Actions are judged by intentions"</div>
+          <div class="fv-ref">Sahih Bukhari 1</div>
+        </div>
+        <div class="floating-count">
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:var(--emerald)"></div><div style="font-size:.5rem;color:var(--emerald);font-weight:600">Next: Fajr</div></div>
+          <div class="fc-num" style="font-size:1.2rem">04:56 AM</div>
+          <div class="fc-label">2h 34m remaining</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 2: STATS BAR -->
+<section class="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card reveal">
+        <div class="stat-num" data-count="114">0</div>
+        <div class="stat-label">Surahs</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num" data-count="6236">0</div>
+        <div class="stat-label">Verses</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num" data-count="50000" data-suffix="+">0</div>
+        <div class="stat-label">Hadith</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num" data-count="8">0</div>
+        <div class="stat-label">Collections</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num" data-prefix="$" data-count="0">$0</div>
+        <div class="stat-label">Forever Free</div>
+        <div class="stat-accent"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 3: FEATURES -->
+<section class="features" id="features">
+  <div class="geo-pattern"></div>
+  <div class="container">
+    <div class="section-label reveal">✦ Everything You Need</div>
+    <div class="section-title reveal">One app, complete deen</div>
+    <div class="section-desc reveal">No more switching between five different apps. MuslimOS brings together every tool a practicing Muslim needs — designed with the beauty and reverence Islam deserves.</div>
+    <div class="features-grid">
+      <div class="feature-card reveal"><div class="feature-icon em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div><h3>Full Quran</h3><p>All 114 surahs with Arabic text, English and Urdu translations. Per-ayah audio with multiple reciters. Beautiful reading experience.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon gd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h3>Prayer Times</h3><p>Precise calculation using solar position math. Live countdown to next prayer. Multiple calculation methods. Works offline.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><h3>Hadith Library</h3><p>8 major collections including Bukhari, Muslim, and 40 Nawawi. Search, bookmark, and share. Offline access.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon gd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div><h3>Dhikr & Duas</h3><p>Tasbeeh counter with multiple modes. Morning and evening adhkar with tap-to-count. 35+ duas organized by life context.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon em"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><h3>Qibla Compass</h3><p>Real-time direction to the Ka'bah using GPS and device compass. Clean, accurate, and beautifully designed.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon gd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/></svg></div><h3>Quran Audio</h3><p>Listen to any surah or individual ayah. Multiple world-class reciters. Persistent player that continues across screens.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 4: QURAN SHOWCASE -->
+<section class="quran-showcase" id="quran">
+  <div class="geo-pattern"></div>
+  <div class="container">
+    <div class="qs-grid">
+      <div class="qs-text">
+        <div class="section-label reveal">✦ Quran Reader</div>
+        <div class="section-title reveal">Read like a real mushaf</div>
+        <div class="section-desc reveal">Each ayah in its own card. Arabic text in beautiful Amiri calligraphy with Urdu and English translations. Tap any verse to hear it recited.</div>
+        <ul class="qs-features">
+          <li class="reveal"><div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>Per-ayah audio playback</strong><span>Mishary, Sudais, Abdul Basit, and Al-Husary</span></div></li>
+          <li class="reveal"><div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>English + Urdu translations</strong><span>Toggle per-card with one tap</span></div></li>
+          <li class="reveal"><div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>Adjustable font sizes</strong><span>Arabic and translation sized independently</span></div></li>
+          <li class="reveal"><div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>Last-read tracking</strong><span>Resume exactly where you left off</span></div></li>
+          <li class="reveal"><div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>Works completely offline</strong><span>Full Quran bundled — no internet needed</span></div></li>
+        </ul>
+      </div>
+      <div class="qs-visual reveal">
+        <div class="ayah-card-demo">
+          <div class="acd-top">
+            <div class="acd-pills"><span class="acd-pill active">Translation</span><span class="acd-pill inactive">Tafseer</span></div>
+            <div class="acd-num">2.1</div>
+          </div>
+          <div class="acd-arabic">ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ ﴿٢﴾</div>
+          <div class="acd-trans">"This is the Book about which there is no doubt, a guidance for those conscious of Allah."</div>
+          <div class="acd-ref">Al-Baqarah 2:2 · Sahih International</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 5: PRAYER TIMES -->
+<section class="prayer-section">
+  <div class="geo-pattern"></div>
+  <div class="container">
+    <div class="prayer-grid">
+      <div class="prayer-visual reveal">
+        <div class="prayer-demo">
+          <div class="pd-hero">
+            <div class="pd-label">Next Prayer</div>
+            <div class="pd-name">Fajr</div>
+            <div class="pd-countdown">02:34:12</div>
+          </div>
+          <div class="pd-row"><span class="pd-pname">Fajr</span><span class="pd-ptime">4:56 AM</span></div>
+          <div class="pd-row"><span class="pd-pname">Sunrise</span><span class="pd-ptime">6:12 AM</span></div>
+          <div class="pd-row"><span class="pd-pname">Dhuhr</span><span class="pd-ptime">12:15 PM</span></div>
+          <div class="pd-row"><span class="pd-pname">Asr</span><span class="pd-ptime">4:02 PM</span></div>
+          <div class="pd-row"><span class="pd-pname">Maghrib</span><span class="pd-ptime">6:42 PM</span></div>
+          <div class="pd-row"><span class="pd-pname">Isha</span><span class="pd-ptime">8:12 PM</span></div>
+        </div>
+      </div>
+      <div class="prayer-text">
+        <div class="section-label reveal">✦ Prayer Times</div>
+        <div class="section-title reveal">Precise. Offline. Beautiful.</div>
+        <div class="section-desc reveal">No API dependency. Prayer times calculated using real solar position mathematics — the same method used by observatories. Works without internet, adapts to your exact GPS coordinates, and supports multiple calculation methods including Karachi, MWL, Egyptian, and ISNA.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 6: HADITH -->
+<section class="hadith-section" id="hadith">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-label reveal">✦ Hadith Library</div>
+      <div class="section-title reveal">50,000+ Prophetic Traditions</div>
+      <div class="section-desc reveal" style="margin-left:auto;margin-right:auto">Browse the world's most authentic hadith collections. Arabic text with full tashkeel, English and Urdu translations. Search, bookmark, and share.</div>
+    </div>
+    <div class="hadith-grid">
+      <div class="hadith-coll reveal"><div class="hc-ar">صحيح البخاري</div><div class="hc-en">Sahih Bukhari</div><div class="hc-count">7,563 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">صحيح مسلم</div><div class="hc-en">Sahih Muslim</div><div class="hc-count">7,453 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">جامع الترمذي</div><div class="hc-en">Jami at-Tirmidhi</div><div class="hc-count">3,956 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">سنن أبي داود</div><div class="hc-en">Sunan Abu Dawud</div><div class="hc-count">5,274 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">سنن النسائي</div><div class="hc-en">Sunan an-Nasa'i</div><div class="hc-count">5,758 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">سنن ابن ماجه</div><div class="hc-en">Sunan Ibn Majah</div><div class="hc-count">4,341 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">الأربعون النووية</div><div class="hc-en">40 Hadith Nawawi</div><div class="hc-count">42 hadith</div></div>
+      <div class="hadith-coll reveal"><div class="hc-ar">مسند أحمد</div><div class="hc-en">Musnad Ahmad</div><div class="hc-count">27,647 hadith</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 7: WORSHIP -->
+<section class="worship-section" id="worship">
+  <div class="geo-pattern"></div>
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-label reveal">✦ Daily Worship</div>
+      <div class="section-title reveal">Your spiritual toolkit</div>
+      <div class="section-desc reveal" style="margin-left:auto;margin-right:auto">Tasbeeh counter, categorized duas with context, and morning/evening adhkar with interactive tap-to-count tracking.</div>
+    </div>
+    <div class="worship-grid">
+      <div class="worship-card reveal"><div class="wc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h3>Tasbeeh Counter</h3><p>SubhanAllah, Alhamdulillah, Allahu Akbar, and free count modes with progress tracking toward targets.</p></div>
+      <div class="worship-card reveal"><div class="wc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div><h3>35+ Essential Duas</h3><p>Organized by life context — salah, fasting, protection, daily life, forgiveness, and distress. Each with "when to recite" guidance.</p></div>
+      <div class="worship-card reveal"><div class="wc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Morning & Evening Adhkar</h3><p>Interactive tap-to-count cards that track your daily progress. Resets at midnight. Complete Fortress of the Muslim coverage.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 8: DESIGN PHILOSOPHY -->
+<section class="philosophy" id="philosophy">
+  <div class="geo-pattern"></div>
+  <div class="container">
+    <div class="section-label reveal" style="color:var(--gold)">✦ Why MuslimOS</div>
+    <div class="phil-quote reveal">"We made everything beautiful. Why should the tools we use to practice our faith be anything less?"</div>
+    <div class="phil-ref reveal">The MuslimOS Philosophy</div>
+    <div class="phil-features">
+      <div class="phil-item reveal"><div class="pi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></div><h4>No Ads. Ever.</h4><p>Your spiritual moments deserve zero interruption. No banners, no popups, no "Rs.300" tricks.</p></div>
+      <div class="phil-item reveal"><div class="pi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h4>Privacy First</h4><p>No tracking. No analytics. No data collection. Your worship is between you and Allah.</p></div>
+      <div class="phil-item reveal"><div class="pi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div><h4>Works Offline</h4><p>Quran, prayer times, duas, and dhikr all work without internet. Designed for the masjid.</p></div>
+      <div class="phil-item reveal"><div class="pi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div><h4>Open Source</h4><p>Every line of code is public. Built with trust, for the ummah, by the ummah.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 9: COMPARISON -->
+<section class="comparison">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-label reveal">✦ Honest Comparison</div>
+      <div class="section-title reveal">Built different</div>
+    </div>
+    <div class="comp-table reveal">
+      <div class="comp-header">Feature</div>
+      <div class="comp-header" style="text-align:center">MuslimOS</div>
+      <div class="comp-header" style="text-align:center">Other Apps</div>
+      <div class="comp-cell feature">Ads</div><div class="comp-cell mos" style="text-align:center">None, ever</div><div class="comp-cell others" style="text-align:center">Banners, popups, video ads</div>
+      <div class="comp-cell feature">Price</div><div class="comp-cell mos" style="text-align:center">Free forever</div><div class="comp-cell others" style="text-align:center">Freemium / subscriptions</div>
+      <div class="comp-cell feature">Full Quran offline</div><div class="comp-cell mos" style="text-align:center">Yes, bundled</div><div class="comp-cell others" style="text-align:center">Requires download</div>
+      <div class="comp-cell feature">Hadith collections</div><div class="comp-cell mos" style="text-align:center">8 collections, 50K+</div><div class="comp-cell others" style="text-align:center">Limited or paid</div>
+      <div class="comp-cell feature">Prayer time method</div><div class="comp-cell mos" style="text-align:center">Local solar math</div><div class="comp-cell others" style="text-align:center">API dependent</div>
+      <div class="comp-cell feature">Privacy</div><div class="comp-cell mos" style="text-align:center">Zero tracking</div><div class="comp-cell others" style="text-align:center">Analytics, ads tracking</div>
+      <div class="comp-cell feature">Design quality</div><div class="comp-cell mos" style="text-align:center">Glassmorphism, luxury</div><div class="comp-cell others" style="text-align:center">Generic, dated</div>
+      <div class="comp-cell feature" style="border:none">Open source</div><div class="comp-cell mos" style="text-align:center;border:none">Yes, fully</div><div class="comp-cell others" style="text-align:center;border:none">No</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 10: TESTIMONIALS -->
+<section class="testimonials">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="section-label reveal">✦ Community</div>
+      <div class="section-title reveal">Made for Muslims, by Muslims</div>
+    </div>
+    <div class="test-grid">
+      <div class="test-card reveal"><div class="tc-stars">★ ★ ★ ★ ★</div><div class="tc-text">"Finally an Islamic app that doesn't insult my eyes with ugly design and pop-up ads every 2 seconds. This feels like it was made with ihsan."</div><div class="tc-author">Ahmed R.</div><div class="tc-loc">Lahore, Pakistan</div></div>
+      <div class="test-card reveal"><div class="tc-stars">★ ★ ★ ★ ★</div><div class="tc-text">"The Quran reader is beautiful. Each ayah on its own card with audio — I've been reading more consistently since I started using this."</div><div class="tc-author">Fatima K.</div><div class="tc-loc">Dubai, UAE</div></div>
+      <div class="test-card reveal"><div class="tc-stars">★ ★ ★ ★ ★</div><div class="tc-text">"Prayer times work perfectly in my area without internet. The hadith library with 8 collections is incredible. And it's free? SubhanAllah."</div><div class="tc-author">Omar S.</div><div class="tc-loc">London, UK</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOLD 11: OPEN SOURCE -->
+<section class="opensource">
+  <div class="container">
+    <div class="os-badge reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg> Open Source on GitHub</div>
+    <div class="section-title reveal">Transparent by design</div>
+    <div class="section-desc reveal" style="text-align:center;margin:12px auto 0">Every line of code is open. Contribute, audit, or fork it. Built with trust for the entire ummah. No hidden trackers. No mystery servers. Just clean code serving a pure purpose.</div>
+  </div>
+</section>
+
+<!-- HADITH QUOTE -->
+<section class="hadith-quote-section">
+  <div class="container">
+    <div class="hq-divider"><div class="hq-line"></div><div class="hq-diamond"></div><div class="hq-line"></div></div>
+    <div class="hq-arabic reveal" id="hqArabic"></div>
+    <div class="hq-english reveal" id="hqEnglish"></div>
+    <div class="hq-ref reveal" id="hqRef"></div>
+  </div>
+</section>
+
+<!-- FOLD 12: FINAL CTA -->
+<section class="final-cta" id="download">
+  <div class="geo-pattern"></div>
+  <div class="container">
+    <div class="cta-arabic reveal">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+    <div class="cta-title reveal">Download MuslimOS</div>
+    <div class="cta-desc reveal">Free. No ads. No tracking. No subscriptions. Just a beautiful tool to help you stay connected to your faith, every single day.</div>
+    <div class="cta-buttons reveal">
+      <a href="#" class="btn-white">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        App Store
+      </a>
+      <a href="#" class="btn-white">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.2l2.807 1.626a1 1 0 010 1.734l-2.807 1.626-2.536-2.536 2.536-2.45zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+        Google Play
+      </a>
+      <a href="/" class="btn-ghost">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        Use on Web
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="fb-name">MuslimOS</div>
+        <div class="fb-desc">Your complete Islamic companion. Built with love and ihsan for the ummah.</div>
+      </div>
+      <div class="footer-links">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#quran">Quran</a>
+        <a href="#hadith">Hadith</a>
+        <a href="#download">Download</a>
+      </div>
+      <div class="footer-links">
+        <h4>Resources</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">GitHub</a>
+        <a href="#">Contribute</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+      MuslimOS · Free & Open Source · Made with ❤️ for the ummah
+    </div>
+  </div>
+</footer>
+
+<script>
+// Sticky nav
+window.addEventListener('scroll',()=>{
+  document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>50);
+});
+
+// Scroll reveal
+const reveals=document.querySelectorAll('.reveal');
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}
+  });
+},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+reveals.forEach(el=>observer.observe(el));
+
+// Animated counters
+const counters=document.querySelectorAll('.stat-num[data-count]');
+const counterObserver=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const el=e.target;
+      const target=parseInt(el.dataset.count);
+      const prefix=el.dataset.prefix||'';
+      const suffix=el.dataset.suffix||'';
+      if(target===0){el.textContent=prefix+'0';counterObserver.unobserve(el);return}
+      const duration=1800;
+      const start=performance.now();
+      function update(now){
+        const elapsed=now-start;
+        const progress=Math.min(elapsed/duration,1);
+        const eased=1-Math.pow(1-progress,3);
+        const current=Math.floor(eased*target);
+        el.textContent=prefix+current.toLocaleString()+suffix;
+        if(progress<1)requestAnimationFrame(update);
+        else el.textContent=prefix+target.toLocaleString()+suffix;
+      }
+      requestAnimationFrame(update);
+      counterObserver.unobserve(el);
+    }
+  });
+},{threshold:0.3});
+counters.forEach(el=>counterObserver.observe(el));
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const target=document.querySelector(a.getAttribute('href'));
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+
+// Rotating hadith footer
+const FOOTER_HADITH=[
+{ar:"مَنْ صَامَ رَمَضَانَ إِيمَانًا وَاحْتِسَابًا غُفِرَ لَهُ مَا تَقَدَّمَ مِنْ ذَنْبِهِ",en:"\"Whoever fasts during Ramadan out of sincere faith and hoping to attain Allah's rewards, then all his past sins will be forgiven.\"",ref:"— Sahih al-Bukhari 38"},
+{ar:"خَيْرُكُمْ خَيْرُكُمْ لِأَهْلِهِ",en:"\"The best of you are those who are best to their families.\"",ref:"— Jami at-Tirmidhi 3895"},
+{ar:"إِنَّ اللَّهَ لَا يَنْظُرُ إِلَى صُوَرِكُمْ وَأَمْوَالِكُمْ وَلَكِنْ يَنْظُرُ إِلَى قُلُوبِكُمْ وَأَعْمَالِكُمْ",en:"\"Allah does not look at your appearance or wealth, but rather He looks at your hearts and your deeds.\"",ref:"— Sahih Muslim 2564"},
+{ar:"يَسِّرُوا وَلَا تُعَسِّرُوا وَبَشِّرُوا وَلَا تُنَفِّرُوا",en:"\"Make things easy and do not make them difficult. Give glad tidings and do not drive people away.\"",ref:"— Sahih al-Bukhari 69"},
+{ar:"لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",en:"\"The strong person is not the one who can wrestle someone else down. The strong person is the one who can control himself when he is angry.\"",ref:"— Sahih al-Bukhari 6114"},
+{ar:"لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ",en:"\"None of you truly believes until he loves for his brother what he loves for himself.\"",ref:"— Sahih al-Bukhari 13"},
+{ar:"كُلُّ مَعْرُوفٍ صَدَقَةٌ",en:"\"Every act of kindness is charity.\"",ref:"— Sahih al-Bukhari 6021"},
+{ar:"مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الْآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ",en:"\"Whoever believes in Allah and the Last Day, let him speak good or remain silent.\"",ref:"— Sahih al-Bukhari 6018"},
+{ar:"أَحَبُّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ",en:"\"The most beloved deeds to Allah are those done consistently, even if they are small.\"",ref:"— Sahih al-Bukhari 6464"},
+{ar:"إِذَا أَحَبَّ اللَّهُ عَبْدًا ابْتَلَاهُ",en:"\"When Allah loves a servant, He tests him.\"",ref:"— Jami at-Tirmidhi 2396"},
+{ar:"الدُّعَاءُ هُوَ الْعِبَادَةُ",en:"\"Supplication is the essence of worship.\"",ref:"— Jami at-Tirmidhi 3371"},
+{ar:"إِنَّ اللَّهَ رَفِيقٌ يُحِبُّ الرِّفْقَ فِي الْأَمْرِ كُلِّهِ",en:"\"Allah is gentle and loves gentleness in all matters.\"",ref:"— Sahih al-Bukhari 6927"},
+{ar:"تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ",en:"\"Your smile in the face of your brother is an act of charity.\"",ref:"— Jami at-Tirmidhi 1956"},
+{ar:"الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ",en:"\"A Muslim is the one from whose tongue and hands other Muslims are safe.\"",ref:"— Sahih al-Bukhari 10"},
+{ar:"مَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا سَهَّلَ اللَّهُ لَهُ طَرِيقًا إِلَى الْجَنَّةِ",en:"\"Whoever takes a path in search of knowledge, Allah will make easy for him a path to Paradise.\"",ref:"— Sahih Muslim 2699"},
+{ar:"الطُّهُورُ شَطْرُ الْإِيمَانِ",en:"\"Cleanliness is half of faith.\"",ref:"— Sahih Muslim 223"},
+{ar:"مَا مَلَأَ آدَمِيٌّ وِعَاءً شَرًّا مِنْ بَطْنٍ",en:"\"No human ever filled a vessel worse than the stomach.\"",ref:"— Jami at-Tirmidhi 2380"},
+{ar:"خَيْرُ النَّاسِ أَنْفَعُهُمْ لِلنَّاسِ",en:"\"The best of people are those who are most beneficial to people.\"",ref:"— Al-Mu'jam al-Awsat 5937"},
+{ar:"إِنَّمَا بُعِثْتُ لِأُتَمِّمَ مَكَارِمَ الْأَخْلَاقِ",en:"\"I was only sent to perfect noble character.\"",ref:"— Musnad Ahmad 8939"},
+{ar:"الدُّنْيَا سِجْنُ الْمُؤْمِنِ وَجَنَّةُ الْكَافِرِ",en:"\"The world is a prison for the believer and a paradise for the disbeliever.\"",ref:"— Sahih Muslim 2956"},
+{ar:"إِنَّ مَعَ الْعُسْرِ يُسْرًا",en:"\"Indeed, with hardship comes ease.\"",ref:"— Quran, Ash-Sharh 94:6"},
+{ar:"رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",en:"\"Our Lord, give us good in this world and good in the Hereafter, and protect us from the punishment of the Fire.\"",ref:"— Quran, Al-Baqarah 2:201"},
+{ar:"وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",en:"\"And whoever puts their trust in Allah, He will be enough for them.\"",ref:"— Quran, At-Talaq 65:3"},
+{ar:"ادْعُونِي أَسْتَجِبْ لَكُمْ",en:"\"Call upon Me; I will respond to you.\"",ref:"— Quran, Ghafir 40:60"},
+{ar:"فَاذْكُرُونِي أَذْكُرْكُمْ",en:"\"So remember Me, and I will remember you.\"",ref:"— Quran, Al-Baqarah 2:152"},
+{ar:"وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ",en:"\"And your Lord is going to give you, and you will be satisfied.\"",ref:"— Quran, Ad-Duha 93:5"},
+{ar:"لَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا",en:"\"Do not grieve; indeed Allah is with us.\"",ref:"— Quran, At-Tawbah 9:40"},
+{ar:"وَهُوَ مَعَكُمْ أَيْنَ مَا كُنتُمْ",en:"\"And He is with you wherever you are.\"",ref:"— Quran, Al-Hadid 57:4"},
+{ar:"إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",en:"\"Indeed, Allah is with the patient.\"",ref:"— Quran, Al-Baqarah 2:153"},
+{ar:"وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ",en:"\"And do not despair of the mercy of Allah.\"",ref:"— Quran, Yusuf 12:87"}
+];
+const hqIdx=(new Date().getDate()-1)%FOOTER_HADITH.length;
+const hq=FOOTER_HADITH[hqIdx];
+document.getElementById('hqArabic').textContent=hq.ar;
+document.getElementById('hqEnglish').textContent=hq.en;
+document.getElementById('hqRef').textContent=hq.ref;
+</script>
+</body>
+</html>
