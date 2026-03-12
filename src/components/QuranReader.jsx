@@ -1,10 +1,36 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import SURAHS_META from '../data/surahMeta';
 import SURAH_TEXT from '../data/quranText.json';
 import { getAbsoluteAyahNumber, toArabicNum } from '../utils/ayahMapping';
 import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER } from '../utils/tafseerApi';
-import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran } from './Icons';
+import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch } from './Icons';
 import HadithFooter from './HadithFooter';
+
+// Build search index once on module load
+const SEARCH_INDEX = [];
+for (const surahNum of Object.keys(SURAH_TEXT)) {
+  const s = parseInt(surahNum);
+  const text = SURAH_TEXT[s];
+  const meta = SURAHS_META.find(m => m.n === s);
+  if (!text || !meta) continue;
+  for (let i = 0; i < text.e.length; i++) {
+    SEARCH_INDEX.push({
+      surah: s, ayah: i + 1,
+      en: text.e[i].toLowerCase(),
+      ur: (text.u?.[i] || '').toLowerCase(),
+      ar: text.a[i],
+      enRaw: text.e[i],
+      urRaw: text.u?.[i] || '',
+      arRaw: text.a[i],
+      name: meta.nm, nameAr: meta.ar,
+      abs: getAbsoluteAyahNumber(s, i + 1),
+    });
+  }
+}
+// Also index surah names for search
+const SURAH_NAME_INDEX = SURAHS_META.map(s => ({
+  ...s, nmLower: s.nm.toLowerCase(), mnLower: s.mn.toLowerCase(),
+}));
 
 const FALLBACK_RECITER = 'ar.alafasy';
 
@@ -13,6 +39,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [activeSurah, setActiveSurah] = useState(null);
   const [search, setSearch] = useState('');
   const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
+
+  // Full-text search
+  const [ftSearch, setFtSearch] = useState('');
+  const [ftQuery, setFtQuery] = useState('');
+  const [ftVisibleCount, setFtVisibleCount] = useState(20);
+  const ftDebounce = useRef(null);
+  const ftSentinelRef = useRef(null);
   const [showTrans, setShowTrans] = useState(true);
 
   const [arabicSize, setArabicSize] = useState(() => parseFloat(localStorage.getItem('mos_arabicSize') || '1.5'));
@@ -111,6 +144,68 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const lastRead = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('mos_lastRead')); } catch { return null; }
   }, [view]);
+
+  // Full-text search results
+  const ftResults = useMemo(() => {
+    if (!ftQuery || ftQuery.length < 3) return [];
+    const q = ftQuery.toLowerCase();
+    const results = [];
+    for (const v of SEARCH_INDEX) {
+      if (results.length >= 50) break;
+      if (v.en.includes(q) || v.ur.includes(q)) results.push(v);
+    }
+    if (results.length < 50) {
+      for (const s of SURAH_NAME_INDEX) {
+        if (s.nmLower.includes(q) || s.mnLower.includes(q)) {
+          const first = SEARCH_INDEX.find(v => v.surah === s.n && v.ayah === 1);
+          if (first && !results.find(r => r.surah === first.surah && r.ayah === first.ayah)) {
+            results.push(first);
+            if (results.length >= 50) break;
+          }
+        }
+      }
+    }
+    return results;
+  }, [ftQuery]);
+
+  function handleFtSearchChange(val) {
+    setFtSearch(val);
+    setFtVisibleCount(20);
+    if (ftDebounce.current) clearTimeout(ftDebounce.current);
+    ftDebounce.current = setTimeout(() => setFtQuery(val.trim()), 300);
+  }
+
+  function clearFtSearch() {
+    setFtSearch('');
+    setFtQuery('');
+    setFtVisibleCount(20);
+  }
+
+  useEffect(() => {
+    if (!ftQuery || view !== 'list') return;
+    const el = ftSentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) setFtVisibleCount(c => Math.min(c + 20, ftResults.length));
+    }, { rootMargin: '400px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [ftQuery, view, ftResults.length, ftVisibleCount]);
+
+  function highlightMatch(text, query) {
+    if (!query || query.length < 3) return text;
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if (idx < 0) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <span style={{ background: 'rgba(201,168,76,0.35)', borderRadius: 2, padding: '0 2px' }}>
+          {text.slice(idx, idx + query.length)}
+        </span>
+        {text.slice(idx + query.length)}
+      </>
+    );
+  }
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -431,6 +526,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
   // ══════════════ LIST VIEW ══════════════
   if (view === 'list') {
+    const isSearching = ftQuery.length >= 3;
+    const visibleResults = ftResults.slice(0, ftVisibleCount);
+
     return (
       <div className="animate-fade-up">
         <div className="page-title">
@@ -442,7 +540,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         </div>
 
         {/* Continue Reading */}
-        {lastRead && SURAH_TEXT[lastRead.surah] && (
+        {!isSearching && lastRead && SURAH_TEXT[lastRead.surah] && (
           <div
             onClick={() => { setTargetAyah(lastRead.ayah); openSurah(lastRead.surah); }}
             className="glass-dark pressable"
@@ -463,59 +561,150 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           </div>
         )}
 
-        <input
-          className="search-box"
-          placeholder="Search surah name or number..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        {/* Full-text search box */}
+        <div style={{ position: 'relative', marginBottom: 'var(--sp-3)' }}>
+          <IconSearch size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-quaternary)', pointerEvents: 'none' }} />
+          <input
+            className="search-box"
+            style={{ paddingLeft: 38, marginBottom: 0 }}
+            placeholder="Search the Quran..."
+            value={ftSearch}
+            onChange={(e) => handleFtSearchChange(e.target.value)}
+          />
+          {ftSearch && (
+            <button
+              onClick={clearFtSearch}
+              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-tertiary)' }}
+            >
+              <IconClose size={16} />
+            </button>
+          )}
+        </div>
 
-        {filteredSurahs.map(s => {
-          const hasText = !!SURAH_TEXT[s.n];
-          return (
-            <div key={s.n} className="glass-card pressable" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)',
-              opacity: hasText ? 1 : 0.45, cursor: hasText ? 'pointer' : 'default',
-            }}>
-              <div onClick={() => hasText && openSurah(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1, minWidth: 0 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 'var(--r-sm)', background: 'var(--emerald-50)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Amiri', serif", fontSize: 'var(--text-base)', fontWeight: 700,
-                  color: 'var(--emerald-700)', flexShrink: 0,
-                }}>
-                  {s.n}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{s.nm}</div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>
-                    {s.mn} · {s.v} verses · {s.type}
+        {/* Search results */}
+        {isSearching ? (
+          <>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--sp-3)', paddingLeft: 'var(--sp-1)' }}>
+              {ftResults.length} result{ftResults.length !== 1 ? 's' : ''} for &ldquo;{ftQuery}&rdquo;
+            </div>
+            {visibleResults.map(r => (
+              <div
+                key={`${r.surah}:${r.ayah}`}
+                className="glass-card pressable"
+                onClick={() => { setTargetAyah(r.ayah); clearFtSearch(); openSurah(r.surah); }}
+                style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)', cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-2)' }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--emerald-700)' }}>
+                    {r.name} {r.surah}:{r.ayah}
                   </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                {hasText && onPlaySurah && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); onPlaySurah(s.n); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!audioRef.current) return;
+                      errorHandled.current = false;
+                      audioRef.current.src = ayahAudioUrl(reciter, r.abs);
+                      audioRef.current.play().catch(() => {});
+                    }}
                     className="pressable"
                     style={{
-                      width: 30, height: 30, borderRadius: 'var(--r-full)', border: '1.5px solid var(--border)',
+                      width: 26, height: 26, borderRadius: 'var(--r-full)', border: '1px solid var(--border)',
                       background: 'var(--bg-glass)', cursor: 'pointer', display: 'flex',
                       alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}
-                    aria-label={`Play ${s.nm}`}
                   >
-                    <IconPlay size={12} style={{ color: 'var(--emerald-500)' }} />
+                    <IconPlay size={10} style={{ color: 'var(--emerald-500)' }} />
                   </button>
-                )}
-                <div className="font-amiri" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
-                  {s.ar}
+                </div>
+                <div className="font-amiri" style={{
+                  fontSize: '1rem', color: 'var(--emerald-700)', direction: 'rtl', textAlign: 'right',
+                  lineHeight: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                }}>
+                  {r.arRaw}
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5, fontStyle: 'italic', marginTop: 'var(--sp-1)' }}>
+                  {highlightMatch(r.enRaw, ftQuery)}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            ))}
+            {ftVisibleCount < ftResults.length && (
+              <div ref={ftSentinelRef} style={{ height: 1 }}>
+                <div style={{ textAlign: 'center', padding: 'var(--sp-5) 0', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
+                  Loading more results...
+                </div>
+              </div>
+            )}
+            {ftResults.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 'var(--sp-10) 0', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
+                No verses found matching your search.
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Surah filter (only when not doing full-text search) */}
+            {search || !ftSearch ? (
+              <>
+                {!ftSearch && (
+                  <input
+                    className="search-box"
+                    placeholder="Filter surah name or number..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{ marginBottom: 'var(--sp-3)' }}
+                  />
+                )}
+
+                {filteredSurahs.map(s => {
+                  const hasText = !!SURAH_TEXT[s.n];
+                  return (
+                    <div key={s.n} className="glass-card pressable" style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)',
+                      opacity: hasText ? 1 : 0.45, cursor: hasText ? 'pointer' : 'default',
+                    }}>
+                      <div onClick={() => hasText && openSurah(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 'var(--r-sm)', background: 'var(--emerald-50)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: "'Amiri', serif", fontSize: 'var(--text-base)', fontWeight: 700,
+                          color: 'var(--emerald-700)', flexShrink: 0,
+                        }}>
+                          {s.n}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{s.nm}</div>
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>
+                            {s.mn} · {s.v} verses · {s.type}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                        {hasText && onPlaySurah && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onPlaySurah(s.n); }}
+                            className="pressable"
+                            style={{
+                              width: 30, height: 30, borderRadius: 'var(--r-full)', border: '1.5px solid var(--border)',
+                              background: 'var(--bg-glass)', cursor: 'pointer', display: 'flex',
+                              alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                            }}
+                            aria-label={`Play ${s.nm}`}
+                          >
+                            <IconPlay size={12} style={{ color: 'var(--emerald-500)' }} />
+                          </button>
+                        )}
+                        <div className="font-amiri" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
+                          {s.ar}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            ) : null}
+          </>
+        )}
 
         <HadithFooter />
       </div>
