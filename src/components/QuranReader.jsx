@@ -10,7 +10,7 @@ import { shareAyahAsImage } from '../utils/shareImage';
 import audioManager from '../utils/audioManager';
 import { ayahAudioUrl } from '../utils/quranAudio';
 import { findSegmentIndex, findTimingIndex, getSurahTimingData } from '../utils/quranTiming';
-import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch, IconImage } from './Icons';
+import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch, IconImage, IconHeart } from './Icons';
 import HadithFooter from './HadithFooter';
 
 // Build search index once on module load
@@ -146,6 +146,27 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       return { ...c, ayahs: c.ayahs.filter(a => !(a.surah === surah && a.ayah === ayah)) };
     });
     saveCollections(updated);
+  }
+
+  function favoriteCollection() {
+    return collections.find((collection) => collection.id === 'col_fav') || null;
+  }
+
+  function isFavoritedAyah(surah, ayah) {
+    return !!favoriteCollection()?.ayahs?.some((item) => item.surah === surah && item.ayah === ayah);
+  }
+
+  function toggleFavoriteAyah(surah, ayah) {
+    const favorites = favoriteCollection();
+    if (!favorites) return;
+
+    if (favorites.ayahs.some((item) => item.surah === surah && item.ayah === ayah)) {
+      removeAyahFromCollection(favorites.id, surah, ayah);
+      showColToast('Removed from Favorites');
+      return;
+    }
+
+    addAyahToCollection(favorites.id, surah, ayah);
   }
 
   function createCollection() {
@@ -839,9 +860,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     if (seqIndex > 0) {
       setIsSequential(true);
       playAtIndex(seqIndex - 1);
-    } else if (activeSurah > 1 && SURAH_TEXT[activeSurah - 1]) {
-      setPendingPlayAyah('last');
-      openSurah(activeSurah - 1);
+    } else {
+      goToSurahStart();
     }
   }
 
@@ -849,11 +869,15 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     if (seqIndex < verses.length - 1) {
       setIsSequential(true);
       playAtIndex(seqIndex + 1);
-    } else if (activeSurah < 114 && SURAH_TEXT[activeSurah + 1]) {
-      setPendingPlayAyah('first');
-      openSurah(activeSurah + 1);
     } else {
       stopAudio();
+    }
+  }
+
+  function skipToPrevSurah() {
+    if (activeSurah > 1 && SURAH_TEXT[activeSurah - 1]) {
+      setPendingPlayAyah('last');
+      openSurah(activeSurah - 1);
     }
   }
 
@@ -873,7 +897,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     longPressFired.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true;
-      goToSurahStart();
+      skipToPrevSurah();
     }, 500);
   }
 
@@ -1539,6 +1563,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         const isActive = playingAyah === v.abs;
         const bmId = `${activeSurah}:${v.vn}`;
         const isBookmarked = bookmarks.includes(bmId);
+        const isFavorited = isFavoritedAyah(activeSurah, v.vn);
 
         return (
           <div
@@ -1699,17 +1724,38 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
             {/* Bottom: audio + bookmark */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
-              <button
-                onClick={() => playSingleAyah(v, i)}
-                className={`pressable${isActive ? ' audio-pulse' : ''}`}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-                  color: isActive ? 'var(--emerald-500)' : 'var(--text-tertiary)',
-                  display: 'flex', alignItems: 'center', gap: 4,
-                }}
-              >
-                {isActive ? <IconPause size={16} /> : <IconPlay size={16} />}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  onClick={() => playSingleAyah(v, i)}
+                  className={`pressable${isActive ? ' audio-pulse' : ''}`}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                    color: isActive ? 'var(--emerald-500)' : 'var(--text-tertiary)',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  {isActive ? <IconPause size={16} /> : <IconPlay size={16} />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleFavoriteAyah(activeSurah, v.vn)}
+                  className="pressable"
+                  aria-label={isFavorited ? `Remove ${activeSurah}:${v.vn} from favorites` : `Add ${activeSurah}:${v.vn} to favorites`}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 4,
+                    color: isFavorited ? 'var(--gold-500)' : 'var(--text-tertiary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <IconHeart size={16} fill={isFavorited ? 'currentColor' : 'none'} />
+                </button>
+              </div>
 
               {isBookmarked && (
                 <span style={{ fontSize: '0.6rem', color: 'var(--gold-500)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 'var(--sp-1)' }}>
