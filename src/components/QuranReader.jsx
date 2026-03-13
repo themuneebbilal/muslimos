@@ -96,6 +96,10 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const sentinelRef = useRef(null);
   const [scrollPct, setScrollPct] = useState(0);
 
+  // ── Karaoke word-by-word highlighting ──
+  const [activeWordIdx, setActiveWordIdx] = useState(-1);
+  const activeWordElRef = useRef(null);
+
   const [bookmarks, setBookmarks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mos_ayah_bm') || '[]'); } catch { return []; }
   });
@@ -403,6 +407,48 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     }
   }, [playingAyah]);
 
+  // ── Karaoke: track active word via timeupdate ──
+  useEffect(() => {
+    const audio = audioRef.current;
+    setActiveWordIdx(-1);
+    if (!audio || !playingAyah) return;
+
+    const verse = verses.find(v => v.abs === playingAyah);
+    if (!verse) return;
+
+    const words = verse.ar.trim().split(/\s+/);
+    const wordCount = words.length;
+    if (wordCount === 0) return;
+
+    let lastIdx = -1;
+    function onTimeUpdate() {
+      const dur = audio.duration;
+      if (!dur || isNaN(dur) || dur === 0) return;
+      const ct = audio.currentTime;
+      const idx = Math.min(Math.floor((ct / dur) * wordCount), wordCount - 1);
+      if (idx !== lastIdx) {
+        lastIdx = idx;
+        setActiveWordIdx(idx);
+      }
+    }
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', onTimeUpdate);
+  }, [playingAyah, verses]);
+
+  // ── Karaoke: auto-scroll active word into center third ──
+  useEffect(() => {
+    if (activeWordIdx < 0 || !activeWordElRef.current) return;
+    const el = activeWordElRef.current;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const topThird = vh / 3;
+    const bottomThird = vh * 2 / 3;
+    if (rect.top < topThird || rect.bottom > bottomThird) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeWordIdx]);
+
   // Auto-play after cross-surah navigation
   useEffect(() => {
     if (view === 'read' && verses.length > 0 && pendingPlayAyah) {
@@ -479,6 +525,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     setIsSequential(false);
     setSeqIndex(-1);
     setAutoScrollOn(false);
+    setActiveWordIdx(-1);
     // Reset per-card overrides (abs numbers are surah-specific in practice)
     setTransOnCards(new Set());
     setTransOffCards(new Set());
@@ -1433,7 +1480,22 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               textAlign: 'center', direction: 'rtl', lineHeight: 2.4,
               letterSpacing: '0.02em', marginBottom: showTrans ? 16 : 4,
             }}>
-              {v.ar} {'\uFD3F'}{toArabicNum(v.vn)}{'\uFD3E'}
+              {isActive ? (
+                <>
+                  {v.ar.trim().split(/\s+/).map((word, wi, words) => (
+                    <span
+                      key={wi}
+                      ref={wi === activeWordIdx ? (el) => { activeWordElRef.current = el; } : null}
+                      className={`karaoke-word${wi === activeWordIdx ? ' active' : wi < activeWordIdx ? ' read' : ''}`}
+                    >
+                      {word}{wi < words.length - 1 ? ' ' : ''}
+                    </span>
+                  ))}
+                  {' '}{'\uFD3F'}{toArabicNum(v.vn)}{'\uFD3E'}
+                </>
+              ) : (
+                <>{v.ar} {'\uFD3F'}{toArabicNum(v.vn)}{'\uFD3E'}</>
+              )}
             </div>
 
             {/* Translation */}
