@@ -21,6 +21,7 @@ export default function BottomNav({ activePage, onNavigate }) {
         <button
           key={tab.id}
           className={`nav-item${activePage === tab.id ? ' active' : ''}`}
+          type="button"
           onClick={() => onNavigate(tab.id)}
         >
           <tab.Icon size={22} />
