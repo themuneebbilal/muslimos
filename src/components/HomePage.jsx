@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { calculatePrayerTimes, formatTime, getNextPrayer, getCountdown, getHijriDate } from '../utils/prayerCalc';
+import { calculatePrayerTimes, formatTime, getNextPrayer, getCountdown, getHijriDate, getHijriDateParts } from '../utils/prayerCalc';
 import { calculateQibla } from '../utils/qiblaCalc';
 import { getStreakData, getRecentDays } from '../utils/streakTracker';
+import { getUpcomingEvents, getTodayEvent } from '../data/islamicCalendar';
 import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame } from './Icons';
 import HadithFooter from './HadithFooter';
 
@@ -132,6 +133,10 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
 
   const streak = useMemo(() => getStreakData(), []);
   const recentDays = useMemo(() => getRecentDays(7), []);
+
+  const hijriParsed = useMemo(() => getHijriDateParts(), []);
+  const todayEvent = useMemo(() => getTodayEvent(hijriParsed.day, hijriParsed.month), [hijriParsed]);
+  const upcomingEvents = useMemo(() => getUpcomingEvents(hijriParsed.day, hijriParsed.month, 3), [hijriParsed]);
 
   const iconBox = (bg, children) => (
     <div style={{
@@ -283,6 +288,55 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
           </div>
         </div>
       </div>
+
+      {/* TODAY'S EVENT BANNER */}
+      {todayEvent && (
+        <div className="glass-card" style={{
+          padding: 'var(--sp-4) var(--sp-5)', marginBottom: 'var(--sp-3)',
+          borderLeft: '4px solid var(--gold-400)',
+          background: 'linear-gradient(135deg, rgba(201,168,76,0.08), rgba(201,168,76,0.03))',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-1)' }}>
+            <IconCrescent size={14} style={{ color: 'var(--gold-400)' }} />
+            <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--gold-400)', fontWeight: 600 }}>Today</div>
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--text-primary)', marginBottom: 2 }}>{todayEvent.name}</div>
+          <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: 'var(--gold-400)', marginBottom: 4 }}>{todayEvent.nameAr}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{todayEvent.desc}</div>
+        </div>
+      )}
+
+      {/* UPCOMING ISLAMIC EVENTS */}
+      {upcomingEvents.length > 0 && (
+        <div className="glass-card" style={{ padding: 'var(--sp-4) var(--sp-5)', marginBottom: 'var(--sp-4)', boxShadow: 'var(--shadow-xs)' }}>
+          <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--gold-400)', fontWeight: 600, marginBottom: 'var(--sp-3)', display: 'flex', alignItems: 'center', gap: 'var(--sp-1)' }}>
+            <IconCrescent size={12} style={{ color: 'var(--gold-400)' }} />
+            Upcoming Events
+          </div>
+          {upcomingEvents.map((e, i) => (
+            <div key={`${e.month}-${e.day}`} style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+              padding: 'var(--sp-2) 0',
+              borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 'var(--r-sm)',
+                background: e.daysUntil === 0 ? 'var(--gold-400)' : 'var(--emerald-50)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: e.daysUntil === 0 ? 'white' : 'var(--emerald-700)', textAlign: 'center', lineHeight: 1.2 }}>
+                  {e.daysUntil === 0 ? 'NOW' : e.daysUntil}
+                  {e.daysUntil > 0 && <div style={{ fontSize: '0.45rem', fontWeight: 400 }}>days</div>}
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{e.name}</div>
+                <div className="font-amiri" style={{ fontSize: '0.7rem', color: 'var(--gold-400)' }}>{e.nameAr}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* DAILY STREAK */}
       <div className="glass-card" style={{ padding: 'var(--sp-4) var(--sp-5)', marginBottom: 'var(--sp-4)', boxShadow: 'var(--shadow-xs)' }}>

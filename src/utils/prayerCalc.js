@@ -125,3 +125,20 @@ export function getHijriDate() {
   const months = ['Muharram','Safar',"Rabi' al-Awwal","Rabi' al-Thani","Jumada al-Ula","Jumada al-Thani",'Rajab',"Sha'ban",'Ramadan','Shawwal',"Dhul Qi'dah",'Dhul Hijjah'];
   return `${hd} ${months[hm - 1]} ${hy} AH`;
 }
+
+export function getHijriDateParts() {
+  const today = new Date();
+  const gd = today.getDate(), gm = today.getMonth() + 1, gy = today.getFullYear();
+  const jd = julianDate(gy, gm, gd);
+  let l = Math.floor(jd - 1948439.5) + 10632;
+  const n = Math.floor((l - 1) / 10631);
+  l = l - 10631 * n + 354;
+  const j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) +
+            (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
+  l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
+      (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
+  const hm = Math.floor((24 * l) / 709);
+  const hd = l - Math.floor((709 * hm) / 24);
+  const hy = 30 * n + j - 30;
+  return { day: hd, month: hm, year: hy };
+}
