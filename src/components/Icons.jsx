@@ -373,3 +373,10 @@ export const IconTarget = (p) => (
     <circle cx="12" cy="12" r="2"/>
   </I>
 );
+
+export const IconLearn = (p) => (
+  <I {...p}>
+    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+  </I>
+);

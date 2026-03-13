@@ -4,7 +4,7 @@ import { calculateQibla } from '../utils/qiblaCalc';
 import { getStreakData, getRecentDays } from '../utils/streakTracker';
 import { getKhatmData } from '../utils/khatmTracker';
 import { getUpcomingEvents, getTodayEvent } from '../data/islamicCalendar';
-import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame, IconTarget, IconHadith } from './Icons';
+import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame, IconTarget, IconHadith, IconLearn } from './Icons';
 import HadithFooter from './HadithFooter';
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -410,6 +410,20 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
           <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Hadith</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
             Collections
+          </div>
+        </div>
+
+        <div onClick={() => onNavigate('learn')} className="glass-card pressable" style={{ padding: 'var(--sp-5) var(--sp-4)', marginBottom: 0, gridColumn: '1 / -1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+            <div className="icon-box-emerald" style={{ marginBottom: 0 }}>
+              <IconLearn size={18} />
+            </div>
+            <div>
+              <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Learn</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                Step-by-step guides — Salah, Wudu, Hajj & more
+              </div>
+            </div>
           </div>
         </div>
       </div>

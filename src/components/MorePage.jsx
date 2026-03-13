@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CALC_METHODS } from '../utils/prayerCalc';
 import { calculateQibla } from '../utils/qiblaCalc';
 import Qibla from './Qibla';
-import { IconCompass, IconSettings, IconBack, IconForward, IconHeart, IconMoon, IconSun, IconCrescent } from './Icons';
+import { IconCompass, IconSettings, IconBack, IconForward, IconHeart, IconMoon, IconSun, IconCrescent, IconLearn } from './Icons';
 
 export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, reciter, reciters, onReciterChange, onNavigate, theme, onThemeChange }) {
   const [showQibla, setShowQibla] = useState(false);
@@ -44,6 +44,14 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
     <div className="animate-fade-up">
       <div className="page-title f1">More</div>
       <div className="page-subtitle f2">Settings & Tools</div>
+
+      {settingRow(
+        <IconLearn size={18} style={{ color: 'var(--emerald-500)' }} />,
+        'var(--emerald-50)',
+        'Islamic Guides',
+        'Step-by-step Salah, Wudu, Hajj & more',
+        () => onNavigate('learn'),
+      )}
 
       {settingRow(
         <IconCompass size={18} style={{ color: 'var(--emerald-500)' }} />,

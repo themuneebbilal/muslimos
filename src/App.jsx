@@ -6,6 +6,8 @@ import Worship from './components/Worship';
 import MorePage from './components/MorePage';
 import HadithPage from './components/HadithPage';
 import HadithCollection from './components/HadithCollection';
+import LearnPage from './components/LearnPage';
+import GuideReader from './components/GuideReader';
 import AudioPlayer from './components/AudioPlayer';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 
@@ -27,6 +29,9 @@ export default function App() {
 
   // Hadith sub-navigation
   const [activeCollection, setActiveCollection] = useState(null);
+
+  // Learn sub-navigation
+  const [activeGuide, setActiveGuide] = useState(null);
 
   // Audio state
   const [currentSurah, setCurrentSurah] = useState(() => {
@@ -89,6 +94,7 @@ export default function App() {
   function handleNavigate(newPage) {
     setPage(newPage);
     setActiveCollection(null);
+    setActiveGuide(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -142,6 +148,11 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }
 
+  function handleOpenGuide(id) {
+    setActiveGuide(id);
+    window.scrollTo({ top: 0 });
+  }
+
   const hasAudio = !!currentSurah;
 
   return (
@@ -157,6 +168,12 @@ export default function App() {
           collectionId={activeCollection}
           onBack={() => { setActiveCollection(null); window.scrollTo({ top: 0 }); }}
         />
+      )}
+      {page === 'learn' && !activeGuide && (
+        <LearnPage onOpenGuide={handleOpenGuide} onBack={() => handleNavigate('home')} />
+      )}
+      {page === 'learn' && activeGuide && (
+        <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />
       )}
       {page === 'more' && (
         <MorePage
