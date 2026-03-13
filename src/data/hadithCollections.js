@@ -12,6 +12,18 @@ export const HADITH_COLLECTIONS = [
     bundled: true,
   },
   {
+    id: "riyad",
+    apiName: "riyad",
+    nameAr: "رياض الصالحين",
+    nameEn: "Riyad as-Salihin",
+    compiler: "Imam Yahya ibn Sharaf an-Nawawi",
+    compilerDeath: "676 AH / 1277 CE",
+    description: "A beloved thematic collection on adab, worship, character, and daily spiritual practice.",
+    totalHadith: 1900,
+    tier: "primary",
+    bundled: false,
+  },
+  {
     id: "bukhari",
     apiName: "bukhari",
     nameAr: "\u0635\u062D\u064A\u062D \u0627\u0644\u0628\u062E\u0627\u0631\u064A",
@@ -49,7 +61,7 @@ export const HADITH_COLLECTIONS = [
   },
   {
     id: "abudawud",
-    apiName: "abudawud",
+    apiName: "abu_dawud",
     nameAr: "\u0633\u0646\u0646 \u0623\u0628\u064A \u062F\u0627\u0648\u062F",
     nameEn: "Sunan Abu Dawud",
     compiler: "Imam Abu Dawud Sulayman ibn al-Ash'ath",

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
-import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, isFullyDownloaded, loadAllCached } from '../utils/hadithApi';
+import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, hasIncludedHadith, isFullyDownloaded, loadAllCached } from '../utils/hadithApi';
 import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck } from './Icons';
 
 function SkeletonCard() {
@@ -42,6 +42,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   const isSaved = collectionId === '_saved';
   const collection = HADITH_COLLECTIONS.find(c => c.id === collectionId);
   const isBundled = collection?.bundled;
+  const isIncluded = collection ? hasIncludedHadith(collection.apiName || collection.id) : false;
   const isNawawi = collectionId === 'nawawi40';
 
   // Get all bookmarked hadith for saved view
@@ -77,9 +78,9 @@ export default function HadithCollection({ collectionId, onBack }) {
       return;
     }
 
-    // API collection: check if fully downloaded
-    if (collection && isFullyDownloaded(collection.id)) {
-      const all = loadAllCached(collection.apiName);
+    // Local-included or fully-downloaded collection
+    if (collection && (isIncluded || isFullyDownloaded(collection.id))) {
+      const all = loadAllCached(collection.apiName || collection.id);
       const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
       setHadithList(mapped);
       setHasMore(false);
@@ -93,7 +94,7 @@ export default function HadithCollection({ collectionId, onBack }) {
         if (chs.length > 0) setChapters(chs);
       });
     }
-  }, [collectionId]);
+  }, [collectionId, isIncluded]);
 
   async function loadPage(p) {
     if (loading || !collection?.apiName) return;
@@ -117,7 +118,7 @@ export default function HadithCollection({ collectionId, onBack }) {
 
   // Infinite scroll observer
   useEffect(() => {
-    if (!hasMore || loading || isSaved || isNawawi) return;
+    if (!hasMore || loading || isSaved || isNawawi || isIncluded) return;
     const el = sentinelRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(([e]) => {
@@ -127,7 +128,7 @@ export default function HadithCollection({ collectionId, onBack }) {
     }, { rootMargin: '400px' });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [hasMore, loading, page]);
+  }, [hasMore, loading, page, isIncluded]);
 
   // Filter
   const displayList = useMemo(() => {
@@ -171,7 +172,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   }
 
   async function handleDownload() {
-    if (!collection?.apiName || downloading) return;
+    if (!collection?.apiName || downloading || isIncluded) return;
     setDownloading(true);
     setDlProgress({ done: 0, total: collection.totalHadith });
     try {
@@ -179,7 +180,7 @@ export default function HadithCollection({ collectionId, onBack }) {
         setDlProgress({ done, total });
       });
       // Reload all data
-      const all = loadAllCached(collection.apiName);
+      const all = loadAllCached(collection.apiName || collection.id);
       const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
       setHadithList(mapped);
       setHasMore(false);
@@ -190,7 +191,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   }
 
   const cachedCount = collection?.apiName ? getCachedCount(collection.apiName) : (isNawawi ? 42 : 0);
-  const fullyDownloaded = collection ? (isBundled || isFullyDownloaded(collection.id)) : false;
+  const fullyDownloaded = collection ? (isBundled || isIncluded || isFullyDownloaded(collection.id)) : false;
 
   return (
     <div className="animate-fade-up hadithv2-collection">
@@ -231,7 +232,9 @@ export default function HadithCollection({ collectionId, onBack }) {
             </div>
             {cachedCount > 0 && (
               <div style={{ fontSize: '0.6rem', color: 'var(--success)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 'var(--sp-1)' }}>
-                {fullyDownloaded ? (
+                {isIncluded ? (
+                  <><IconCheck size={10} /> {cachedCount} included in app</>
+                ) : fullyDownloaded ? (
                   <><IconCheck size={10} /> Fully available offline</>
                 ) : (
                   <>{cachedCount} cached locally</>

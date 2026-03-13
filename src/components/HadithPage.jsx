@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
 import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconForward, IconShare } from './Icons';
-import { getCachedCount, isFullyDownloaded } from '../utils/hadithApi';
+import { getCachedCount, hasIncludedHadith, isFullyDownloaded } from '../utils/hadithApi';
 import HadithFooter from './HadithFooter';
 
 const TIER_STYLES = {
@@ -38,6 +38,8 @@ export default function HadithPage({ onOpenCollection }) {
     HADITH_COLLECTIONS.forEach(c => {
       if (c.bundled) {
         states[c.id] = { status: 'bundled', cached: c.totalHadith };
+      } else if (hasIncludedHadith(c.apiName || c.id)) {
+        states[c.id] = { status: 'included', cached: getCachedCount(c.apiName || c.id) };
       } else if (isFullyDownloaded(c.id)) {
         states[c.id] = { status: 'downloaded', cached: getCachedCount(c.apiName) };
       } else {
@@ -193,6 +195,9 @@ export default function HadithPage({ onOpenCollection }) {
                     <div style={{ marginTop: 'var(--sp-2)', fontSize: '0.6rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-1)' }}>
                       {(state.status === 'bundled' || state.status === 'downloaded') && (
                         <><IconCheck size={10} style={{ color: 'var(--success)' }} /> Available offline</>
+                      )}
+                      {state.status === 'included' && (
+                        <><IconCheck size={10} style={{ color: 'var(--success)' }} /> {state.cached} included in app</>
                       )}
                       {state.status === 'partial' && (
                         <>{state.cached} cached</>
