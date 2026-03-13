@@ -1226,6 +1226,12 @@ body.dark-mode .search-box::placeholder {
   color: var(--text-quaternary);
 }
 
+/* Quick-access cards dark */
+body.dark-mode .qa-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
 /* Ayah card dark */
 body.dark-mode .ayah-card {
   background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);

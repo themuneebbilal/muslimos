@@ -304,29 +304,6 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
         </div>
       )}
 
-      {/* ── 4. CONTINUE READING ── */}
-      {lastReadInfo && (
-        <div onClick={() => onNavigate('quran')} className="glass-card pressable f5" style={{
-          display: 'flex', alignItems: 'center', gap: 'var(--sp-4)',
-          padding: 'var(--sp-4) var(--sp-5)', marginBottom: 'var(--sp-4)',
-        }}>
-          <div className="icon-box-emerald" style={{ width: 44, height: 44 }}>
-            <IconQuran size={20} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="section-label" style={{ marginBottom: 2 }}>Continue Reading</div>
-            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {lastReadInfo.name}
-            </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>
-              Ayah {lastReadInfo.ayah}
-            </div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </div>
-      )}
 
       {/* ── 5. SMART SUGGESTION ── */}
       <div onClick={() => onNavigate(suggestion.page)} className="glass-card pressable f6" style={{
@@ -372,58 +349,141 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
       </div>
 
       {/* ── 7. QUICK ACCESS GRID ── */}
-      <div className="f8" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-4)' }}>
-        <div onClick={() => onNavigate('quran')} className="glass-card pressable" style={{ padding: 'var(--sp-5) var(--sp-4)', marginBottom: 0 }}>
-          <div className="icon-box-emerald" style={{ marginBottom: 10 }}>
-            <IconQuran size={18} />
+      {/* Hero Quran Card */}
+      <div onClick={() => onNavigate('quran')} className="pressable f8" style={{
+        borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)', marginBottom: 10,
+        position: 'relative', overflow: 'hidden', cursor: 'pointer',
+        background: 'linear-gradient(135deg, var(--emerald-700) 0%, rgba(11,107,79,0.85) 100%)',
+        border: '1px solid rgba(11,107,79,0.3)',
+      }}>
+        <div className="font-amiri" style={{
+          position: 'absolute', bottom: 6, right: 14, fontSize: '2.8rem',
+          color: 'rgba(255,255,255,0.05)', pointerEvents: 'none', lineHeight: 1,
+        }}>&#x0627;&#x0644;&#x0652;&#x0642;&#x064F;&#x0631;&#x0652;&#x0622;&#x0646;</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', position: 'relative', zIndex: 1 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 'var(--r-md)',
+            border: '1.5px solid var(--gold-400)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(201,168,76,0.15)', flexShrink: 0,
+          }}>
+            <IconQuran size={22} style={{ color: 'var(--gold-400)' }} />
           </div>
-          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Quran</div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
-            {lastReadInfo ? `${lastReadInfo.name} : ${lastReadInfo.ayah}` : '114 Surahs'}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="font-amiri" style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'white' }}>Al-Quran</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+              114 Surahs &middot; 30 Para &middot; Arabic + Urdu
+            </div>
+            {lastReadInfo && (
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--gold-400)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 8 }}>&#9654;</span> Continue: {lastReadInfo.name} &middot; Ayah {lastReadInfo.ayah}
+              </div>
+            )}
           </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </div>
+        <div style={{ marginTop: 'var(--sp-3)', height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--r-full)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${khatm.pct}%`, background: 'linear-gradient(90deg, var(--gold-400), var(--gold-300))', borderRadius: 'var(--r-full)', transition: 'width 0.3s' }} />
+        </div>
+      </div>
 
-        <div onClick={() => onNavigate('worship')} className="glass-card pressable" style={{ padding: 'var(--sp-5) var(--sp-4)', marginBottom: 0 }}>
-          <div className="icon-box-emerald" style={{ marginBottom: 10 }}>
-            <IconWorship size={18} />
+      {/* 2x2 Feature Grid */}
+      <div className="f9" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-4)' }}>
+        {/* Dhikr */}
+        <div onClick={() => onNavigate('worship')} className="qa-card pressable" style={{
+          borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)', cursor: 'pointer',
+          position: 'relative', overflow: 'hidden',
+          background: 'linear-gradient(135deg, rgba(11,107,79,0.08), rgba(11,107,79,0.02))',
+          border: '1px solid rgba(11,107,79,0.12)',
+        }}>
+          <div className="font-amiri" style={{ position: 'absolute', bottom: 2, right: 8, fontSize: '1.9rem', color: 'rgba(11,107,79,0.05)', pointerEvents: 'none', lineHeight: 1 }}>&#x0630;&#x0650;&#x0643;&#x0652;&#x0631;</div>
+          <div style={{
+            width: 36, height: 36, borderRadius: 'var(--r-sm)',
+            border: '1.5px solid var(--gold-400)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(201,168,76,0.1)',
+          }}>
+            <IconWorship size={16} style={{ color: 'var(--gold-400)' }} />
           </div>
-          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Dhikr</div>
+          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)', marginTop: 8 }}>Dhikr</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
             {tasbeehCount > 0 ? `${tasbeehCount} today` : 'Morning & Evening'}
           </div>
         </div>
 
-        <div onClick={() => onNavigate('more')} className="glass-card pressable" style={{ padding: 'var(--sp-5) var(--sp-4)', marginBottom: 0 }}>
-          <div className="icon-box-gold" style={{ marginBottom: 10 }}>
-            <IconCompass size={18} />
+        {/* Qibla */}
+        <div onClick={() => onNavigate('more')} className="qa-card pressable" style={{
+          borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)', cursor: 'pointer',
+          position: 'relative', overflow: 'hidden',
+          background: 'linear-gradient(135deg, rgba(11,107,79,0.08), rgba(11,107,79,0.02))',
+          border: '1px solid rgba(11,107,79,0.12)',
+        }}>
+          <div className="font-amiri" style={{ position: 'absolute', bottom: 2, right: 8, fontSize: '1.9rem', color: 'rgba(11,107,79,0.05)', pointerEvents: 'none', lineHeight: 1 }}>&#x0642;&#x0650;&#x0628;&#x0652;&#x0644;&#x064E;&#x0629;</div>
+          <div style={{
+            width: 36, height: 36, borderRadius: 'var(--r-sm)',
+            border: '1.5px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--bg-glass)',
+          }}>
+            <IconCompass size={16} style={{ color: 'var(--text-secondary)' }} />
           </div>
-          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Qibla</div>
+          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)', marginTop: 8 }}>Qibla</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
             {qiblaAngle}&deg; {qiblaDir}
           </div>
         </div>
 
-        <div onClick={() => onNavigate('hadith')} className="glass-card pressable" style={{ padding: 'var(--sp-5) var(--sp-4)', marginBottom: 0 }}>
-          <div className="icon-box-gold" style={{ marginBottom: 10 }}>
-            <IconHadith size={18} />
+        {/* Hadith */}
+        <div onClick={() => onNavigate('hadith')} className="qa-card pressable" style={{
+          borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)', cursor: 'pointer',
+          position: 'relative', overflow: 'hidden',
+          background: 'linear-gradient(135deg, rgba(11,107,79,0.08), rgba(11,107,79,0.02))',
+          border: '1px solid rgba(11,107,79,0.12)',
+        }}>
+          <div className="font-amiri" style={{ position: 'absolute', bottom: 2, right: 8, fontSize: '1.9rem', color: 'rgba(11,107,79,0.05)', pointerEvents: 'none', lineHeight: 1 }}>&#x062D;&#x064E;&#x062F;&#x0650;&#x064A;&#x062B;</div>
+          <div style={{
+            width: 36, height: 36, borderRadius: 'var(--r-sm)',
+            border: '1.5px solid var(--gold-400)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(201,168,76,0.1)',
+          }}>
+            <IconHadith size={16} style={{ color: 'var(--gold-400)' }} />
           </div>
-          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Hadith</div>
+          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)', marginTop: 8 }}>Hadith</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
-            Collections
+            8 Collections
           </div>
         </div>
 
-        <div onClick={() => onNavigate('learn')} className="glass-card pressable" style={{ padding: 'var(--sp-5) var(--sp-4)', marginBottom: 0, gridColumn: '1 / -1' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-            <div className="icon-box-emerald" style={{ marginBottom: 0 }}>
-              <IconLearn size={18} />
+        {/* Learn */}
+        <div onClick={() => onNavigate('learn')} className="qa-card pressable" style={{
+          borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)', cursor: 'pointer',
+          position: 'relative', overflow: 'hidden',
+          background: 'linear-gradient(135deg, rgba(11,107,79,0.08), rgba(11,107,79,0.02))',
+          border: '1px solid rgba(11,107,79,0.12)',
+        }}>
+          <div className="font-amiri" style={{ position: 'absolute', bottom: 2, right: 8, fontSize: '1.9rem', color: 'rgba(11,107,79,0.05)', pointerEvents: 'none', lineHeight: 1 }}>&#x0639;&#x0650;&#x0644;&#x0652;&#x0645;</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 'var(--r-sm)',
+              border: '1.5px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--bg-glass)',
+            }}>
+              <IconLearn size={16} style={{ color: 'var(--text-secondary)' }} />
             </div>
-            <div>
-              <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>Learn</div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
-                Step-by-step guides — Salah, Wudu, Hajj & more
-              </div>
-            </div>
+            <div style={{
+              fontSize: '0.55rem', fontWeight: 700, color: 'var(--emerald-700)',
+              background: 'var(--emerald-50)', padding: '2px 8px',
+              borderRadius: 'var(--r-full)', letterSpacing: 0.5,
+              textTransform: 'uppercase',
+            }}>8 Guides</div>
+          </div>
+          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)', marginTop: 8 }}>Learn</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+            Salah &middot; Umrah &middot; Hajj
           </div>
         </div>
       </div>
