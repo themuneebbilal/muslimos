@@ -5,7 +5,8 @@ import JUZ_DATA from '../data/juzData';
 import { getAbsoluteAyahNumber, toArabicNum } from '../utils/ayahMapping';
 import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER } from '../utils/tafseerApi';
 import { markTodayRead } from '../utils/streakTracker';
-import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch } from './Icons';
+import { shareAyahAsImage } from '../utils/shareImage';
+import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch, IconImage } from './Icons';
 import HadithFooter from './HadithFooter';
 
 // Build search index once on module load
@@ -1192,7 +1193,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                   <div className="ayah-dropdown" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => copyText(v.ar)}><IconCopy size={14} /> Copy Arabic</button>
                     <button onClick={() => copyText(lang === 'en' ? v.en : (v.ur || v.en))}><IconCopy size={14} /> Copy Translation</button>
-                    <button onClick={() => shareAyah(v)}><IconShare size={14} /> Share</button>
+                    <button onClick={() => shareAyah(v)}><IconShare size={14} /> Share Text</button>
+                    <button onClick={() => { shareAyahAsImage(v.ar, lang === 'en' ? v.en : (v.ur || v.en), `Quran ${activeSurah}:${v.vn}`, lang); setOpenMenu(null); }}><IconImage size={14} /> Share as Image</button>
                     <button onClick={() => { setSaveToCollectionAyah({ surah: activeSurah, ayah: v.vn }); setOpenMenu(null); }}>
                       <IconBookmark size={14} /> Save to Collection
                     </button>
