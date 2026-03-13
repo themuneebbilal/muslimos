@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import SURAHS_META from '../data/surahMeta';
 import SURAH_TEXT from '../data/quranText.json';
+import JUZ_DATA from '../data/juzData';
 import { getAbsoluteAyahNumber, toArabicNum } from '../utils/ayahMapping';
 import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER } from '../utils/tafseerApi';
 import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch } from './Icons';
@@ -38,6 +39,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [view, setView] = useState('list');
   const [activeSurah, setActiveSurah] = useState(null);
   const [search, setSearch] = useState('');
+  const [listMode, setListMode] = useState('surahs'); // 'surahs' | 'juz'
   const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
 
   // Full-text search
@@ -493,6 +495,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     window.scrollTo({ top: 0 });
   }
 
+  function openJuz(juz) {
+    const j = JUZ_DATA.find(d => d.juz === juz);
+    if (!j || !SURAH_TEXT[j.start.s]) return;
+    setTargetAyah(j.start.a);
+    openSurah(j.start.s);
+  }
+
   function closeReading() {
     if (audioRef.current) audioRef.current.pause();
     setPlayingAyah(null);
@@ -858,67 +867,123 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           </>
         ) : !showCollections ? (
           <>
-            {/* Surah filter (only when not doing full-text search) */}
-            {search || !ftSearch ? (
-              <>
-                {!ftSearch && (
-                  <input
-                    className="search-box"
-                    placeholder="Filter surah name or number..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    style={{ marginBottom: 'var(--sp-3)' }}
-                  />
-                )}
+            {/* Surahs / Juz toggle pills */}
+            {!ftSearch && (
+              <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' }}>
+                <button
+                  className={`trans-pill${listMode === 'surahs' ? ' active' : ''}`}
+                  onClick={() => setListMode('surahs')}
+                  style={{ padding: '5px 14px', fontSize: '0.72rem' }}
+                >Surahs</button>
+                <button
+                  className={`trans-pill${listMode === 'juz' ? ' active' : ''}`}
+                  onClick={() => setListMode('juz')}
+                  style={{ padding: '5px 14px', fontSize: '0.72rem' }}
+                >Juz</button>
+              </div>
+            )}
 
-                {filteredSurahs.map(s => {
-                  const hasText = !!SURAH_TEXT[s.n];
-                  return (
-                    <div key={s.n} className="glass-card pressable" style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)',
-                      opacity: hasText ? 1 : 0.45, cursor: hasText ? 'pointer' : 'default',
-                    }}>
-                      <div onClick={() => hasText && openSurah(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          width: 36, height: 36, borderRadius: 'var(--r-sm)', background: 'var(--emerald-50)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontFamily: "'Amiri', serif", fontSize: 'var(--text-base)', fontWeight: 700,
-                          color: 'var(--emerald-700)', flexShrink: 0,
+            {listMode === 'surahs' ? (
+              <>
+                {/* Surah filter (only when not doing full-text search) */}
+                {search || !ftSearch ? (
+                  <>
+                    {!ftSearch && (
+                      <input
+                        className="search-box"
+                        placeholder="Filter surah name or number..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        style={{ marginBottom: 'var(--sp-3)' }}
+                      />
+                    )}
+
+                    {filteredSurahs.map(s => {
+                      const hasText = !!SURAH_TEXT[s.n];
+                      return (
+                        <div key={s.n} className="glass-card pressable" style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)',
+                          opacity: hasText ? 1 : 0.45, cursor: hasText ? 'pointer' : 'default',
                         }}>
-                          {s.n}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{s.nm}</div>
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>
-                            {s.mn} · {s.v} verses · {s.type}
+                          <div onClick={() => hasText && openSurah(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 'var(--r-sm)', background: 'var(--emerald-50)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontFamily: "'Amiri', serif", fontSize: 'var(--text-base)', fontWeight: 700,
+                              color: 'var(--emerald-700)', flexShrink: 0,
+                            }}>
+                              {s.n}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{s.nm}</div>
+                              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>
+                                {s.mn} · {s.v} verses · {s.type}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                            {hasText && onPlaySurah && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onPlaySurah(s.n); }}
+                                className="pressable"
+                                style={{
+                                  width: 30, height: 30, borderRadius: 'var(--r-full)', border: '1.5px solid var(--border)',
+                                  background: 'var(--bg-glass)', cursor: 'pointer', display: 'flex',
+                                  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                }}
+                                aria-label={`Play ${s.nm}`}
+                              >
+                                <IconPlay size={12} style={{ color: 'var(--emerald-500)' }} />
+                              </button>
+                            )}
+                            <div className="font-amiri" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
+                              {s.ar}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                        {hasText && onPlaySurah && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onPlaySurah(s.n); }}
-                            className="pressable"
-                            style={{
-                              width: 30, height: 30, borderRadius: 'var(--r-full)', border: '1.5px solid var(--border)',
-                              background: 'var(--bg-glass)', cursor: 'pointer', display: 'flex',
-                              alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                            }}
-                            aria-label={`Play ${s.nm}`}
-                          >
-                            <IconPlay size={12} style={{ color: 'var(--emerald-500)' }} />
-                          </button>
-                        )}
-                        <div className="font-amiri" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
-                          {s.ar}
+                      );
+                    })}
+                  </>
+                ) : null}
+              </>
+            ) : (
+              /* ── Juz Grid ── */
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {JUZ_DATA.map(j => {
+                  const startMeta = SURAHS_META.find(s => s.n === j.start.s);
+                  const endMeta = SURAHS_META.find(s => s.n === j.end.s);
+                  return (
+                    <div
+                      key={j.juz}
+                      onClick={() => openJuz(j.juz)}
+                      className="glass-card pressable"
+                      style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 0, cursor: 'pointer' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-2)' }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: 'var(--r-full)',
+                          background: 'var(--emerald-50)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: "'Amiri', serif", fontSize: 'var(--text-sm)', fontWeight: 700,
+                          color: 'var(--emerald-700)', flexShrink: 0,
+                        }}>
+                          {j.juz}
                         </div>
+                        <div className="font-amiri" style={{ fontSize: '0.85rem', color: 'var(--gold-400)', lineHeight: 1.3 }}>
+                          {j.name}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                        {j.nameEn}
+                      </div>
+                      <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
+                        {startMeta?.nm || `Surah ${j.start.s}`}:{j.start.a} — {endMeta?.nm || `Surah ${j.end.s}`}:{j.end.a}
                       </div>
                     </div>
                   );
                 })}
-              </>
-            ) : null}
+              </div>
+            )}
           </>
         ) : null}
 
