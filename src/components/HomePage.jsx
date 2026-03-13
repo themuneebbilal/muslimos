@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { calculatePrayerTimes, formatTime, getNextPrayer, getCountdown, getHijriDate, getHijriDateParts } from '../utils/prayerCalc';
 import { calculateQibla } from '../utils/qiblaCalc';
 import { getStreakData, getRecentDays } from '../utils/streakTracker';
+import { getKhatmData } from '../utils/khatmTracker';
 import { getUpcomingEvents, getTodayEvent } from '../data/islamicCalendar';
-import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame } from './Icons';
+import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame, IconTarget } from './Icons';
 import HadithFooter from './HadithFooter';
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -134,6 +135,7 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
   const streak = useMemo(() => getStreakData(), []);
   const recentDays = useMemo(() => getRecentDays(7), []);
 
+  const khatm = useMemo(() => getKhatmData(), []);
   const hijriParsed = useMemo(() => getHijriDateParts(), []);
   const todayEvent = useMemo(() => getTodayEvent(hijriParsed.day, hijriParsed.month), [hijriParsed]);
   const upcomingEvents = useMemo(() => getUpcomingEvents(hijriParsed.day, hijriParsed.month, 3), [hijriParsed]);
@@ -286,6 +288,43 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
             {tasbeehCount > 0 ? `${tasbeehCount} count` : 'Start counting'}
           </div>
+        </div>
+      </div>
+
+      {/* KHATM PROGRESS */}
+      <div onClick={() => onNavigate('quran')} className="glass-card pressable" style={{
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-4)',
+        padding: 'var(--sp-4) var(--sp-5)', marginBottom: 'var(--sp-4)',
+      }}>
+        <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0 }}>
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="var(--border)" strokeWidth="4" />
+            <circle cx="26" cy="26" r="22" fill="none" stroke="var(--emerald-500)" strokeWidth="4"
+              strokeDasharray={`${(khatm.pct / 100) * 138.2} 138.2`}
+              strokeLinecap="round" transform="rotate(-90 26 26)"
+              style={{ transition: 'stroke-dasharray 0.5s ease' }}
+            />
+          </svg>
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.65rem', fontWeight: 700, color: 'var(--emerald-700)',
+          }}>
+            {khatm.pct}%
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-1)', marginBottom: 2 }}>
+            <IconTarget size={14} style={{ color: 'var(--emerald-500)' }} />
+            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>Khatm al-Quran</div>
+          </div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+            {khatm.completedSurahs} of {khatm.totalSurahs} surahs read
+          </div>
+          {khatm.completedAt && (
+            <div style={{ fontSize: '0.6rem', color: 'var(--gold-400)', fontWeight: 600, marginTop: 2 }}>
+              Completed! Alhamdulillah
+            </div>
+          )}
         </div>
       </div>
 
