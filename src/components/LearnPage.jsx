@@ -63,23 +63,73 @@ export default function LearnPage({ onOpenGuide, onBack }) {
     return p;
   }, []);
 
+  const startedCount = useMemo(
+    () => GUIDES.filter((guide) => (progress[guide.id] || 0) > 0).length,
+    [progress]
+  );
+  const totalSteps = useMemo(
+    () => GUIDES.reduce((sum, guide) => sum + guide.stepCount, 0),
+    []
+  );
+  const completedSteps = useMemo(
+    () => GUIDES.reduce((sum, guide) => sum + (progress[guide.id] || 0), 0),
+    [progress]
+  );
+  const completionPct = Math.max(6, Math.min(100, Math.round((completedSteps / totalSteps) * 100)));
+
   return (
-    <div className="animate-fade-up guide-page">
-      <div className="page-title f1" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+    <div className="learnv3 animate-fade-up">
+      <div className="learnv3-header">
         {onBack && (
-          <button className="back-btn" onClick={onBack} style={{ marginRight: 'var(--sp-1)' }}>
+          <button className="back-btn" onClick={onBack}>
             <IconBack size={16} />
           </button>
         )}
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-500)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-        </svg>
-        Learn
+        <div>
+          <div className="page-title" style={{ padding: 0 }}>Learn</div>
+          <div className="page-subtitle" style={{ padding: 0 }}>Guides designed for quick return and steady progress.</div>
+        </div>
       </div>
-      <div className="page-subtitle f2">Step-by-step Islamic guides</div>
 
-      <div className="guide-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', marginTop: 'var(--sp-3)' }}>
+      <section className="learnv3-hero settingsv2-panel settingsv2-panel-hero">
+        <div className="settingsv2-watermark">عِلْم</div>
+        <div className="settingsv2-label">Study Path</div>
+        <h2>Learn with structure, not clutter.</h2>
+        <p>Short practical guides, clear re-entry points, and visible progress across the essentials of worship.</p>
+
+        <div className="learnv3-hero-meta">
+          <div className="learnv3-hero-metric">
+            <strong>{GUIDES.length}</strong>
+            <span>Guides</span>
+          </div>
+          <div className="learnv3-hero-metric">
+            <strong>{startedCount}</strong>
+            <span>Started</span>
+          </div>
+          <div className="learnv3-hero-metric">
+            <strong>{completedSteps}</strong>
+            <span>Steps done</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="learnv3-overview">
+        <article className="learnv3-feature glass-card">
+          <div className="learnv3-feature-label">Reading Progress</div>
+          <div className="learnv3-feature-row">
+            <div>
+              <div className="learnv3-feature-title">Your study arc</div>
+              <div className="learnv3-feature-copy">Across all guides, you are building consistency one ritual at a time.</div>
+            </div>
+            <div className="learnv3-feature-pill">{completionPct}%</div>
+          </div>
+          <div className="guide-progress-bar learnv3-progress">
+            <div className="guide-progress-fill" style={{ width: `${completionPct}%` }} />
+          </div>
+        </article>
+      </section>
+
+      <div className="learnv3-grid">
         {GUIDES.map((guide, i) => {
           const colors = ICON_COLORS[guide.color] || ICON_COLORS.emerald;
           const icon = GUIDE_ICONS[guide.icon];
@@ -88,44 +138,42 @@ export default function LearnPage({ onOpenGuide, onBack }) {
           const isStarted = completed > 0;
 
           return (
-            <div
+            <button
               key={guide.id}
-              className={`glass-card pressable f${Math.min(i + 3, 12)}`}
+              type="button"
+              className={`learnv3-card glass-card pressable f${Math.min(i + 3, 12)}`}
               onClick={() => onOpenGuide(guide.id)}
-              style={{ padding: 'var(--sp-4)', marginBottom: 0, cursor: 'pointer' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 'var(--r-md)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: colors.bg, color: colors.color, flexShrink: 0,
-                }}>
+              <div className="learnv3-card-top">
+                <div
+                  className="learnv3-card-icon"
+                  style={{ background: colors.bg, color: colors.color }}
+                >
                   {icon}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-2)' }}>
-                    <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)' }}>
-                      {guide.title}
-                    </div>
-                    <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
-                      {guide.titleAr}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2, lineHeight: 1.4 }}>
-                    {guide.desc}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginTop: 'var(--sp-2)' }}>
-                    <div className="guide-progress-bar" style={{ flex: 1 }}>
-                      <div className="guide-progress-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: isStarted ? 'var(--emerald-500)' : 'var(--text-tertiary)', fontWeight: 600, flexShrink: 0 }}>
-                      {isStarted ? `${completed}/${guide.stepCount}` : `${guide.stepCount} steps`}
-                    </div>
-                    <IconForward size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
-                  </div>
+                <div className="learnv3-card-step">
+                  {isStarted ? `${completed}/${guide.stepCount}` : `${guide.stepCount} steps`}
                 </div>
               </div>
-            </div>
+
+              <div className="learnv3-card-body">
+                <div className="learnv3-card-title-row">
+                  <div className="learnv3-card-title font-amiri">{guide.title}</div>
+                  <div className="learnv3-card-ar font-amiri">{guide.titleAr}</div>
+                </div>
+                <div className="learnv3-card-desc">{guide.desc}</div>
+              </div>
+
+              <div className="learnv3-card-footer">
+                <div className="guide-progress-bar learnv3-card-progress">
+                  <div className="guide-progress-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="learnv3-card-state">
+                  <span>{isStarted ? 'Continue guide' : 'Start guide'}</span>
+                  <IconForward size={14} />
+                </div>
+              </div>
+            </button>
           );
         })}
       </div>

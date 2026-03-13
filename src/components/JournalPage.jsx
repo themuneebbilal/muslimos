@@ -24,6 +24,7 @@ export default function JournalPage({ onBack }) {
   const [anchor, setAnchor] = useState('General');
   const [text, setText] = useState('');
   const prompt = useMemo(() => getDailyJournalPrompt(), []);
+  const latestEntry = entries[0] || null;
 
   function handleSave() {
     if (!text.trim()) return;
@@ -54,9 +55,38 @@ export default function JournalPage({ onBack }) {
         <div className="ritual-label">Daily Reflection</div>
         <h2 className="ritual-title font-amiri">Write while the heart is still warm.</h2>
         <p className="ritual-copy">{prompt}</p>
+        <div className="ritual-hero-strip">
+          <div className="ritual-hero-pill">
+            <strong>{entries.length}</strong>
+            <span>Entries</span>
+          </div>
+          <div className="ritual-hero-pill">
+            <strong>{anchor}</strong>
+            <span>Focus</span>
+          </div>
+          <div className="ritual-hero-pill">
+            <strong>{mood}</strong>
+            <span>Mood</span>
+          </div>
+        </div>
       </section>
 
-      <section className="ritual-panel glass-card">
+      {latestEntry && (
+        <section className="ritual-panel ritual-panel-feature glass-card">
+          <div className="ritual-panel-head">
+            <div className="ritual-icon ritual-icon-emerald">
+              <IconHeart size={18} />
+            </div>
+            <div>
+              <div className="ritual-panel-title">Latest reflection</div>
+              <div className="ritual-panel-sub">{formatEntryTime(latestEntry.createdAt)} · {latestEntry.anchor}</div>
+            </div>
+          </div>
+          <p className="ritual-feature-quote">{latestEntry.text}</p>
+        </section>
+      )}
+
+      <section className="ritual-panel ritual-panel-composer glass-card">
         <div className="ritual-panel-head">
           <div className="ritual-icon ritual-icon-gold">
             <IconJournal size={18} />
@@ -94,7 +124,7 @@ export default function JournalPage({ onBack }) {
         </div>
 
         <textarea
-          className="ritual-textarea glass-input"
+          className="ritual-textarea ritual-textarea-journal glass-input"
           placeholder="Write one sincere line. A dua, a lesson, a moment of sabr, or what you want to remember tonight."
           value={text}
           onChange={(event) => setText(event.target.value)}
@@ -128,7 +158,7 @@ export default function JournalPage({ onBack }) {
                 <span className="ritual-mini-pill ritual-mini-pill-soft">{entry.mood}</span>
                 <span className="ritual-entry-time">{formatEntryTime(entry.createdAt)}</span>
               </div>
-              <p className="ritual-entry-text">{entry.text}</p>
+              <p className="ritual-entry-text ritual-entry-text-journal">{entry.text}</p>
               <div className="ritual-entry-actions">
                 <button type="button" className="ritual-link-btn" onClick={() => handleDelete(entry.id)}>
                   Delete
