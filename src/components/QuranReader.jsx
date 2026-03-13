@@ -90,6 +90,82 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     try { return JSON.parse(localStorage.getItem('mos_ayah_bm') || '[]'); } catch { return []; }
   });
 
+  // ── Collections state ──
+  const DEFAULT_COLLECTIONS = [
+    { id: 'col_fav', name: 'Favorites', icon: 'heart', color: 'gold', ayahs: [], createdAt: new Date().toISOString() },
+    { id: 'col_motiv', name: 'Motivation', icon: 'lightning', color: 'emerald', ayahs: [], createdAt: new Date().toISOString() },
+    { id: 'col_duas', name: 'Duas from Quran', icon: 'hands', color: 'emerald', ayahs: [], createdAt: new Date().toISOString() },
+  ];
+  const [collections, setCollections] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('mos_ayah_collections') || 'null');
+      return saved?.collections || DEFAULT_COLLECTIONS;
+    } catch { return DEFAULT_COLLECTIONS; }
+  });
+  const [showCollections, setShowCollections] = useState(false);
+  const [activeCollectionId, setActiveCollectionId] = useState(null);
+  const [saveToCollectionAyah, setSaveToCollectionAyah] = useState(null); // {surah, ayah} to show bottom sheet
+  const [collectionToast, setCollectionToast] = useState(null);
+  const colToastTimer = useRef(null);
+  const [showNewCollection, setShowNewCollection] = useState(false);
+  const [newColName, setNewColName] = useState('');
+  const [newColIcon, setNewColIcon] = useState('heart');
+  const [newColColor, setNewColColor] = useState('gold');
+
+  function saveCollections(cols) {
+    setCollections(cols);
+    localStorage.setItem('mos_ayah_collections', JSON.stringify({ collections: cols }));
+  }
+
+  function showColToast(msg) {
+    setCollectionToast(msg);
+    if (colToastTimer.current) clearTimeout(colToastTimer.current);
+    colToastTimer.current = setTimeout(() => setCollectionToast(null), 2500);
+  }
+
+  function addAyahToCollection(colId, surah, ayah) {
+    const updated = collections.map(c => {
+      if (c.id !== colId) return c;
+      if (c.ayahs.find(a => a.surah === surah && a.ayah === ayah)) return c;
+      return { ...c, ayahs: [...c.ayahs, { surah, ayah }] };
+    });
+    saveCollections(updated);
+    const col = collections.find(c => c.id === colId);
+    showColToast(`Saved to ${col?.name || 'collection'}`);
+    setSaveToCollectionAyah(null);
+  }
+
+  function removeAyahFromCollection(colId, surah, ayah) {
+    const updated = collections.map(c => {
+      if (c.id !== colId) return c;
+      return { ...c, ayahs: c.ayahs.filter(a => !(a.surah === surah && a.ayah === ayah)) };
+    });
+    saveCollections(updated);
+  }
+
+  function createCollection() {
+    if (!newColName.trim()) return;
+    const col = {
+      id: `col_${Date.now()}`,
+      name: newColName.trim(),
+      icon: newColIcon,
+      color: newColColor,
+      ayahs: [],
+      createdAt: new Date().toISOString(),
+    };
+    saveCollections([...collections, col]);
+    setShowNewCollection(false);
+    setNewColName('');
+  }
+
+  function deleteCollection(colId) {
+    saveCollections(collections.filter(c => c.id !== colId));
+    if (activeCollectionId === colId) setActiveCollectionId(null);
+  }
+
+  const COLLECTION_ICONS = { heart: 'M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z', lightning: 'M13 2L3 14h9l-1 8 10-12h-9l1-8', hands: 'M7 20c0-4 1-6 3-8 1.5-1.5 2-3 2-5V4 M17 20c0-4-1-6-3-8-1.5-1.5-2-3-2-5V4 M5 20h14', shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', star: 'M12,2 L15.09,8.26 L22,9.27 L17,14.14 L18.18,21.02 L12,17.77 L5.82,21.02 L7,14.14 L2,9.27 L8.91,8.26z', bookmark: 'M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z' };
+  const COLLECTION_COLORS = { gold: 'var(--gold-400)', emerald: 'var(--emerald-500)', blue: 'var(--blue)', danger: 'var(--danger)' };
+
   const [showJump, setShowJump] = useState(false);
   const [jumpVal, setJumpVal] = useState('');
   const [targetAyah, setTargetAyah] = useState(null);
@@ -531,9 +607,25 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
     return (
       <div className="animate-fade-up">
-        <div className="page-title">
-          <IconQuran size={22} style={{ color: 'var(--emerald-500)' }} />
-          Al-Quran
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="page-title">
+            <IconQuran size={22} style={{ color: 'var(--emerald-500)' }} />
+            Al-Quran
+          </div>
+          <button
+            onClick={() => setShowCollections(!showCollections)}
+            className="pressable"
+            style={{
+              background: showCollections ? 'var(--emerald-500)' : 'var(--bg-glass)',
+              border: `1.5px solid ${showCollections ? 'var(--emerald-500)' : 'var(--border)'}`,
+              borderRadius: 'var(--r-sm)', cursor: 'pointer', padding: '5px 10px',
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
+              fontSize: '0.68rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+              color: showCollections ? 'white' : 'var(--text-secondary)',
+            }}
+          >
+            <IconBookmark size={14} /> Collections
+          </button>
         </div>
         <div className="page-subtitle">
           {availableCount > 0 ? `${availableCount} surahs · Arabic + English + Urdu` : 'Loading...'}
@@ -561,8 +653,132 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           </div>
         )}
 
+        {/* Collections View */}
+        {showCollections && !isSearching && (
+          activeCollectionId ? (() => {
+            const col = collections.find(c => c.id === activeCollectionId);
+            if (!col) return null;
+            return (
+              <div style={{ marginBottom: 'var(--sp-4)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' }}>
+                  <button onClick={() => setActiveCollectionId(null)} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}>
+                    <IconBack size={18} />
+                  </button>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{col.name}</div>
+                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>{col.ayahs.length} ayah{col.ayahs.length !== 1 ? 's' : ''}</div>
+                  </div>
+                  <button onClick={() => { if (confirm(`Delete "${col.name}"?`)) deleteCollection(col.id); }} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-tertiary)' }}>
+                    <IconClose size={16} />
+                  </button>
+                </div>
+                {col.ayahs.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 'var(--sp-8) 0', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
+                    No ayahs saved yet. Use the bookmark button on any ayah to save it here.
+                  </div>
+                )}
+                {col.ayahs.map(a => {
+                  const text = SURAH_TEXT[a.surah];
+                  const sMeta = SURAHS_META.find(m => m.n === a.surah);
+                  if (!text || !sMeta) return null;
+                  const ar = text.a[a.ayah - 1] || '';
+                  const en = text.e[a.ayah - 1] || '';
+                  return (
+                    <div key={`${a.surah}:${a.ayah}`} className="glass-card" style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)', position: 'relative' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--sp-2)' }}>
+                        <div onClick={() => { setTargetAyah(a.ayah); setShowCollections(false); setActiveCollectionId(null); openSurah(a.surah); }} style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--emerald-700)', cursor: 'pointer' }}>
+                          {sMeta.nm} {a.surah}:{a.ayah}
+                        </div>
+                        <button onClick={() => removeAyahFromCollection(col.id, a.surah, a.ayah)} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--text-tertiary)', fontSize: '0.6rem' }}>
+                          Remove
+                        </button>
+                      </div>
+                      <div className="font-amiri" style={{ fontSize: '1rem', color: 'var(--emerald-700)', direction: 'rtl', textAlign: 'right', lineHeight: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                        {ar}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5, fontStyle: 'italic', marginTop: 'var(--sp-1)' }}>
+                        &ldquo;{en}&rdquo;
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })() : (
+            <div style={{ marginBottom: 'var(--sp-4)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-3)' }}>
+                {collections.map(c => (
+                  <div
+                    key={c.id}
+                    onClick={() => setActiveCollectionId(c.id)}
+                    className="glass-card pressable"
+                    style={{ padding: 'var(--sp-4)', marginBottom: 0, cursor: 'pointer', textAlign: 'center' }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={COLLECTION_COLORS[c.color] || 'var(--gold-400)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 'var(--sp-2)' }}>
+                      <path d={COLLECTION_ICONS[c.icon] || COLLECTION_ICONS.heart} />
+                    </svg>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
+                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: 2 }}>{c.ayahs.length} ayah{c.ayahs.length !== 1 ? 's' : ''}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* New Collection Form */}
+              {showNewCollection ? (
+                <div className="glass-surface" style={{ padding: 'var(--sp-4)', marginBottom: 'var(--sp-2)' }}>
+                  <input
+                    value={newColName} onChange={(e) => setNewColName(e.target.value)}
+                    placeholder="Collection name..."
+                    className="search-box" style={{ marginBottom: 'var(--sp-3)' }}
+                  />
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)', flexWrap: 'wrap' }}>
+                    {Object.keys(COLLECTION_ICONS).map(ic => (
+                      <button key={ic} onClick={() => setNewColIcon(ic)} className="pressable" style={{
+                        width: 36, height: 36, borderRadius: 'var(--r-sm)',
+                        border: `2px solid ${newColIcon === ic ? 'var(--emerald-500)' : 'var(--border)'}`,
+                        background: newColIcon === ic ? 'var(--emerald-50)' : 'var(--bg-glass)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={COLLECTION_ICONS[ic]} /></svg>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' }}>
+                    {Object.keys(COLLECTION_COLORS).map(cl => (
+                      <button key={cl} onClick={() => setNewColColor(cl)} className="pressable" style={{
+                        width: 28, height: 28, borderRadius: 'var(--r-full)',
+                        background: COLLECTION_COLORS[cl],
+                        border: `3px solid ${newColColor === cl ? 'var(--text-primary)' : 'transparent'}`,
+                        cursor: 'pointer',
+                      }} />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <button onClick={createCollection} className="pressable" style={{
+                      flex: 1, padding: '8px', borderRadius: 'var(--r-sm)', border: 'none',
+                      background: 'var(--emerald-500)', color: 'white', cursor: 'pointer',
+                      fontSize: 'var(--text-sm)', fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                    }}>Create</button>
+                    <button onClick={() => setShowNewCollection(false)} className="pressable" style={{
+                      padding: '8px 14px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
+                      background: 'var(--bg-glass)', cursor: 'pointer',
+                      fontSize: 'var(--text-sm)', fontFamily: "'DM Sans', sans-serif", color: 'var(--text-secondary)',
+                    }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowNewCollection(true)} className="pressable" style={{
+                  width: '100%', padding: '10px', borderRadius: 'var(--r-md)',
+                  border: '1.5px dashed var(--border)', background: 'none', cursor: 'pointer',
+                  fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', fontFamily: "'DM Sans', sans-serif",
+                }}>+ New Collection</button>
+              )}
+            </div>
+          )
+        )}
+
         {/* Full-text search box */}
-        <div style={{ position: 'relative', marginBottom: 'var(--sp-3)' }}>
+        {!showCollections && <div style={{ position: 'relative', marginBottom: 'var(--sp-3)' }}>
           <IconSearch size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-quaternary)', pointerEvents: 'none' }} />
           <input
             className="search-box"
@@ -579,10 +795,10 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               <IconClose size={16} />
             </button>
           )}
-        </div>
+        </div>}
 
         {/* Search results */}
-        {isSearching ? (
+        {!showCollections && isSearching ? (
           <>
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--sp-3)', paddingLeft: 'var(--sp-1)' }}>
               {ftResults.length} result{ftResults.length !== 1 ? 's' : ''} for &ldquo;{ftQuery}&rdquo;
@@ -640,7 +856,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               </div>
             )}
           </>
-        ) : (
+        ) : !showCollections ? (
           <>
             {/* Surah filter (only when not doing full-text search) */}
             {search || !ftSearch ? (
@@ -704,7 +920,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               </>
             ) : null}
           </>
-        )}
+        ) : null}
 
         <HadithFooter />
       </div>
@@ -910,9 +1126,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                     <button onClick={() => copyText(v.ar)}><IconCopy size={14} /> Copy Arabic</button>
                     <button onClick={() => copyText(lang === 'en' ? v.en : (v.ur || v.en))}><IconCopy size={14} /> Copy Translation</button>
                     <button onClick={() => shareAyah(v)}><IconShare size={14} /> Share</button>
-                    <button onClick={() => toggleBookmark(bmId)}>
-                      {isBookmarked ? <IconBookmarkFilled size={14} /> : <IconBookmark size={14} />}
-                      {isBookmarked ? ' Remove Bookmark' : ' Bookmark'}
+                    <button onClick={() => { setSaveToCollectionAyah({ surah: activeSurah, ayah: v.vn }); setOpenMenu(null); }}>
+                      <IconBookmark size={14} /> Save to Collection
                     </button>
                     <button onClick={() => { setIsSequential(true); playAtIndex(i); setOpenMenu(null); }}>
                       <IconPlay size={14} /> Play from here
@@ -1145,6 +1360,78 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           <IconSpeed size={14} /> {playbackSpeed}x
         </button>
       </div>
+
+      {/* Collection save bottom sheet */}
+      {saveToCollectionAyah && (
+        <div
+          onClick={() => setSaveToCollectionAyah(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200,
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 480, background: 'var(--bg-primary)',
+              borderRadius: 'var(--r-xl) var(--r-xl) 0 0', padding: 'var(--sp-5)',
+              maxHeight: '60vh', overflowY: 'auto', animation: 'fadeUp 0.25s ease',
+            }}
+          >
+            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-3)' }}>
+              Save to Collection
+            </div>
+            {collections.map(c => (
+              <div
+                key={c.id}
+                onClick={() => addAyahToCollection(c.id, saveToCollectionAyah.surah, saveToCollectionAyah.ayah)}
+                className="pressable"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)',
+                  borderRadius: 'var(--r-md)', marginBottom: 'var(--sp-1)', cursor: 'pointer',
+                  background: 'var(--bg-glass)', border: '1px solid var(--border)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLLECTION_COLORS[c.color] || 'var(--gold-400)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={COLLECTION_ICONS[c.icon] || COLLECTION_ICONS.heart} />
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{c.name}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>{c.ayahs.length} ayah{c.ayahs.length !== 1 ? 's' : ''}</div>
+                </div>
+                {c.ayahs.find(a => a.surah === saveToCollectionAyah.surah && a.ayah === saveToCollectionAyah.ayah) && (
+                  <span style={{ fontSize: '0.6rem', color: 'var(--emerald-500)', fontWeight: 600 }}>Saved</span>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={() => { setSaveToCollectionAyah(null); setShowNewCollection(true); }}
+              className="pressable"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginTop: 'var(--sp-2)',
+                background: 'none', border: 'none', cursor: 'pointer', color: 'var(--emerald-500)',
+                fontSize: 'var(--text-sm)', fontWeight: 600, padding: 'var(--sp-2) 0',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              + New Collection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Collection toast */}
+      {collectionToast && (
+        <div style={{
+          position: 'fixed', bottom: 180, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(6,74,55,0.92)', color: 'white', padding: '8px 16px',
+          borderRadius: 'var(--r-md)', fontSize: 'var(--text-xs)', zIndex: 210,
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          animation: 'fadeUp 0.25s ease', whiteSpace: 'nowrap',
+        }}>
+          {collectionToast}
+        </div>
+      )}
     </div>
   );
 }
