@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CALC_METHODS } from '../utils/prayerCalc';
 import { calculateQibla } from '../utils/qiblaCalc';
 import Qibla from './Qibla';
-import { IconCompass, IconSettings, IconBack, IconForward, IconHeart, IconMoon, IconSun, IconCrescent, IconLearn } from './Icons';
+import { IconCompass, IconSettings, IconBack, IconForward, IconHeart, IconMoon, IconSun, IconCrescent, IconLearn, IconRefresh, IconTrash } from './Icons';
 
 export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, reciter, reciters, onReciterChange, onNavigate, theme, onThemeChange }) {
   const [showQibla, setShowQibla] = useState(false);
@@ -141,6 +141,63 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Data & Cache */}
+      <div style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Data & Cache</div>
+        {settingRow(
+          <IconRefresh size={18} style={{ color: 'var(--emerald-500)' }} />,
+          'var(--emerald-50)',
+          'Reset Reading Progress',
+          'Clear khatm, last read & streak data',
+          () => {
+            if (window.confirm('Reset all reading progress? This cannot be undone.')) {
+              ['mos_khatm', 'mos_lastRead', 'mos_streak'].forEach(k => localStorage.removeItem(k));
+              window.location.reload();
+            }
+          },
+        )}
+        {settingRow(
+          <IconRefresh size={18} style={{ color: 'var(--gold-500)' }} />,
+          'var(--gold-100)',
+          'Reset Dhikr & Tasbeeh',
+          'Clear tasbeeh counters & adhkar progress',
+          () => {
+            if (window.confirm('Reset all dhikr and tasbeeh data? This cannot be undone.')) {
+              ['mos_tb_subhanallah', 'mos_tb_alhamdulillah', 'mos_tb_allahuakbar', 'mos_adhkar_counts'].forEach(k => localStorage.removeItem(k));
+              window.location.reload();
+            }
+          },
+        )}
+        {settingRow(
+          <IconRefresh size={18} style={{ color: 'var(--emerald-500)' }} />,
+          'var(--emerald-50)',
+          'Reset Guide Progress',
+          'Restart all step-by-step guides',
+          () => {
+            if (window.confirm('Reset all guide progress? This cannot be undone.')) {
+              ['salah', 'wudu', 'taraweeh', 'witr', 'janazah', 'eid', 'umrah', 'hajj'].forEach(id => localStorage.removeItem(`mos_guide_${id}_step`));
+              window.location.reload();
+            }
+          },
+        )}
+        {settingRow(
+          <IconTrash size={18} style={{ color: '#ef4444' }} />,
+          'rgba(239,68,68,0.1)',
+          'Clear Cached Data',
+          'Remove cached tafseer, hadith & bookmarks',
+          () => {
+            if (window.confirm('Clear all cached data? Bookmarks and collections will be removed. This cannot be undone.')) {
+              const keys = Object.keys(localStorage);
+              keys.forEach(k => {
+                if (k.startsWith('mos_tafseer_') || k.startsWith('mos_hadith_')) localStorage.removeItem(k);
+              });
+              ['mos_bookmarks', 'mos_ayah_bm', 'mos_ayah_collections'].forEach(k => localStorage.removeItem(k));
+              window.location.reload();
+            }
+          },
+        )}
       </div>
 
       {settingRow(

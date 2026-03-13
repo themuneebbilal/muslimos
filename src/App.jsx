@@ -8,6 +8,7 @@ import HadithPage from './components/HadithPage';
 import HadithCollection from './components/HadithCollection';
 import LearnPage from './components/LearnPage';
 import GuideReader from './components/GuideReader';
+import PrayerTimesPage from './components/PrayerTimesPage';
 import AudioPlayer from './components/AudioPlayer';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 
@@ -158,6 +159,7 @@ export default function App() {
   return (
     <div className="app" style={{ paddingBottom: hasAudio ? 140 : 100 }}>
       {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} />}
+      {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
       {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} />}
       {page === 'worship' && <Worship />}
       {page === 'hadith' && !activeCollection && (

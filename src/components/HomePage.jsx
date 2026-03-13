@@ -7,8 +7,6 @@ import { getUpcomingEvents, getTodayEvent } from '../data/islamicCalendar';
 import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame, IconTarget, IconHadith, IconLearn } from './Icons';
 import HadithFooter from './HadithFooter';
 
-const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-
 // 30 curated powerful verses — rotates daily
 const DAILY_VERSES = [
   { a: '\u0625\u0650\u0646\u0651\u064E \u0645\u064E\u0639\u064E \u0627\u0644\u0652\u0639\u064F\u0633\u0652\u0631\u0650 \u064A\u064F\u0633\u0652\u0631\u064B\u0627', e: 'Indeed, with hardship comes ease.', u: '\u0628\u06D2 \u0634\u06A9 \u0645\u0634\u06A9\u0644 \u06A9\u06D2 \u0633\u0627\u062A\u06BE \u0622\u0633\u0627\u0646\u06CC \u06C1\u06D2', r: 'Ash-Sharh 94:6' },
@@ -81,7 +79,7 @@ const DAILY_DUAS = [
 const SMART_SUGGESTIONS = [
   { hour: [3, 5], label: 'Tahajjud', title: 'Night Prayer', desc: 'The last third of the night is when duas are most accepted', icon: 'moon', page: 'worship' },
   { hour: [5, 7], label: 'Morning', title: 'Morning Adhkar', desc: 'Start your day with the morning remembrance', icon: 'sun', page: 'worship' },
-  { hour: [7, 12], label: 'Recite', title: 'Continue Reading', desc: 'The morning is the best time for Quran recitation', icon: 'quran', page: 'quran' },
+  { hour: [7, 12], label: 'Learn', title: 'Daily Hadith', desc: 'Start your morning with a hadith from the Prophet \u2E1E', icon: 'hadith', page: 'hadith' },
   { hour: [12, 15], label: 'Learn', title: 'Read Hadith', desc: 'Gain knowledge from the words of the Prophet \u2E1E', icon: 'hadith', page: 'hadith' },
   { hour: [15, 17], label: 'Reflect', title: 'Daily Dua', desc: 'Take a moment to make dua and seek guidance', icon: 'star', page: 'worship' },
   { hour: [17, 19], label: 'Evening', title: 'Evening Adhkar', desc: 'Recite the evening remembrance before Maghrib', icon: 'moon', page: 'worship' },
@@ -153,8 +151,6 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
   const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
   const verse = DAILY_VERSES[dayOfYear % DAILY_VERSES.length];
   const dua = DAILY_DUAS[dayOfYear % DAILY_DUAS.length];
-
-  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
 
   const hijriStr = getHijriDate();
   const hijriParts = hijriStr.split(' ');
@@ -251,10 +247,11 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
       )}
 
       {/* ── 3. PRAYER TIME HERO ── */}
-      <div className="glass-dark f3" style={{
+      <div onClick={() => onNavigate('prayers')} className="glass-dark pressable f3" style={{
         borderRadius: 'var(--r-xl)', padding: '28px 24px 24px', textAlign: 'center',
-        marginBottom: 4, position: 'relative', overflow: 'hidden',
+        marginBottom: 'var(--sp-5)', position: 'relative', overflow: 'hidden',
         background: 'linear-gradient(135deg, var(--emerald-700) 0%, var(--emerald-500) 100%)',
+        cursor: 'pointer',
       }}>
         {/* Gold radial glow */}
         <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%)' }} />
@@ -273,36 +270,9 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
           <div style={{ fontSize: 'var(--text-md)', opacity: .8, marginBottom: 'var(--sp-4)' }}>{formatTime(nextPrayer.time % 24)}</div>
           <div className="font-amiri" style={{ fontSize: 'var(--text-4xl)', fontWeight: 700, letterSpacing: 3, lineHeight: 1, textShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>{countdown}</div>
           <div className="section-label" style={{ color: 'rgba(255,255,255,0.5)', marginTop: 'var(--sp-1)' }}>remaining</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'rgba(255,255,255,0.45)', marginTop: 'var(--sp-3)' }}>View All Times &#x203A;</div>
         </div>
       </div>
-
-      {/* Prayer timeline */}
-      {times && (
-        <div className="f4" style={{ display: 'flex', gap: 2, marginBottom: 'var(--sp-5)', padding: '0 2px' }}>
-          {PRAYER_NAMES.map((name, i) => {
-            const tMin = ((times[name] % 24) * 60);
-            const passed = nowMin > tMin;
-            const isActive = name === nextPrayer.name;
-            return (
-              <div key={name} style={{
-                flex: 1, textAlign: 'center', padding: '10px 2px 8px',
-                background: isActive ? 'var(--emerald-700)' : 'var(--bg-glass)',
-                backdropFilter: isActive ? 'none' : 'blur(8px)',
-                WebkitBackdropFilter: isActive ? 'none' : 'blur(8px)',
-                color: isActive ? 'white' : passed ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                borderRadius: i === 0 ? 'var(--r-md) 0 0 var(--r-md)' : i === 5 ? '0 var(--r-md) var(--r-md) 0' : 0,
-                border: isActive ? 'none' : '1px solid rgba(255,255,255,0.4)',
-                borderLeft: i > 0 && !isActive ? 'none' : undefined,
-                opacity: passed && !isActive ? 0.5 : 1,
-                transition: 'all 0.2s',
-              }}>
-                <div style={{ fontSize: '0.58rem', fontWeight: 600, marginBottom: 2 }}>{name === 'Sunrise' ? 'Rise' : name === 'Maghrib' ? 'Maghr' : name}</div>
-                <div className="font-amiri" style={{ fontSize: 'var(--text-xs)', fontWeight: 700 }}>{formatTime(times[name])}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
 
       {/* ── 5. SMART SUGGESTION ── */}
