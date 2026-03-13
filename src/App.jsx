@@ -15,7 +15,7 @@ import Qibla from './components/Qibla';
 import { IconHamburger, IconBack } from './components/Icons';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 import audioManager from './utils/audioManager';
-import { surahAudioUrl } from './utils/quranAudio';
+import { getSurahAudioUrl } from './utils/quranAudio';
 
 const RECITERS = [
   { id: 'ar.alafasy', name: 'Mishary Rashid Alafasy', ayahBitrate: 128, surahBitrate: 128 },
@@ -114,9 +114,10 @@ export default function App() {
 
   async function startSurahPlayback(num, requestedReciter = reciter) {
     try {
+      const src = await getSurahAudioUrl(requestedReciter, num, RECITERS);
       await audioManager.playSource({
         playbackMode: 'surah',
-        src: surahAudioUrl(requestedReciter, num, RECITERS),
+        src,
         reciter: requestedReciter,
         currentSurah: num,
         onEnded: () => {

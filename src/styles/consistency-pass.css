@@ -91,7 +91,10 @@
 }
 
 .ayah-card.active {
-  background: linear-gradient(145deg, rgba(201,168,76,0.07) 0%, rgba(255,255,255,0.62) 100%);
+  background:
+    linear-gradient(90deg, rgba(201,168,76,0.16), rgba(201,168,76,0.03) 18%, transparent 36%),
+    linear-gradient(145deg, rgba(255,248,229,0.96) 0%, rgba(255,255,255,0.7) 100%);
+  box-shadow: 0 10px 32px rgba(201,168,76,0.18), inset 0 1px 0 rgba(255,255,255,0.58);
 }
 
 .dua-card-v2 .dua-translation {
