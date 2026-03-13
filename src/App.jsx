@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import BottomNav from './components/BottomNav';
+import AppDrawer from './components/AppDrawer';
 import HomePage from './components/HomePage';
 import QuranReader from './components/QuranReader';
 import Worship from './components/Worship';
-import MorePage from './components/MorePage';
 import HadithPage from './components/HadithPage';
 import HadithCollection from './components/HadithCollection';
 import LearnPage from './components/LearnPage';
 import GuideReader from './components/GuideReader';
 import PrayerTimesPage from './components/PrayerTimesPage';
 import AudioPlayer from './components/AudioPlayer';
+import Qibla from './components/Qibla';
+import { IconHamburger, IconBack } from './components/Icons';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 import audioManager from './utils/audioManager';
 import { surahAudioUrl } from './utils/quranAudio';
@@ -35,6 +37,7 @@ export default function App() {
 
   // Learn sub-navigation
   const [activeGuide, setActiveGuide] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Audio state
   const [audioState, setAudioState] = useState(audioManager.getState());
@@ -98,6 +101,7 @@ export default function App() {
     setPage(newPage);
     setActiveCollection(null);
     setActiveGuide(null);
+    setDrawerOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -157,13 +161,24 @@ export default function App() {
   }
 
   function handleOpenCollection(id) {
+    setDrawerOpen(false);
     setActiveCollection(id);
     window.scrollTo({ top: 0 });
   }
 
   function handleOpenGuide(id) {
+    setDrawerOpen(false);
+    setPage('learn');
     setActiveGuide(id);
     window.scrollTo({ top: 0 });
+  }
+
+  function handleOpenQibla() {
+    setDrawerOpen(false);
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setPage('qibla');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   useEffect(() => {
@@ -178,7 +193,35 @@ export default function App() {
 
   return (
     <div className="app" style={{ paddingBottom: hasAudio ? 140 : 100 }}>
-      {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} />}
+      <AppDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        activePage={page}
+        onNavigate={handleNavigate}
+        onOpenGuide={handleOpenGuide}
+        onOpenQibla={handleOpenQibla}
+        calcMethodIdx={calcMethodIdx}
+        onToggleCalcMethod={toggleCalcMethod}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        location={location}
+        reciter={reciter}
+        reciters={RECITERS}
+        onReciterChange={handleReciterChange}
+      />
+
+      {page !== 'home' && (
+        <button
+          type="button"
+          className="app-shell-menu"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open menu"
+        >
+          <IconHamburger size={18} />
+        </button>
+      )}
+
+      {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} onOpenDrawer={() => setDrawerOpen(true)} />}
       {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
       {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} />}
       {page === 'worship' && <Worship />}
@@ -197,18 +240,16 @@ export default function App() {
       {page === 'learn' && activeGuide && (
         <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />
       )}
-      {page === 'more' && (
-        <MorePage
-          calcMethodIdx={calcMethodIdx}
-          onToggleCalcMethod={toggleCalcMethod}
-          location={location}
-          reciter={reciter}
-          reciters={RECITERS}
-          onReciterChange={handleReciterChange}
-          onNavigate={handleNavigate}
-          theme={theme}
-          onThemeChange={handleThemeChange}
-        />
+      {page === 'qibla' && (
+        <div className="animate-fade-up">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
+            <button className="back-btn" onClick={() => handleNavigate('home')}>
+              <IconBack size={16} />
+            </button>
+            <div className="page-title" style={{ padding: 0 }}>Qibla Direction</div>
+          </div>
+          <Qibla location={location} />
+        </div>
       )}
       {hasAudio && (
         <AudioPlayer

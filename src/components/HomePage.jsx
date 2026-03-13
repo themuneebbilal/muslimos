@@ -14,6 +14,7 @@ import { getUpcomingEvents } from '../data/islamicCalendar';
 import {
   IconCompass,
   IconCrescent,
+  IconHamburger,
   IconHadith,
   IconLearn,
   IconMoon,
@@ -89,7 +90,7 @@ function HomeDivider() {
   );
 }
 
-export default function HomePage({ location, calcMethodIdx, onNavigate, theme, onThemeChange }) {
+export default function HomePage({ location, calcMethodIdx, onNavigate, theme, onThemeChange, onOpenDrawer }) {
   const [times, setTimes] = useState(() =>
     calculatePrayerTimes(location.lat, location.lng, location.tz, calcMethodIdx)
   );
@@ -178,6 +179,9 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
       <header className="homev2-header homev2-reveal-1">
         <div>
           <div className="homev2-greeting-row">
+            <button type="button" className="homev2-menu-btn" onClick={onOpenDrawer} aria-label="Open menu">
+              <IconHamburger size={18} />
+            </button>
             <span className="homev2-gold-dot" />
             <span>{greeting}</span>
           </div>
@@ -211,10 +215,14 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
 
       {ramadanProgress.isRamadan && (
         <section className="homev2-ramadan glass-card homev2-reveal-2">
-          <div className="homev2-ramadan-title">Ramadan Mubarak</div>
-          <div className="homev2-ramadan-day">{ramadanProgress.day} / 30</div>
-          <div className="homev2-thin-progress">
-            <span style={{ width: `${ramadanProgress.pct}%` }} />
+          <div className="homev2-ramadan-copy">
+            <div className="homev2-ramadan-title">Ramadan Mubarak</div>
+          </div>
+          <div className="homev2-ramadan-progress">
+            <div className="homev2-ramadan-day">{ramadanProgress.day} / 30</div>
+            <div className="homev2-thin-progress">
+              <span style={{ width: `${ramadanProgress.pct}%` }} />
+            </div>
           </div>
         </section>
       )}

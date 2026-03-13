@@ -50,6 +50,14 @@ export const IconMore = (p) => (
   </I>
 );
 
+export const IconHamburger = (p) => (
+  <I {...p}>
+    <path d="M4 7h16"/>
+    <path d="M4 12h16"/>
+    <path d="M4 17h16"/>
+  </I>
+);
+
 // ── Actions ──
 export const IconPlay = (p) => (
   <I {...p}><polygon points="6,3 20,12 6,21" fill="currentColor" stroke="none"/></I>

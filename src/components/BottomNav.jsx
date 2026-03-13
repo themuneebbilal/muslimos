@@ -1,12 +1,11 @@
 import React from 'react';
-import { IconHome, IconQuran, IconWorship, IconHadith, IconMore } from './Icons';
+import { IconHome, IconQuran, IconWorship, IconHadith } from './Icons';
 
 const tabs = [
   { id: 'home', label: 'Home', Icon: IconHome },
   { id: 'quran', label: 'Quran', Icon: IconQuran },
   { id: 'worship', label: 'Worship', Icon: IconWorship },
   { id: 'hadith', label: 'Hadith', Icon: IconHadith },
-  { id: 'more', label: 'More', Icon: IconMore },
 ];
 
 export default function BottomNav({ activePage, onNavigate }) {

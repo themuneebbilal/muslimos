@@ -99,9 +99,6 @@ test('bottom nav reaches all main tabs', async ({ page }) => {
   await page.locator('.bottom-nav').getByRole('button', { name: 'Hadith', exact: true }).click();
   await expect(page.locator('.page-title').filter({ hasText: 'Hadith' })).toBeVisible();
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'More', exact: true }).click();
-  await expect(page.locator('.page-title').filter({ hasText: 'More' })).toBeVisible();
-
   await page.locator('.bottom-nav').getByRole('button', { name: 'Home', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'MuslimOS' })).toBeVisible();
 });

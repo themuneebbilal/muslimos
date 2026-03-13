@@ -43,6 +43,10 @@
   font-weight: 600;
 }
 
+.homev2-menu-btn {
+  flex-shrink: 0;
+}
+
 .homev2-gold-dot {
   width: 8px;
   height: 8px;
@@ -121,6 +125,7 @@
 .homev2-ramadan {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--sp-3);
   padding: 14px var(--sp-4);
   border-radius: var(--r-md);
@@ -146,11 +151,21 @@
   font-weight: 700;
 }
 
+.homev2-ramadan-copy {
+  min-width: 0;
+}
+
+.homev2-ramadan-progress {
+  display: grid;
+  gap: 6px;
+  min-width: 112px;
+}
+
 .homev2-ramadan-day {
-  margin-left: auto;
   color: var(--gold-600);
   font-weight: 700;
   font-size: var(--text-xs);
+  text-align: right;
 }
 
 .homev2-thin-progress {
@@ -901,6 +916,19 @@
 @media (max-width: 480px) {
   .homev2-header {
     gap: var(--sp-3);
+  }
+
+  .homev2-ramadan {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .homev2-ramadan-progress {
+    width: 100%;
+  }
+
+  .homev2-ramadan-day {
+    text-align: left;
   }
 
   .homev2-brand {
