@@ -199,7 +199,7 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
       {ramadanProgress.isRamadan && (
         <section className="homev2-ramadan glass-card homev2-reveal-2">
           <div className="homev2-ramadan-copy">
-            <div className="homev2-ramadan-title">Ramadan Mubarak</div>
+            <div className="homev2-ramadan-title">Month Progress</div>
           </div>
           <div className="homev2-ramadan-progress">
             <div className="homev2-ramadan-day">{ramadanProgress.day} / 30</div>
@@ -228,7 +228,7 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
             <button
               type="button"
               className="homev2-qibla-mini homev2-dark-glass"
-              onClick={() => onNavigate('prayers')}
+              onClick={() => onNavigate('qibla')}
             >
               <div className="homev2-qibla-ring">
                 <HomeQiblaNeedle angle={qiblaAngle} />
@@ -307,7 +307,7 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
             </div>
           </button>
 
-          <button type="button" className="homev2-action-card homev2-dark-glass" onClick={() => onNavigate('prayers')}>
+          <button type="button" className="homev2-action-card homev2-dark-glass" onClick={() => onNavigate('qibla')}>
             <div className="homev2-watermark">قِبْلَة</div>
             <HomeIconWrap tone="emerald">
               <IconCompass size={20} />
