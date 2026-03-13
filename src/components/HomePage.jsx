@@ -12,9 +12,11 @@ import { getStreakData } from '../utils/streakTracker';
 import { getKhatmData } from '../utils/khatmTracker';
 import { getUpcomingEvents } from '../data/islamicCalendar';
 import {
+  IconCalendar,
   IconCompass,
   IconCrescent,
   IconHadith,
+  IconJournal,
   IconLearn,
   IconQuran,
   IconWorship,
@@ -61,6 +63,37 @@ const PRAYER_ORDER = [
   { key: 'Asr', label: 'Asr' },
   { key: 'Maghrib', label: 'Maghr' },
   { key: 'Isha', label: 'Isha' },
+];
+
+const HOME_FOLD_ACTIONS = [
+  {
+    id: 'worship',
+    title: 'Tasbeeh',
+    subtitle: 'Daily dhikr, adhkar, and reset routines',
+    tone: 'emerald',
+    Icon: IconWorship,
+  },
+  {
+    id: 'learn',
+    title: 'Learning',
+    subtitle: 'Guides, hadith, and practical study',
+    tone: 'gold',
+    Icon: IconLearn,
+  },
+  {
+    id: 'journal',
+    title: 'Journal',
+    subtitle: 'Reflect, save duas, and track the day',
+    tone: 'rose',
+    Icon: IconJournal,
+  },
+  {
+    id: 'calendar',
+    title: 'Islamic Calendar',
+    subtitle: 'Hijri month, events, and planning',
+    tone: 'emerald',
+    Icon: IconCalendar,
+  },
 ];
 
 function HomeIconWrap({ tone = 'gold', children }) {
@@ -359,7 +392,37 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
         </div>
       </section>
 
-      <section className="homev2-journey homev2-reveal-6">
+      <section className="homev2-fold glass-card homev2-reveal-6">
+        <div className="homev2-fold-header">
+          <div>
+            <div className="homev2-sub-head homev2-sub-head-lightless">Use the existing subpages</div>
+            <h2 className="homev2-fold-title">Keep the flow moving</h2>
+          </div>
+        </div>
+
+        <div className="homev2-fold-list">
+          {HOME_FOLD_ACTIONS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`homev2-fold-card homev2-fold-card-${item.tone}`}
+              onClick={() => onNavigate(item.id)}
+            >
+              <span className="homev2-fold-accent" />
+              <span className="homev2-fold-icon">
+                <item.Icon size={18} />
+              </span>
+              <span className="homev2-fold-copy">
+                <strong>{item.title}</strong>
+                <small>{item.subtitle}</small>
+              </span>
+              <span className="homev2-fold-arrow">→</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="homev2-journey homev2-reveal-7">
         <div className="homev2-section-header">
           <h2 className="homev2-arabic-title homev2-arabic-title-light">رِحْلَتُكَ</h2>
           <div className="homev2-sub-head homev2-sub-head-light">Your Journey</div>
@@ -418,7 +481,9 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
           </article>
         )}
 
-        <div className="homev2-journal">How was your day? Tap to reflect...</div>
+        <button type="button" className="homev2-journal" onClick={() => onNavigate('journal')}>
+          How was your day? Tap to reflect...
+        </button>
       </section>
 
       <footer className="homev2-footer homev2-reveal-7">

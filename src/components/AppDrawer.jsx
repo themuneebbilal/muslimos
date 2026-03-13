@@ -9,6 +9,7 @@ import {
   IconHadith,
   IconHeart,
   IconHome,
+  IconJournal,
   IconLearn,
   IconPrayer,
   IconQuran,
@@ -41,6 +42,8 @@ export default function AppDrawer({
   onNavigate,
   onOpenGuide,
   onOpenQibla,
+  onOpenCalendar,
+  onOpenJournal,
   location,
   onOpenSettings,
 }) {
@@ -75,8 +78,9 @@ export default function AppDrawer({
     touchStartX.current = null;
   }
 
-  const drawerRow = (icon, tone, label, subtitle, onClick, active = false, trailing = null) => (
+  const drawerRow = (key, icon, tone, label, subtitle, onClick, active = false, trailing = null) => (
     <button
+      key={key}
       type="button"
       onClick={onClick}
       className={`appdrawer-row${active ? ' active' : ''}`}
@@ -135,6 +139,7 @@ export default function AppDrawer({
         <div className="appdrawer-section">
           <div className="appdrawer-label">Learn Islam</div>
           {GUIDES.map((guide) => drawerRow(
+            guide.id,
             <IconLearn size={18} />,
             'gold',
             guide.label,
@@ -145,16 +150,16 @@ export default function AppDrawer({
 
         <div className="appdrawer-section">
           <div className="appdrawer-label">Tools</div>
-          {drawerRow(<IconCompass size={18} />, 'emerald', 'Qibla Compass', 'Direction to the Kaaba', onOpenQibla, activePage === 'qibla')}
-          {drawerRow(<IconCalendar size={18} />, 'gold', 'Islamic Calendar', 'Coming soon', undefined, false, <span className="appdrawer-soon">Soon</span>)}
-          {drawerRow(<IconHeart size={18} />, 'emerald', 'Journal', 'Coming soon', undefined, false, <span className="appdrawer-soon">Soon</span>)}
-          {drawerRow(<IconPrayer size={18} />, 'gold', 'Prayer History', 'Coming soon', undefined, false, <span className="appdrawer-soon">Soon</span>)}
+          {drawerRow('qibla', <IconCompass size={18} />, 'emerald', 'Qibla Compass', 'Direction to the Kaaba', onOpenQibla, activePage === 'qibla')}
+          {drawerRow('calendar', <IconCalendar size={18} />, 'gold', 'Islamic Calendar', 'Hijri dates and sacred events', onOpenCalendar, activePage === 'calendar')}
+          {drawerRow('journal', <IconJournal size={18} />, 'emerald', 'Journal', 'Private reflections and prayer notes', onOpenJournal, activePage === 'journal')}
+          {drawerRow('prayer-history', <IconPrayer size={18} />, 'gold', 'Prayer History', 'Coming soon', undefined, false, <span className="appdrawer-soon">Soon</span>)}
         </div>
 
         <div className="appdrawer-section">
           <div className="appdrawer-label">System</div>
-          {drawerRow(<IconSettings size={18} />, 'gold', 'Settings', 'Theme, reciter, language, notifications', onOpenSettings, activePage === 'settings')}
-          {drawerRow(<IconHeart size={18} />, 'emerald', 'About MuslimOS', 'Open Source · Made for the Ummah')}
+          {drawerRow('settings', <IconSettings size={18} />, 'gold', 'Settings', 'Theme, reciter, language, notifications', onOpenSettings, activePage === 'settings')}
+          {drawerRow('about', <IconHeart size={18} />, 'emerald', 'About MuslimOS', 'Open Source · Made for the Ummah')}
         </div>
 
         <div className="appdrawer-footer">

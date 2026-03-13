@@ -168,6 +168,14 @@ export const IconCalendar = (p) => (
   </I>
 );
 
+export const IconJournal = (p) => (
+  <I {...p}>
+    <path d="M6 3h9a3 3 0 0 1 3 3v15H9a3 3 0 0 0-3 3z"/>
+    <path d="M6 3v18"/>
+    <path d="M10 8h5M10 12h5M10 16h3" opacity={0.5}/>
+  </I>
+);
+
 export const IconClock = (p) => (
   <I {...p}>
     <circle cx="12" cy="12" r="10"/>

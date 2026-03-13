@@ -12,10 +12,13 @@ import PrayerTimesPage from './components/PrayerTimesPage';
 import SettingsPage from './components/SettingsPage';
 import AudioPlayer from './components/AudioPlayer';
 import Qibla from './components/Qibla';
+import JournalPage from './components/JournalPage';
+import IslamicCalendarPage from './components/IslamicCalendarPage';
 import { IconHamburger, IconBack } from './components/Icons';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 import audioManager from './utils/audioManager';
 import { getSurahAudioUrl } from './utils/quranAudio';
+import './styles/ritual-pages.css';
 
 const RECITERS = [
   { id: 'ar.alafasy', name: 'Mishary Rashid Alafasy', ayahBitrate: 128, surahBitrate: 128 },
@@ -291,6 +294,24 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function handleOpenCalendar() {
+    pushHistoryState('page:calendar');
+    setDrawerOpen(false);
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setPage('calendar');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleOpenJournal() {
+    pushHistoryState('page:journal');
+    setDrawerOpen(false);
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setPage('journal');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   useEffect(() => {
     if (audioState.playbackMode === 'surah' && audioState.currentSurah) {
       localStorage.setItem('mos_audio_surah', String(audioState.currentSurah));
@@ -315,6 +336,8 @@ export default function App() {
         onNavigate={handleNavigate}
         onOpenGuide={handleOpenGuide}
         onOpenQibla={handleOpenQibla}
+        onOpenCalendar={handleOpenCalendar}
+        onOpenJournal={handleOpenJournal}
         location={location}
         onOpenSettings={handleOpenSettings}
       />
@@ -373,6 +396,12 @@ export default function App() {
           ayahAutoplay={ayahAutoplay}
           onAyahAutoplayChange={handleAyahAutoplayChange}
         />
+      )}
+      {page === 'journal' && (
+        <JournalPage onBack={() => handleNavigate('home')} />
+      )}
+      {page === 'calendar' && (
+        <IslamicCalendarPage onBack={() => handleNavigate('home')} />
       )}
       {hasAudio && (
         <AudioPlayer

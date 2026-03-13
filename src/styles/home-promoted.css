@@ -10,6 +10,7 @@
 .homev2-header,
 .homev2-ramadan,
 .homev2-hero-grid,
+.homev2-fold,
 .homev2-path,
 .homev2-journey,
 .homev2-footer {
@@ -656,6 +657,10 @@
   color: var(--text-tertiary);
 }
 
+.homev2-sub-head-lightless {
+  color: var(--text-tertiary);
+}
+
 .homev2-divider {
   width: 120px;
   margin: 14px auto 0;
@@ -824,6 +829,130 @@
   color: var(--gold-600);
 }
 
+.homev2-fold {
+  margin-top: 22px;
+  padding: 22px 18px;
+  border-radius: 28px;
+}
+
+.homev2-fold-header {
+  margin-bottom: 14px;
+}
+
+.homev2-fold-title {
+  margin: 6px 0 0;
+  font-family: 'Amiri', serif;
+  font-size: clamp(1.9rem, 6vw, 2.5rem);
+  line-height: 0.98;
+  color: var(--emerald-700);
+}
+
+.homev2-fold-list {
+  display: grid;
+  gap: 12px;
+}
+
+.homev2-fold-card {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 30px 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 18px 18px 0;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58));
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5);
+  text-align: left;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.homev2-fold-card:active {
+  transform: scale(0.98);
+}
+
+.homev2-fold-accent {
+  align-self: stretch;
+  width: 30px;
+  border-radius: 28px 0 0 28px;
+}
+
+.homev2-fold-card::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 10px;
+  bottom: 10px;
+  width: 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.54), rgba(255,255,255,0.02));
+  opacity: 0.7;
+}
+
+.homev2-fold-card-emerald .homev2-fold-accent {
+  background: linear-gradient(180deg, rgba(11,107,79,0.82), rgba(6,74,55,0.94));
+}
+
+.homev2-fold-card-gold .homev2-fold-accent {
+  background: linear-gradient(180deg, rgba(201,168,76,0.9), rgba(139,115,48,0.96));
+}
+
+.homev2-fold-card-rose .homev2-fold-accent {
+  background: linear-gradient(180deg, rgba(165,92,71,0.82), rgba(127,60,43,0.94));
+}
+
+.homev2-fold-icon {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(11,107,79,0.08), rgba(11,107,79,0.02));
+  border: 1px solid rgba(11,107,79,0.08);
+  color: var(--emerald-700);
+}
+
+.homev2-fold-card-gold .homev2-fold-icon {
+  background: linear-gradient(145deg, rgba(201,168,76,0.12), rgba(201,168,76,0.04));
+  border-color: rgba(201,168,76,0.1);
+  color: var(--gold-600);
+}
+
+.homev2-fold-card-rose .homev2-fold-icon {
+  background: linear-gradient(145deg, rgba(165,92,71,0.12), rgba(165,92,71,0.03));
+  border-color: rgba(165,92,71,0.1);
+  color: #8f4630;
+}
+
+.homev2-fold-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.homev2-fold-copy strong {
+  font-family: 'Amiri', serif;
+  font-size: 1.65rem;
+  line-height: 1;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.homev2-fold-copy small {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.homev2-fold-arrow {
+  color: var(--text-tertiary);
+  font-size: 1.15rem;
+}
+
 .homev2-journey {
   margin-top: 26px;
   padding: 24px 0 0;
@@ -965,10 +1094,14 @@
 
 .homev2-journal {
   margin-top: 12px;
+  width: 100%;
+  border: none;
+  background: transparent;
   padding: 14px 4px 0;
   text-align: center;
   color: rgba(74,74,74,0.45);
   font-size: var(--text-sm);
+  cursor: pointer;
 }
 
 .homev2-footer {
@@ -1093,6 +1226,24 @@
 
   .homev2-action-card {
     min-height: 118px;
+  }
+
+  .homev2-fold {
+    padding: 20px 16px;
+  }
+
+  .homev2-fold-card {
+    grid-template-columns: 26px 34px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding-right: 16px;
+  }
+
+  .homev2-fold-copy strong {
+    font-size: 1.45rem;
+  }
+
+  .homev2-fold-copy small {
+    font-size: 0.86rem;
   }
 
   .homev2-metrics {
