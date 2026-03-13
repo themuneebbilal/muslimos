@@ -86,6 +86,11 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [autoScrollOn, setAutoScrollOn] = useState(false);
   const rafRef = useRef(null);
 
+  // ── Prev/Next navigation state ──
+  const [pendingPlayAyah, setPendingPlayAyah] = useState(null); // 'first' | 'last' | null
+  const longPressTimer = useRef(null);
+  const longPressFired = useRef(false);
+
   const [openMenu, setOpenMenu] = useState(null);
   const [visibleCount, setVisibleCount] = useState(20);
   const sentinelRef = useRef(null);
@@ -175,6 +180,10 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [jumpVal, setJumpVal] = useState('');
   const [targetAyah, setTargetAyah] = useState(null);
 
+  // ── Per-card translation overrides ──
+  const [transOnCards, setTransOnCards] = useState(new Set());
+  const [transOffCards, setTransOffCards] = useState(new Set());
+
   // ── Tafseer state ──
   const [showTafseer, setShowTafseer] = useState(false);
   const [tafseerOnCards, setTafseerOnCards] = useState(new Set());
@@ -189,6 +198,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     const userLang = localStorage.getItem('mos_lang') || 'en';
     return userLang === 'ur' ? 'tafseer-ibn-e-kaseer-urdu' : DEFAULT_TAFSEER;
   });
+  const tafseerAbortRef = useRef(new AbortController());
 
   const ayahElems = useRef({});
 
@@ -393,6 +403,47 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     }
   }, [playingAyah]);
 
+  // Auto-play after cross-surah navigation
+  useEffect(() => {
+    if (view === 'read' && verses.length > 0 && pendingPlayAyah) {
+      if (pendingPlayAyah === 'first') {
+        setIsSequential(true);
+        playAtIndex(0);
+      } else if (pendingPlayAyah === 'last') {
+        setIsSequential(true);
+        const lastIdx = verses.length - 1;
+        if (lastIdx >= visibleCount) setVisibleCount(lastIdx + 5);
+        playAtIndex(lastIdx);
+      }
+      setPendingPlayAyah(null);
+    }
+  }, [view, activeSurah, verses.length, pendingPlayAyah]);
+
+  // Auto-fetch tafseer for visible ayahs via IntersectionObserver
+  useEffect(() => {
+    if (!showTafseer || view !== 'read' || verses.length === 0) return;
+
+    const elMap = new WeakMap();
+    const obs = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const verse = elMap.get(entry.target);
+        if (verse) doFetchTafseer(verse);
+        obs.unobserve(entry.target);
+      }
+    }, { rootMargin: '300px' });
+
+    for (const v of visibleVerses) {
+      const el = ayahElems.current[v.abs];
+      if (el && !tafseerCache[v.abs]) {
+        elMap.set(el, v);
+        obs.observe(el);
+      }
+    }
+
+    return () => obs.disconnect();
+  }, [showTafseer, view, visibleCount, tafseerEdition, activeSurah]);
+
   useEffect(() => {
     if (view === 'read' && targetAyah && verses.length > 0) {
       const idx = verses.findIndex(v => v.vn === targetAyah);
@@ -428,18 +479,54 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     setIsSequential(false);
     setSeqIndex(-1);
     setAutoScrollOn(false);
-    // Reset tafseer in-memory state
+    // Reset per-card overrides (abs numbers are surah-specific in practice)
+    setTransOnCards(new Set());
+    setTransOffCards(new Set());
     setTafseerOnCards(new Set());
     setTafseerOffCards(new Set());
-    setTafseerCache({});
+    // Cancel pending tafseer fetches for old surah
+    tafseerAbortRef.current.abort();
+    tafseerAbortRef.current = new AbortController();
     setTafseerLoading(new Set());
     setTafseerErrors({});
     setTafseerExpanded(new Set());
+    // Keep tafseerCache — abs keys are globally unique, so cache persists across surahs
   }, [activeSurah]);
 
-  function setLangPref(l) { setLang(l); localStorage.setItem('mos_lang', l); }
+  function setLangPref(l) {
+    setLang(l);
+    localStorage.setItem('mos_lang', l);
+    // Reset per-card translation overrides so all cards follow new global lang
+    setTransOnCards(new Set());
+    setTransOffCards(new Set());
+  }
   function saveArabicSize(v) { setArabicSize(v); localStorage.setItem('mos_arabicSize', v); }
   function saveTransSize(v) { setTransSize(v); localStorage.setItem('mos_transSize', v); }
+
+  // ── Translation per-card logic ──
+  function shouldShowTrans(abs) {
+    if (transOnCards.has(abs)) return true;
+    if (transOffCards.has(abs)) return false;
+    return showTrans;
+  }
+
+  function toggleCardTrans(abs) {
+    const currently = shouldShowTrans(abs);
+    if (currently) {
+      setTransOnCards(prev => { const n = new Set(prev); n.delete(abs); return n; });
+      setTransOffCards(prev => new Set(prev).add(abs));
+    } else {
+      setTransOffCards(prev => { const n = new Set(prev); n.delete(abs); return n; });
+      setTransOnCards(prev => new Set(prev).add(abs));
+    }
+  }
+
+  function toggleGlobalTrans() {
+    setShowTrans(prev => !prev);
+    // Reset all per-card overrides to match new global state
+    setTransOnCards(new Set());
+    setTransOffCards(new Set());
+  }
 
   // ── Tafseer logic ──
   function shouldShowTafseer(abs) {
@@ -453,12 +540,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     if (tafseerCache[abs] || tafseerLoading.has(abs)) return;
     setTafseerLoading(prev => new Set(prev).add(abs));
     setTafseerErrors(prev => { const n = { ...prev }; delete n[abs]; return n; });
-    fetchTafseer(activeSurah, verse.vn, tafseerEdition)
+    fetchTafseer(activeSurah, verse.vn, tafseerEdition, tafseerAbortRef.current.signal)
       .then(text => {
         setTafseerCache(prev => ({ ...prev, [abs]: text }));
         setTafseerLoading(prev => { const n = new Set(prev); n.delete(abs); return n; });
       })
       .catch(err => {
+        if (err.name === 'AbortError') return; // Cancelled — ignore silently
         setTafseerLoading(prev => { const n = new Set(prev); n.delete(abs); return n; });
         setTafseerErrors(prev => ({ ...prev, [abs]: err.message || 'Failed to load' }));
       });
@@ -480,15 +568,26 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }
 
   function toggleGlobalTafseer() {
-    setShowTafseer(prev => !prev);
+    const willBeOn = !showTafseer;
+    setShowTafseer(willBeOn);
     setTafseerOnCards(new Set());
     setTafseerOffCards(new Set());
+    if (!willBeOn) {
+      // Cancel all pending fetches when disabling
+      tafseerAbortRef.current.abort();
+      tafseerAbortRef.current = new AbortController();
+      setTafseerLoading(new Set());
+    }
   }
 
   function saveTafseerEdition(ed) {
+    // Cancel pending fetches for old edition
+    tafseerAbortRef.current.abort();
+    tafseerAbortRef.current = new AbortController();
     setTafseerEdition(ed);
     localStorage.setItem('mos_tafseer_edition', ed);
     setTafseerCache({});
+    setTafseerLoading(new Set());
     setTafseerErrors({});
     setTafseerExpanded(new Set());
   }
@@ -573,6 +672,67 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     const next = speeds[(i + 1) % speeds.length];
     setPlaybackSpeed(next);
     if (audioRef.current) audioRef.current.playbackRate = next;
+  }
+
+  // ── Prev/Next ayah navigation ──
+  function playPrevAyah() {
+    if (seqIndex > 0) {
+      setIsSequential(true);
+      playAtIndex(seqIndex - 1);
+    } else if (activeSurah > 1 && SURAH_TEXT[activeSurah - 1]) {
+      setPendingPlayAyah('last');
+      openSurah(activeSurah - 1);
+    }
+  }
+
+  function playNextAyah() {
+    if (seqIndex < verses.length - 1) {
+      setIsSequential(true);
+      playAtIndex(seqIndex + 1);
+    } else if (activeSurah < 114 && SURAH_TEXT[activeSurah + 1]) {
+      setPendingPlayAyah('first');
+      openSurah(activeSurah + 1);
+    } else {
+      stopAudio();
+    }
+  }
+
+  function skipToNextSurah() {
+    if (activeSurah < 114 && SURAH_TEXT[activeSurah + 1]) {
+      setPendingPlayAyah('first');
+      openSurah(activeSurah + 1);
+    }
+  }
+
+  function goToSurahStart() {
+    setIsSequential(true);
+    playAtIndex(0);
+  }
+
+  function handlePrevPointerDown() {
+    longPressFired.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      goToSurahStart();
+    }, 500);
+  }
+
+  function handlePrevPointerUp() {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (!longPressFired.current) playPrevAyah();
+  }
+
+  function handleNextPointerDown() {
+    longPressFired.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      skipToNextSurah();
+    }, 500);
+  }
+
+  function handleNextPointerUp() {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (!longPressFired.current) playNextAyah();
   }
 
   async function copyText(text) {
@@ -997,6 +1157,10 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     );
   }
 
+  // ── Derive current ayah reference ──
+  const playingVerse = playingAyah ? verses.find(v => v.abs === playingAyah) : null;
+  const playingRef = playingVerse && meta ? `${meta.nm} ${activeSurah}:${playingVerse.vn}` : null;
+
   // ══════════════ READING VIEW ══════════════
   return (
     <div>
@@ -1137,7 +1301,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       {/* Language / Translation controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-3)', padding: '0 var(--sp-1)' }}>
         <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-          <button className={`trans-pill${showTrans ? ' active' : ''}`} onClick={() => setShowTrans(!showTrans)}>
+          <button className={`trans-pill${showTrans ? ' active' : ''}`} onClick={toggleGlobalTrans}>
             Translation
           </button>
           <button className={`trans-pill${showTafseer ? ' active' : ''}`} onClick={toggleGlobalTafseer}>
@@ -1208,9 +1372,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--sp-1)' }}>
-                <button className={`trans-pill${showTrans ? ' active' : ''}`}
+                <button className={`trans-pill${shouldShowTrans(v.abs) ? ' active' : ''}`}
                   style={{ padding: '2px 8px', fontSize: '0.62rem' }}
-                  onClick={() => setShowTrans(!showTrans)}>
+                  onClick={() => toggleCardTrans(v.abs)}>
                   Translation
                 </button>
                 <button className={`trans-pill${shouldShowTafseer(v.abs) ? ' active' : ''}`}
@@ -1246,7 +1410,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
             </div>
 
             {/* Translation */}
-            {showTrans && (
+            {shouldShowTrans(v.abs) && (
               lang === 'en' ? (
                 <div style={{
                   fontSize: `${transSize}rem`, color: 'var(--text-secondary)',
@@ -1273,13 +1437,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
             {/* Tafseer block */}
             {shouldShowTafseer(v.abs) && (
-              tafseerLoading.has(v.abs) ? (
-                <div className="tafseer-skeleton">
-                  <div className="skeleton-line" />
-                  <div className="skeleton-line" />
-                  <div className="skeleton-line" />
-                </div>
-              ) : tafseerErrors[v.abs] ? (
+              tafseerErrors[v.abs] ? (
                 <div className="tafseer-error">
                   {tafseerErrors[v.abs]}
                   <a onClick={() => doFetchTafseer(v)}>Retry</a>
@@ -1313,8 +1471,11 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                   )}
                 </div>
               ) : (
-                <div className="tafseer-hint" onClick={() => doFetchTafseer(v)}>
-                  Tap to load tafseer for this ayah
+                /* Skeleton shimmer while loading or waiting for IO auto-fetch */
+                <div className="tafseer-skeleton">
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line" />
                 </div>
               )
             )}
@@ -1388,48 +1549,92 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
       {/* Floating reading controls */}
       <div className="reading-controls">
-        <button
-          onClick={() => setAutoScrollOn(!autoScrollOn)}
-          className="pressable"
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', color: 'white',
-            display: 'flex', alignItems: 'center', gap: 'var(--sp-1)', padding: 4,
-            fontFamily: "'DM Sans', sans-serif", fontSize: '0.68rem', opacity: autoScrollOn ? 1 : 0.6,
-          }}
-        >
-          <IconAutoScroll size={16} />
-          <span>Scroll</span>
-          {autoScrollOn && <span style={{ width: 6, height: 6, borderRadius: 'var(--r-full)', background: '#4ADE80', flexShrink: 0 }} />}
-        </button>
+        {/* Top row: ayah reference */}
+        {playingRef && (
+          <div className="reading-controls-ref">
+            {playingRef}
+          </div>
+        )}
+        {/* Bottom row: controls */}
+        <div className="reading-controls-row">
+          {/* Left: auto-scroll */}
+          <button
+            onClick={() => setAutoScrollOn(!autoScrollOn)}
+            className="pressable"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', color: 'white',
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-1)', padding: 4,
+              fontFamily: "'DM Sans', sans-serif", fontSize: '0.68rem', opacity: autoScrollOn ? 1 : 0.6,
+            }}
+          >
+            <IconAutoScroll size={16} />
+            <span>Scroll</span>
+            {autoScrollOn && <span style={{ width: 6, height: 6, borderRadius: 'var(--r-full)', background: '#4ADE80', flexShrink: 0 }} />}
+          </button>
 
-        <button
-          onClick={toggleSequentialPlay}
-          className="pressable"
-          style={{
-            width: 44, height: 44, borderRadius: 'var(--r-full)',
-            background: 'white', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: 'var(--shadow-md)',
-          }}
-        >
-          {playingAyah && isSequential
-            ? <IconPause size={18} style={{ color: 'var(--emerald-700)' }} />
-            : <IconPlay size={18} style={{ color: 'var(--emerald-700)' }} />
-          }
-        </button>
+          {/* Center: prev | play/pause | next */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              onPointerDown={handlePrevPointerDown}
+              onPointerUp={handlePrevPointerUp}
+              onPointerCancel={handlePrevPointerUp}
+              className="pressable"
+              style={{
+                width: 34, height: 34, borderRadius: 'var(--r-full)',
+                background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <IconBack size={16} />
+            </button>
 
-        <button
-          onClick={cycleSpeed}
-          className="pressable"
-          style={{
-            background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 'var(--r-sm)',
-            cursor: 'pointer', color: 'white', padding: '4px 10px',
-            fontSize: 'var(--text-xs)', fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-            display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
-          }}
-        >
-          <IconSpeed size={14} /> {playbackSpeed}x
-        </button>
+            <button
+              onClick={toggleSequentialPlay}
+              className="pressable"
+              style={{
+                width: 44, height: 44, borderRadius: 'var(--r-full)',
+                background: 'white', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'var(--shadow-md)',
+              }}
+            >
+              {playingAyah && isSequential
+                ? <IconPause size={18} style={{ color: 'var(--emerald-700)' }} />
+                : <IconPlay size={18} style={{ color: 'var(--emerald-700)' }} />
+              }
+            </button>
+
+            <button
+              onPointerDown={handleNextPointerDown}
+              onPointerUp={handleNextPointerUp}
+              onPointerCancel={handleNextPointerUp}
+              className="pressable"
+              style={{
+                width: 34, height: 34, borderRadius: 'var(--r-full)',
+                background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <IconForward size={16} />
+            </button>
+          </div>
+
+          {/* Right: speed */}
+          <button
+            onClick={cycleSpeed}
+            className="pressable"
+            style={{
+              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 'var(--r-sm)',
+              cursor: 'pointer', color: 'white', padding: '4px 10px',
+              fontSize: 'var(--text-xs)', fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
+            }}
+          >
+            <IconSpeed size={14} /> {playbackSpeed}x
+          </button>
+        </div>
       </div>
 
       {/* Collection save bottom sheet */}

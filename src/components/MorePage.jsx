@@ -150,6 +150,21 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
           &#x0628;&#x0650;&#x0633;&#x0652;&#x0645;&#x0650; &#x0627;&#x0644;&#x0644;&#x0651;&#x0647;&#x0650; &#x0627;&#x0644;&#x0631;&#x0651;&#x064E;&#x062D;&#x0652;&#x0645;&#x064E;&#x0670;&#x0646;&#x0650; &#x0627;&#x0644;&#x0631;&#x0651;&#x064E;&#x062D;&#x0650;&#x064A;&#x0645;&#x0650;
         </div>
       </div>
+
+      <div style={{
+        margin: '0 var(--sp-4) var(--sp-6)',
+        padding: 'var(--sp-4)',
+        borderRadius: 'var(--r-md)',
+        background: 'var(--bg-glass)',
+        border: '1px solid var(--border)',
+      }}>
+        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--sp-2)' }}>
+          Content Accuracy
+        </div>
+        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+          Duas, adhkar, and hadith in this app are sourced from well-known Islamic collections (Sahih al-Bukhari, Sahih Muslim, Jami at-Tirmidhi, Sunan Abu Dawud, Sunan Ibn Majah, and others). References show collection names only; specific hadith numbering may vary across editions. Quranic verses are sourced from standard Arabic texts. This app is a personal aid and does not replace scholarly guidance. If you find any inaccuracy, please report it so we can correct it.
+        </div>
+      </div>
     </div>
   );
 }

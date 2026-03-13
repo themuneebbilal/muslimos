@@ -31,7 +31,7 @@ function stripHtml(html) {
  * Fetch tafseer for a single ayah.
  * Returns plain text string. Caches in localStorage.
  */
-export async function fetchTafseer(surah, ayah, edition) {
+export async function fetchTafseer(surah, ayah, edition, signal) {
   const key = cacheKey(edition, surah, ayah);
 
   // Check localStorage cache
@@ -45,14 +45,14 @@ export async function fetchTafseer(surah, ayah, edition) {
 
   if (edInfo.api === 'alquran.cloud') {
     const url = `https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/${edition}`;
-    const res = await fetch(url);
+    const res = await fetch(url, signal ? { signal } : undefined);
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const json = await res.json();
     text = json?.data?.text || '';
   } else {
     // quran.com v4
     const url = `https://api.quran.com/api/v4/tafsirs/${edition}/by_ayah/${surah}:${ayah}`;
-    const res = await fetch(url);
+    const res = await fetch(url, signal ? { signal } : undefined);
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const json = await res.json();
     text = stripHtml(json?.tafsir?.text || '');

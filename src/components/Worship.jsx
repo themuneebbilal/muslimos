@@ -72,6 +72,11 @@ function DuaCard({ dua }) {
       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--gold-500)', marginTop: 'var(--sp-2)', fontWeight: 500 }}>
         {dua.ref}
       </div>
+      {dua.note && (
+        <div style={{ fontSize: '0.65rem', color: 'var(--danger)', opacity: 0.8, marginTop: 'var(--sp-1)', lineHeight: 1.5, fontStyle: 'italic' }}>
+          {dua.note}
+        </div>
+      )}
     </div>
   );
 }
