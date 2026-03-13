@@ -226,6 +226,10 @@ export default function App() {
   }
 
   function handleNextSurah() {
+    if (audioState.playbackMode === 'ayah') {
+      window.dispatchEvent(new CustomEvent('mos:quran-next-ayah'));
+      return;
+    }
     if (audioState.currentSurah < 114) {
       openQuranSurah(audioState.currentSurah + 1, false);
       startSurahPlayback(audioState.currentSurah + 1);
@@ -233,6 +237,10 @@ export default function App() {
   }
 
   function handlePrevSurah() {
+    if (audioState.playbackMode === 'ayah') {
+      window.dispatchEvent(new CustomEvent('mos:quran-prev-ayah'));
+      return;
+    }
     if (audioState.currentSurah > 1) {
       openQuranSurah(audioState.currentSurah - 1, false);
       startSurahPlayback(audioState.currentSurah - 1);

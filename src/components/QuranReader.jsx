@@ -919,6 +919,24 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     if (!longPressFired.current) playNextAyah();
   }
 
+  useEffect(() => {
+    function handleExternalPrevAyah() {
+      playPrevAyah();
+    }
+
+    function handleExternalNextAyah() {
+      playNextAyah();
+    }
+
+    window.addEventListener('mos:quran-prev-ayah', handleExternalPrevAyah);
+    window.addEventListener('mos:quran-next-ayah', handleExternalNextAyah);
+
+    return () => {
+      window.removeEventListener('mos:quran-prev-ayah', handleExternalPrevAyah);
+      window.removeEventListener('mos:quran-next-ayah', handleExternalNextAyah);
+    };
+  }, [seqIndex, activeSurah, verses.length, audioState.playbackMode]);
+
   async function copyText(text) {
     try { await navigator.clipboard.writeText(text); } catch {}
     setOpenMenu(null);
