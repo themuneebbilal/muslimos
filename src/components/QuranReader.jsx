@@ -176,6 +176,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [targetAyah, setTargetAyah] = useState(null);
   const [surahTimings, setSurahTimings] = useState([]);
   const [timingError, setTimingError] = useState('');
+  const preloadRefs = useRef([]);
 
   // ── Per-card translation overrides ──
   const [transOnCards, setTransOnCards] = useState(new Set());
@@ -319,6 +320,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       })
       .catch((err) => {
         if (!cancelled) {
+          console.warn('[QuranReader] Falling back to estimated verse timing', err);
           setSurahTimings([]);
           setTimingError(err.message || 'Timing unavailable');
         }
@@ -328,6 +330,27 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       cancelled = true;
     };
   }, [view, activeSurah, reciter]);
+
+  useEffect(() => {
+    preloadRefs.current.forEach((audio) => audio?.pause?.());
+    preloadRefs.current = [];
+
+    if (view !== 'read' || !activeSurah || visibleVerses.length === 0) return;
+
+    const startIndex = Math.max(seqIndex, 0);
+    const nextVerses = verses.slice(startIndex + 1, startIndex + 3);
+    preloadRefs.current = nextVerses.map((verse) => {
+      const preloadAudio = new Audio();
+      preloadAudio.preload = 'auto';
+      preloadAudio.src = ayahAudioUrl(reciter, verse.abs, reciters);
+      return preloadAudio;
+    });
+
+    return () => {
+      preloadRefs.current.forEach((audio) => audio?.pause?.());
+      preloadRefs.current = [];
+    };
+  }, [view, activeSurah, reciter, reciters, verses, seqIndex, visibleVerses.length]);
 
   useEffect(() => {
     if (view !== 'read') return;
@@ -392,15 +415,40 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
   useEffect(() => {
     setActiveWordIdx(-1);
-    if (!activeSurah || !surahTimings.length) {
+    if (!activeSurah) {
+      if (audioState.playbackMode !== 'ayah') setPlayingAyah(null);
+      return;
+    }
+
+    const effectiveTimings = surahTimings.length
+      ? surahTimings
+      : (
+        audioState.playbackMode === 'surah' &&
+        audioState.currentSurah === activeSurah &&
+        audioState.duration > 0 &&
+        verses.length > 0
+      )
+        ? verses.map((verse, index) => {
+            const slice = (audioState.duration * 1000) / verses.length;
+            return {
+              verseKey: `${activeSurah}:${verse.vn}`,
+              timestampFrom: Math.round(index * slice),
+              timestampTo: Math.round((index + 1) * slice),
+              segments: [],
+            };
+          })
+        : [];
+
+    if (!effectiveTimings.length) {
+      setActiveWordIdx(-1);
       if (audioState.playbackMode !== 'ayah') setPlayingAyah(null);
       return;
     }
 
     if (audioState.playbackMode === 'surah' && audioState.currentSurah === activeSurah) {
       const positionMs = Math.max(0, Math.round(audioState.currentTime * 1000));
-      const verseIdx = findTimingIndex(surahTimings, positionMs);
-      const verseTiming = surahTimings[verseIdx];
+      const verseIdx = findTimingIndex(effectiveTimings, positionMs);
+      const verseTiming = effectiveTimings[verseIdx];
       const [surahNum, ayahNum] = (verseTiming?.verseKey || '').split(':').map(Number);
 
       if (surahNum === activeSurah && ayahNum) {
@@ -414,15 +462,22 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           const segment = verseTiming.segments[segIdx];
           const nextIdx = Math.max(0, Math.min(Number(segment?.wordIndex || 0), words.length - 1));
           setActiveWordIdx(nextIdx);
+        } else {
+          setActiveWordIdx(-1);
         }
       }
       return;
     }
 
     if (audioState.playbackMode === 'ayah' && audioState.currentAyahAbs) {
+      if (!audioState.isPlaying) {
+        setPlayingAyah(null);
+        setActiveWordIdx(-1);
+        return;
+      }
       const verse = verses.find((item) => item.abs === audioState.currentAyahAbs);
       const words = verse?.ar.trim().split(/\s+/) || [];
-      const verseTiming = surahTimings.find((item) => item.verseKey === audioState.currentVerseKey);
+      const verseTiming = effectiveTimings.find((item) => item.verseKey === audioState.currentVerseKey);
       setPlayingAyah(audioState.currentAyahAbs);
 
       if (verseTiming?.segments?.length && words.length) {
@@ -431,6 +486,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         const segment = verseTiming.segments[segIdx];
         const nextIdx = Math.max(0, Math.min(Number(segment?.wordIndex || 0), words.length - 1));
         setActiveWordIdx(nextIdx);
+      } else {
+        setActiveWordIdx(-1);
       }
       return;
     }
@@ -444,6 +501,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     audioState.currentSurah,
     audioState.currentTime,
     audioState.currentVerseKey,
+    audioState.duration,
+    audioState.isPlaying,
     audioState.playbackMode,
     surahTimings,
     verses,
@@ -709,7 +768,6 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         },
         onError: () => showAudioToast('Audio unavailable'),
       });
-      setPlayingAyah(v.abs);
       setSeqIndex(idx);
     } catch {}
     if (idx >= visibleCount) setVisibleCount(idx + 5);

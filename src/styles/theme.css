@@ -545,7 +545,7 @@ body::after {
    ══════════════════════════════════════════════════════ */
 .audio-bar {
   position: fixed;
-  bottom: 64px;
+  bottom: 60px;
   left: 0; right: 0;
   background: linear-gradient(135deg, var(--emerald-700) 0%, var(--emerald-500) 50%, var(--emerald-700) 100%);
   backdrop-filter: blur(16px) saturate(1.8);
@@ -555,10 +555,9 @@ body::after {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  z-index: 85;
+  z-index: 95;
   box-shadow: 0 -2px 16px rgba(0,0,0,0.15);
   border-top: 1px solid rgba(255,255,255,0.08);
-  position: relative;
   overflow: hidden;
 }
 /* Geometric pattern inside audio bar */

@@ -9,6 +9,7 @@ import HadithCollection from './components/HadithCollection';
 import LearnPage from './components/LearnPage';
 import GuideReader from './components/GuideReader';
 import PrayerTimesPage from './components/PrayerTimesPage';
+import SettingsPage from './components/SettingsPage';
 import AudioPlayer from './components/AudioPlayer';
 import Qibla from './components/Qibla';
 import { IconHamburger, IconBack } from './components/Icons';
@@ -181,6 +182,14 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function handleOpenSettings() {
+    setDrawerOpen(false);
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setPage('settings');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   useEffect(() => {
     if (audioState.playbackMode === 'surah' && audioState.currentSurah) {
       localStorage.setItem('mos_audio_surah', String(audioState.currentSurah));
@@ -189,7 +198,7 @@ export default function App() {
     localStorage.removeItem('mos_audio_surah');
   }, [audioState.playbackMode, audioState.currentSurah]);
 
-  const hasAudio = audioState.playbackMode === 'surah' && !!audioState.currentSurah;
+  const hasAudio = (!!audioState.sourceUrl || audioState.isPlaying) && !!audioState.currentSurah;
 
   return (
     <div className="app" style={{ paddingBottom: hasAudio ? 140 : 100 }}>
@@ -200,14 +209,8 @@ export default function App() {
         onNavigate={handleNavigate}
         onOpenGuide={handleOpenGuide}
         onOpenQibla={handleOpenQibla}
-        calcMethodIdx={calcMethodIdx}
-        onToggleCalcMethod={toggleCalcMethod}
-        theme={theme}
-        onThemeChange={handleThemeChange}
         location={location}
-        reciter={reciter}
-        reciters={RECITERS}
-        onReciterChange={handleReciterChange}
+        onOpenSettings={handleOpenSettings}
       />
 
       {page !== 'home' && (
@@ -250,6 +253,18 @@ export default function App() {
           </div>
           <Qibla location={location} />
         </div>
+      )}
+      {page === 'settings' && (
+        <SettingsPage
+          onBack={() => handleNavigate('home')}
+          calcMethodIdx={calcMethodIdx}
+          onToggleCalcMethod={toggleCalcMethod}
+          theme={theme}
+          onThemeChange={handleThemeChange}
+          reciter={reciter}
+          reciters={RECITERS}
+          onReciterChange={handleReciterChange}
+        />
       )}
       {hasAudio && (
         <AudioPlayer

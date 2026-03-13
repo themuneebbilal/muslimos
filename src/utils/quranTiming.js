@@ -1,7 +1,7 @@
 import { getQuranComReciterId } from './quranAudio';
 
 function cacheKey(surah, reciter) {
-  return `mos_ayah_timing_${surah}_${reciter}`;
+  return `mos_verse_timings_${surah}_${reciter}`;
 }
 
 function authHeaders() {
@@ -45,7 +45,7 @@ export async function getSurahTimingData(surah, reciter) {
 
   const reciterId = getQuranComReciterId(reciter);
   const res = await fetch(
-    `https://api.quran.com/api/v4/chapter_recitations/${reciterId}/${surah}?segments=true`,
+    `https://api.quran.com/api/v4/recitations/${reciterId}/by_chapter/${surah}?per_page=300`,
     { headers: authHeaders() }
   );
 
@@ -54,8 +54,11 @@ export async function getSurahTimingData(surah, reciter) {
   }
 
   const json = await res.json();
-  const timings = Array.isArray(json?.audio_file?.timestamps)
-    ? json.audio_file.timestamps.map(normalizeTimingItem)
+  const timings = Array.isArray(json?.audio_files)
+    ? json.audio_files
+        .flatMap((file) => Array.isArray(file?.verse_timings) ? file.verse_timings : [])
+        .map(normalizeTimingItem)
+        .sort((a, b) => a.timestampFrom - b.timestampFrom)
     : [];
 
   if (!timings.length) {

@@ -14,12 +14,9 @@ import { getUpcomingEvents } from '../data/islamicCalendar';
 import {
   IconCompass,
   IconCrescent,
-  IconHamburger,
   IconHadith,
   IconLearn,
-  IconMoon,
   IconQuran,
-  IconSun,
   IconWorship,
 } from './Icons';
 import {
@@ -90,7 +87,7 @@ function HomeDivider() {
   );
 }
 
-export default function HomePage({ location, calcMethodIdx, onNavigate, theme, onThemeChange, onOpenDrawer }) {
+export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDrawer }) {
   const [times, setTimes] = useState(() =>
     calculatePrayerTimes(location.lat, location.lng, location.tz, calcMethodIdx)
   );
@@ -179,9 +176,6 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
       <header className="homev2-header homev2-reveal-1">
         <div>
           <div className="homev2-greeting-row">
-            <button type="button" className="homev2-menu-btn" onClick={onOpenDrawer} aria-label="Open menu">
-              <IconHamburger size={18} />
-            </button>
             <span className="homev2-gold-dot" />
             <span>{greeting}</span>
           </div>
@@ -190,26 +184,15 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
         </div>
 
         <div className="homev2-header-right">
+          <button type="button" className="homev2-menu-btn" onClick={onOpenDrawer} aria-label="Open menu">
+            <span className="homev2-menu-lines" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </button>
           <div className="homev2-hijri">{hijriDate}</div>
           <div className="homev2-gregorian">{gregorianDate}</div>
-          <button
-            type="button"
-            className="homev2-theme-toggle"
-            onClick={() => {
-              const modes = ['light', 'dark', 'auto'];
-              const next = modes[(modes.indexOf(theme) + 1) % modes.length];
-              onThemeChange(next);
-            }}
-            aria-label={`Theme: ${theme}`}
-          >
-            {theme === 'dark' ? (
-              <IconMoon size={18} />
-            ) : theme === 'auto' ? (
-              <IconCrescent size={18} />
-            ) : (
-              <IconSun size={18} />
-            )}
-          </button>
         </div>
       </header>
 

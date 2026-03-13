@@ -7,7 +7,7 @@ async function installAudioHarness(page) {
         super();
         this._src = '';
         this._currentTime = 0;
-        this._duration = 7;
+        this._duration = 400;
         this._playbackRate = 1;
         this.paused = true;
         this.error = null;
@@ -36,6 +36,10 @@ async function installAudioHarness(page) {
       play() {
         this.paused = false;
         this.dispatchEvent(new Event('play'));
+        queueMicrotask(() => {
+          this.dispatchEvent(new Event('playing'));
+          this.dispatchEvent(new Event('timeupdate'));
+        });
         return Promise.resolve();
       }
 
@@ -53,19 +57,23 @@ async function installAudioHarness(page) {
     window.Audio = MockAudio;
   });
 
-  await page.route('https://api.quran.com/api/v4/chapter_recitations/**', async (route) => {
-    const timings = Array.from({ length: 7 }, (_, index) => {
+  await page.route('https://api.quran.com/api/v4/recitations/**/by_chapter/**', async (route) => {
+    const url = new URL(route.request().url());
+    const match = url.pathname.match(/by_chapter\/(\d+)/);
+    const surah = Number(match?.[1] || 1);
+    const verseCount = surah === 1 ? 7 : 286;
+    const timings = Array.from({ length: verseCount }, (_, index) => {
       const ayah = index + 1;
       const from = index * 1000;
       const to = from + 1000;
       return {
-        verse_key: `1:${ayah}`,
+        verse_key: `${surah}:${ayah}`,
         timestamp_from: from,
         timestamp_to: to,
         segments: [
-          [0, from, from + 400],
-          [1, from + 400, from + 700],
-          [2, from + 700, to],
+          [0, from, from + 250],
+          [1, from + 250, from + 650],
+          [2, from + 650, to],
         ],
       };
     });
@@ -73,7 +81,7 @@ async function installAudioHarness(page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ audio_file: { timestamps: timings } }),
+      body: JSON.stringify({ audio_files: [{ verse_timings: timings }] }),
     });
   });
 }
@@ -103,6 +111,20 @@ test('bottom nav reaches all main tabs', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'MuslimOS' })).toBeVisible();
 });
 
+test('hamburger menu opens and closes from the home header', async ({ page }) => {
+  await page.goto('/');
+
+  const menuButton = page.getByRole('button', { name: 'Open menu' }).first();
+  await expect(menuButton).toBeVisible();
+  await menuButton.click();
+
+  await expect(page.locator('.appdrawer.open')).toBeVisible();
+  await expect(page.locator('.appdrawer-overlay.open')).toBeVisible();
+
+  await page.locator('.appdrawer-overlay.open').click({ position: { x: 10, y: 10 } });
+  await expect(page.locator('.appdrawer.open')).toHaveCount(0);
+});
+
 test('surah and ayah playback never run together', async ({ page }) => {
   await installAudioHarness(page);
   await page.goto('/');
@@ -122,6 +144,8 @@ test('surah and ayah playback never run together', async ({ page }) => {
     return page.evaluate(() => window.__mosAudioManager.getState().playbackMode);
   }).toBe('surah');
 
+  await expect(page.locator('.audio-bar')).toBeVisible();
+
   await page.locator('.ayah-card button').nth(3).click({ force: true });
 
   await expect.poll(async () => {
@@ -130,6 +154,8 @@ test('surah and ayah playback never run together', async ({ page }) => {
       return `${state.playbackMode}:${state.currentVerseKey}`;
     });
   }).toBe('ayah:1:1');
+
+  await expect(page.locator('.audio-bar')).toBeVisible();
 
   await page.evaluate(async () => {
     await window.__mosAudioManager.playSource({
@@ -184,4 +210,53 @@ test('ayah highlight stays in sync after play and seek', async ({ page }) => {
   await expect.poll(async () => {
     return page.locator('.ayah-card.active').textContent();
   }).toContain('1.5');
+});
+
+test('ayah highlight only appears after playing and clears on pause', async ({ page }) => {
+  await installAudioHarness(page);
+  await page.goto('/');
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await page.getByText('Al-Fatihah').first().click();
+  await page.locator('.ayah-card button').nth(3).click({ force: true });
+
+  await expect.poll(async () => {
+    return page.evaluate(() => {
+      const state = window.__mosAudioManager.getState();
+      return `${state.playbackMode}:${state.isPlaying}:${state.currentVerseKey}`;
+    });
+  }).toBe('ayah:true:1:1');
+
+  await expect(page.locator('.ayah-card.active')).toContainText('1.1');
+  await expect(page.locator('.audio-bar')).toBeVisible();
+
+  await page.evaluate(() => window.__mosAudioManager.pause());
+
+  await expect.poll(async () => page.locator('.ayah-card.active').count()).toBe(0);
+});
+
+test('long surah timing stays aligned through at least twenty ayahs', async ({ page }) => {
+  await installAudioHarness(page);
+  await page.goto('/');
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await page.getByText('Al-Baqarah').first().click();
+  await page.evaluate(async () => {
+    await window.__mosAudioManager.playSource({
+      playbackMode: 'surah',
+      src: 'https://example.com/baqarah-surah.mp3',
+      reciter: 'ar.alafasy',
+      currentSurah: 2,
+    });
+  });
+
+  await expect(page.locator('.audio-bar')).toBeVisible();
+
+  await page.evaluate(() => {
+    window.__mosAudioManager.seekTo(19.2);
+  });
+
+  await expect.poll(async () => {
+    return page.locator('.ayah-card.active').textContent();
+  }).toContain('2.20');
 });

@@ -30,7 +30,9 @@ class AudioManager {
   }
 
   bindEvents() {
-    this.audio.addEventListener('play', () => {
+    this.audio.preload = 'auto';
+
+    this.audio.addEventListener('playing', () => {
       this.patch({ isPlaying: true });
     });
 
