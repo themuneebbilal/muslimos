@@ -57,9 +57,9 @@ async function installAudioHarness(page) {
     window.Audio = MockAudio;
   });
 
-  await page.route('https://api.quran.com/api/v4/recitations/**/by_chapter/**', async (route) => {
+  await page.route('https://api.quran.com/api/v4/chapter_recitations/**/**', async (route) => {
     const url = new URL(route.request().url());
-    const match = url.pathname.match(/by_chapter\/(\d+)/);
+    const match = url.pathname.match(/chapter_recitations\/\d+\/(\d+)/);
     const surah = Number(match?.[1] || 1);
     const verseCount = surah === 1 ? 7 : 286;
     const timings = Array.from({ length: verseCount }, (_, index) => {
@@ -81,7 +81,7 @@ async function installAudioHarness(page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ audio_files: [{ verse_timings: timings }] }),
+      body: JSON.stringify({ audio_file: { audio_url: `https://example.com/surah-${surah}.mp3`, timestamps: timings } }),
     });
   });
 }

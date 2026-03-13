@@ -414,8 +414,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }, [playingAyah]);
 
   useEffect(() => {
-    setActiveWordIdx(-1);
     if (!activeSurah) {
+      setActiveWordIdx(-1);
       if (audioState.playbackMode !== 'ayah') setPlayingAyah(null);
       return;
     }
@@ -460,7 +460,14 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         if (verseTiming?.segments?.length && words.length) {
           const segIdx = findSegmentIndex(verseTiming.segments, positionMs);
           const segment = verseTiming.segments[segIdx];
-          const nextIdx = Math.max(0, Math.min(Number(segment?.wordIndex || 0), words.length - 1));
+          const rawWordIndex = Number(segment?.wordIndex);
+          const nextIdx = Number.isFinite(rawWordIndex)
+            ? rawWordIndex >= 1 && rawWordIndex <= words.length
+              ? rawWordIndex - 1
+              : rawWordIndex >= 0 && rawWordIndex < words.length
+                ? rawWordIndex
+                : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0))
+            : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0));
           setActiveWordIdx(nextIdx);
         } else {
           setActiveWordIdx(-1);
@@ -484,7 +491,14 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         const positionMs = Math.max(0, Math.round(audioState.currentTime * 1000) + verseTiming.timestampFrom);
         const segIdx = findSegmentIndex(verseTiming.segments, positionMs);
         const segment = verseTiming.segments[segIdx];
-        const nextIdx = Math.max(0, Math.min(Number(segment?.wordIndex || 0), words.length - 1));
+        const rawWordIndex = Number(segment?.wordIndex);
+        const nextIdx = Number.isFinite(rawWordIndex)
+          ? rawWordIndex >= 1 && rawWordIndex <= words.length
+            ? rawWordIndex - 1
+            : rawWordIndex >= 0 && rawWordIndex < words.length
+              ? rawWordIndex
+              : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0))
+          : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0));
         setActiveWordIdx(nextIdx);
       } else {
         setActiveWordIdx(-1);
