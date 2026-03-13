@@ -75,9 +75,9 @@ export default function GuideReader({ guideId, onBack }) {
   const pct = ((step + 1) / total) * 100;
 
   return (
-    <div className="animate-fade-up" ref={contentRef}>
+    <div className="animate-fade-up guide-reader-page" ref={contentRef}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
+      <div className="page-title f1" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
         <button className="back-btn" onClick={onBack}>
           <IconBack size={16} />
         </button>
@@ -85,7 +85,7 @@ export default function GuideReader({ guideId, onBack }) {
           <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {guide.title}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
             Step {step + 1} of {total}
           </div>
         </div>

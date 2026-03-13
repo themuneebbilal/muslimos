@@ -1621,6 +1621,22 @@ body.dark-mode .category-header {
   }
 
   /* ═══════════════════════════════════════
+     5a. LEARN PAGE — 2-Column Grid + Centered Reader
+     ═══════════════════════════════════════ */
+  .guide-page {
+    max-width: 960px;
+  }
+  .guide-page .guide-list {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3) !important;
+  }
+  .guide-reader-page {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* ═══════════════════════════════════════
      5. HADITH PAGE — 4-Column Grid
      ═══════════════════════════════════════ */
   .app > .animate-fade-up:not(:has(> .glass-dark)) [style*="grid-template-columns"] {

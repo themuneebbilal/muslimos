@@ -64,26 +64,22 @@ export default function LearnPage({ onOpenGuide, onBack }) {
   }, []);
 
   return (
-    <div className="animate-fade-up">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
+    <div className="animate-fade-up guide-page">
+      <div className="page-title f1" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
         {onBack && (
-          <button className="back-btn" onClick={onBack}>
+          <button className="back-btn" onClick={onBack} style={{ marginRight: 'var(--sp-1)' }}>
             <IconBack size={16} />
           </button>
         )}
-        <div>
-          <div className="page-title f1" style={{ padding: 0, display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-500)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-            </svg>
-            Learn
-          </div>
-          <div className="page-subtitle f2">Step-by-step Islamic guides</div>
-        </div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-500)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+        </svg>
+        Learn
       </div>
+      <div className="page-subtitle f2">Step-by-step Islamic guides</div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', marginTop: 'var(--sp-3)' }}>
+      <div className="guide-list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', marginTop: 'var(--sp-3)' }}>
         {GUIDES.map((guide, i) => {
           const colors = ICON_COLORS[guide.color] || ICON_COLORS.emerald;
           const icon = GUIDE_ICONS[guide.icon];
