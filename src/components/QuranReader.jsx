@@ -7,6 +7,9 @@ import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER } from '../utils/tafsee
 import { markTodayRead } from '../utils/streakTracker';
 import { markSurahProgress } from '../utils/khatmTracker';
 import { shareAyahAsImage } from '../utils/shareImage';
+import audioManager from '../utils/audioManager';
+import { ayahAudioUrl } from '../utils/quranAudio';
+import { findSegmentIndex, findTimingIndex, getSurahTimingData } from '../utils/quranTiming';
 import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch, IconImage } from './Icons';
 import HadithFooter from './HadithFooter';
 
@@ -36,8 +39,6 @@ const SURAH_NAME_INDEX = SURAHS_META.map(s => ({
   ...s, nmLower: s.nm.toLowerCase(), mnLower: s.mn.toLowerCase(),
 }));
 
-const FALLBACK_RECITER = 'ar.alafasy';
-
 export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', reciters }) {
   const [view, setView] = useState('list');
   const [activeSurah, setActiveSurah] = useState(null);
@@ -57,22 +58,12 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [transSize, setTransSize] = useState(() => parseFloat(localStorage.getItem('mos_transSize') || '0.9'));
   const [showSettings, setShowSettings] = useState(false);
 
-  const audioRef = useRef(null);
+  const [audioState, setAudioState] = useState(audioManager.getState());
   const [playingAyah, setPlayingAyah] = useState(null);
   const [isSequential, setIsSequential] = useState(false);
   const [seqIndex, setSeqIndex] = useState(-1);
   const [audioToast, setAudioToast] = useState(null);
   const toastTimer = useRef(null);
-  const errorHandled = useRef(false);
-
-  function getAyahBitrate(recId) {
-    const info = reciters?.find(r => r.id === recId);
-    return info?.ayahBitrate || 128;
-  }
-
-  function ayahAudioUrl(recId, absAyah) {
-    return `https://cdn.islamic.network/quran/audio/${getAyahBitrate(recId)}/${recId}/${absAyah}.mp3`;
-  }
 
   function showAudioToast(msg) {
     setAudioToast(msg);
@@ -183,6 +174,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [showJump, setShowJump] = useState(false);
   const [jumpVal, setJumpVal] = useState('');
   const [targetAyah, setTargetAyah] = useState(null);
+  const [surahTimings, setSurahTimings] = useState([]);
+  const [timingError, setTimingError] = useState('');
 
   // ── Per-card translation overrides ──
   const [transOnCards, setTransOnCards] = useState(new Set());
@@ -303,48 +296,38 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }
 
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.addEventListener('error', () => {
-        if (errorHandled.current) return;
-        errorHandled.current = true;
-        const failedUrl = audioRef.current.src;
-        console.warn('[QuranReader] Audio failed:', failedUrl);
-        if (!failedUrl.includes(FALLBACK_RECITER)) {
-          showAudioToast('Audio unavailable for this reciter — playing Alafasy');
-          const absNum = failedUrl.match(/\/(\d+)\.mp3$/)?.[1];
-          if (absNum) {
-            const fallbackUrl = `https://cdn.islamic.network/quran/audio/128/${FALLBACK_RECITER}/${absNum}.mp3`;
-            console.log('[QuranReader] Falling back to:', fallbackUrl);
-            audioRef.current.src = fallbackUrl;
-            audioRef.current.play().catch(() => {});
-          }
-        } else {
-          showAudioToast('Audio unavailable');
-        }
-      });
-    }
-    return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; } };
+    return audioManager.subscribe(setAudioState);
   }, []);
 
   useEffect(() => { isSeqRef.current = isSequential; }, [isSequential]);
   useEffect(() => { seqIdxRef.current = seqIndex; }, [seqIndex]);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    function onEnded() {
-      if (isSeqRef.current) {
-        const next = seqIdxRef.current + 1;
-        if (next < verses.length) playAtIndex(next);
-        else stopAudio();
-      } else {
-        setPlayingAyah(null);
-      }
-    }
-    audio.addEventListener('ended', onEnded);
-    return () => audio.removeEventListener('ended', onEnded);
-  }, [verses]);
+    audioManager.setPlaybackRate(playbackSpeed);
+  }, [playbackSpeed]);
+
+  useEffect(() => {
+    if (view !== 'read' || !activeSurah) return;
+    let cancelled = false;
+
+    getSurahTimingData(activeSurah, reciter)
+      .then((timings) => {
+        if (!cancelled) {
+          setSurahTimings(timings);
+          setTimingError('');
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setSurahTimings([]);
+          setTimingError(err.message || 'Timing unavailable');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [view, activeSurah, reciter]);
 
   useEffect(() => {
     if (view !== 'read') return;
@@ -407,34 +390,64 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     }
   }, [playingAyah]);
 
-  // ── Karaoke: track active word via timeupdate ──
   useEffect(() => {
-    const audio = audioRef.current;
     setActiveWordIdx(-1);
-    if (!audio || !playingAyah) return;
-
-    const verse = verses.find(v => v.abs === playingAyah);
-    if (!verse) return;
-
-    const words = verse.ar.trim().split(/\s+/);
-    const wordCount = words.length;
-    if (wordCount === 0) return;
-
-    let lastIdx = -1;
-    function onTimeUpdate() {
-      const dur = audio.duration;
-      if (!dur || isNaN(dur) || dur === 0) return;
-      const ct = audio.currentTime;
-      const idx = Math.min(Math.floor((ct / dur) * wordCount), wordCount - 1);
-      if (idx !== lastIdx) {
-        lastIdx = idx;
-        setActiveWordIdx(idx);
-      }
+    if (!activeSurah || !surahTimings.length) {
+      if (audioState.playbackMode !== 'ayah') setPlayingAyah(null);
+      return;
     }
 
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    return () => audio.removeEventListener('timeupdate', onTimeUpdate);
-  }, [playingAyah, verses]);
+    if (audioState.playbackMode === 'surah' && audioState.currentSurah === activeSurah) {
+      const positionMs = Math.max(0, Math.round(audioState.currentTime * 1000));
+      const verseIdx = findTimingIndex(surahTimings, positionMs);
+      const verseTiming = surahTimings[verseIdx];
+      const [surahNum, ayahNum] = (verseTiming?.verseKey || '').split(':').map(Number);
+
+      if (surahNum === activeSurah && ayahNum) {
+        const abs = getAbsoluteAyahNumber(surahNum, ayahNum);
+        const verse = verses.find((item) => item.abs === abs);
+        const words = verse?.ar.trim().split(/\s+/) || [];
+        setPlayingAyah(abs);
+
+        if (verseTiming?.segments?.length && words.length) {
+          const segIdx = findSegmentIndex(verseTiming.segments, positionMs);
+          const segment = verseTiming.segments[segIdx];
+          const nextIdx = Math.max(0, Math.min(Number(segment?.wordIndex || 0), words.length - 1));
+          setActiveWordIdx(nextIdx);
+        }
+      }
+      return;
+    }
+
+    if (audioState.playbackMode === 'ayah' && audioState.currentAyahAbs) {
+      const verse = verses.find((item) => item.abs === audioState.currentAyahAbs);
+      const words = verse?.ar.trim().split(/\s+/) || [];
+      const verseTiming = surahTimings.find((item) => item.verseKey === audioState.currentVerseKey);
+      setPlayingAyah(audioState.currentAyahAbs);
+
+      if (verseTiming?.segments?.length && words.length) {
+        const positionMs = Math.max(0, Math.round(audioState.currentTime * 1000) + verseTiming.timestampFrom);
+        const segIdx = findSegmentIndex(verseTiming.segments, positionMs);
+        const segment = verseTiming.segments[segIdx];
+        const nextIdx = Math.max(0, Math.min(Number(segment?.wordIndex || 0), words.length - 1));
+        setActiveWordIdx(nextIdx);
+      }
+      return;
+    }
+
+    if (audioState.playbackMode !== 'ayah') {
+      setPlayingAyah(null);
+    }
+  }, [
+    activeSurah,
+    audioState.currentAyahAbs,
+    audioState.currentSurah,
+    audioState.currentTime,
+    audioState.currentVerseKey,
+    audioState.playbackMode,
+    surahTimings,
+    verses,
+  ]);
 
   // ── Karaoke: auto-scroll active word into center third ──
   useEffect(() => {
@@ -520,12 +533,19 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     setShowJump(false);
     setScrollPct(0);
     ayahElems.current = {};
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+    if (
+      audioState.playbackMode === 'ayah' ||
+      (audioState.playbackMode === 'surah' && audioState.currentSurah && audioState.currentSurah !== activeSurah)
+    ) {
+      audioManager.stop();
+    }
     setPlayingAyah(null);
     setIsSequential(false);
     setSeqIndex(-1);
     setAutoScrollOn(false);
     setActiveWordIdx(-1);
+    setSurahTimings([]);
+    setTimingError('');
     // Reset per-card overrides (abs numbers are surah-specific in practice)
     setTransOnCards(new Set());
     setTransOffCards(new Set());
@@ -654,7 +674,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }
 
   function closeReading() {
-    if (audioRef.current) audioRef.current.pause();
+    if (audioState.playbackMode === 'ayah') {
+      audioManager.stop();
+    }
     setPlayingAyah(null);
     setIsSequential(false);
     setAutoScrollOn(false);
@@ -663,43 +685,56 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     window.scrollTo({ top: 0 });
   }
 
-  function playAtIndex(idx) {
+  async function playAtIndex(idx) {
     const v = verses[idx];
-    if (!v || !audioRef.current) return;
-    errorHandled.current = false;
-    const url = ayahAudioUrl(reciter, v.abs);
-    console.log('[QuranReader] Playing ayah:', url);
-    audioRef.current.src = url;
-    audioRef.current.playbackRate = playbackSpeed;
-    audioRef.current.play().catch(() => {});
-    setPlayingAyah(v.abs);
-    setSeqIndex(idx);
+    if (!v) return;
+    const url = ayahAudioUrl(reciter, v.abs, reciters);
+    try {
+      await audioManager.playSource({
+        playbackMode: 'ayah',
+        src: url,
+        reciter,
+        currentSurah: activeSurah,
+        currentAyahAbs: v.abs,
+        currentVerseKey: `${activeSurah}:${v.vn}`,
+        playbackRate: playbackSpeed,
+        onEnded: () => {
+          if (isSeqRef.current) {
+            const next = seqIdxRef.current + 1;
+            if (next < verses.length) playAtIndex(next);
+            else stopAudio();
+          } else {
+            stopAudio();
+          }
+        },
+        onError: () => showAudioToast('Audio unavailable'),
+      });
+      setPlayingAyah(v.abs);
+      setSeqIndex(idx);
+    } catch {}
     if (idx >= visibleCount) setVisibleCount(idx + 5);
   }
 
   function playSingleAyah(verse, idx) {
     setIsSequential(false);
-    if (!audioRef.current) return;
-    if (playingAyah === verse.abs) {
-      audioRef.current.pause();
-      setPlayingAyah(null);
+    if (audioState.playbackMode === 'ayah' && audioState.currentAyahAbs === verse.abs) {
+      if (audioState.isPlaying) {
+        audioManager.pause();
+      } else {
+        audioManager.resume();
+      }
       return;
     }
-    errorHandled.current = false;
-    const url = ayahAudioUrl(reciter, verse.abs);
-    console.log('[QuranReader] Playing ayah:', url);
-    audioRef.current.src = url;
-    audioRef.current.playbackRate = playbackSpeed;
-    audioRef.current.play().catch(() => {});
-    setPlayingAyah(verse.abs);
-    setSeqIndex(idx);
+    playAtIndex(idx);
   }
 
   function toggleSequentialPlay() {
-    if (playingAyah && isSequential) {
-      audioRef.current?.pause();
-      setPlayingAyah(null);
-      setIsSequential(false);
+    if (audioState.playbackMode === 'ayah' && isSequential && playingAyah) {
+      if (audioState.isPlaying) {
+        audioManager.pause();
+      } else {
+        audioManager.resume();
+      }
     } else {
       setIsSequential(true);
       playAtIndex(seqIndex >= 0 && seqIndex < verses.length ? seqIndex : 0);
@@ -707,7 +742,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }
 
   function stopAudio() {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+    audioManager.stop();
     setPlayingAyah(null);
     setIsSequential(false);
     setSeqIndex(-1);
@@ -718,7 +753,6 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     const i = speeds.indexOf(playbackSpeed);
     const next = speeds[(i + 1) % speeds.length];
     setPlaybackSpeed(next);
-    if (audioRef.current) audioRef.current.playbackRate = next;
   }
 
   // ── Prev/Next ayah navigation ──
@@ -1042,12 +1076,21 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                     {r.name} {r.surah}:{r.ayah}
                   </div>
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      if (!audioRef.current) return;
-                      errorHandled.current = false;
-                      audioRef.current.src = ayahAudioUrl(reciter, r.abs);
-                      audioRef.current.play().catch(() => {});
+                      try {
+                        await audioManager.playSource({
+                          playbackMode: 'ayah',
+                          src: ayahAudioUrl(reciter, r.abs, reciters),
+                          reciter,
+                          currentSurah: r.surah,
+                          currentAyahAbs: r.abs,
+                          currentVerseKey: `${r.surah}:${r.ayah}`,
+                          playbackRate: playbackSpeed,
+                          onEnded: () => audioManager.stop(),
+                          onError: () => showAudioToast('Audio unavailable'),
+                        });
+                      } catch {}
                     }}
                     className="pressable"
                     style={{
@@ -1341,6 +1384,11 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           <div style={{ fontSize: 'var(--text-xs)', opacity: .5 }}>
             {meta?.v} verses · {meta?.type}
           </div>
+          {timingError && (
+            <div style={{ fontSize: '0.62rem', opacity: 0.7, marginTop: 'var(--sp-2)' }}>
+              Live timing sync unavailable for this reciter right now.
+            </div>
+          )}
         </div>
       </div>
 

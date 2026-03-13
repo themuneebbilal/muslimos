@@ -639,7 +639,7 @@ body::after {
 
 /* ── Karaoke word-by-word highlighting ── */
 .karaoke-word {
-  transition: color 0.15s ease, text-shadow 0.15s ease, transform 0.15s ease;
+  transition: color 0.1s ease, text-shadow 0.1s ease, transform 0.1s ease;
 }
 .karaoke-word.active {
   color: var(--gold-400) !important;

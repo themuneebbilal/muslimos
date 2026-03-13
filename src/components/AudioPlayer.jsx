@@ -1,126 +1,29 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React from 'react';
 import SURAHS_META from '../data/surahMeta';
 import { IconPlay, IconPause, IconClose } from './Icons';
-
-const FALLBACK_RECITER = 'ar.alafasy';
-
-export default function AudioPlayer({ currentSurah, isPlaying, onPlayPause, onClose, onNext, onPrev, reciter, reciters }) {
-  const audioRef = useRef(null);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [toast, setToast] = useState(null);
-  const toastTimer = useRef(null);
-  const progressBarRef = useRef(null);
-  const errorHandled = useRef(false);
+export default function AudioPlayer({
+  currentSurah,
+  isPlaying,
+  progress,
+  duration,
+  onPlayPause,
+  onClose,
+  onNext,
+  onPrev,
+  onSeek,
+  reciter,
+  reciters,
+}) {
+  const progressBarRef = React.useRef(null);
 
   const meta = SURAHS_META.find(s => s.n === currentSurah);
   const reciterInfo = reciters?.find(r => r.id === reciter);
-  const reciterName = reciterInfo?.name || 'Reciter';
-
-  const showToast = useCallback((msg) => {
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 3500);
-  }, []);
-
-  function getSurahUrl(recId, rec) {
-    const info = rec || reciters?.find(r => r.id === recId);
-    if (!info?.surahBitrate) {
-      // No surah audio for this reciter — fall back to Alafasy
-      return `https://cdn.islamic.network/quran/audio-surah/128/${FALLBACK_RECITER}/${currentSurah}.mp3`;
-    }
-    return `https://cdn.islamic.network/quran/audio-surah/${info.surahBitrate}/${recId}/${currentSurah}.mp3`;
-  }
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.addEventListener('timeupdate', () => {
-        setProgress(audioRef.current.currentTime);
-      });
-      audioRef.current.addEventListener('loadedmetadata', () => {
-        setDuration(audioRef.current.duration);
-      });
-      audioRef.current.addEventListener('ended', () => {
-        if (currentSurah < 114) {
-          onNext();
-        } else {
-          onClose();
-        }
-      });
-      audioRef.current.addEventListener('error', () => {
-        if (errorHandled.current) return;
-        errorHandled.current = true;
-        const failedUrl = audioRef.current.src;
-        console.warn('[AudioPlayer] Audio failed:', failedUrl);
-
-        // Fall back to Alafasy if not already
-        if (!failedUrl.includes(FALLBACK_RECITER)) {
-          showToast('Audio unavailable for this reciter — playing Alafasy');
-          const fallbackUrl = `https://cdn.islamic.network/quran/audio-surah/128/${FALLBACK_RECITER}/${currentSurah}.mp3`;
-          console.log('[AudioPlayer] Falling back to:', fallbackUrl);
-          audioRef.current.src = fallbackUrl;
-          audioRef.current.play().catch(() => {});
-        } else {
-          showToast('Audio unavailable');
-        }
-      });
-    }
-    return () => {};
-  }, []);
-
-  useEffect(() => {
-    if (!audioRef.current || !currentSurah) return;
-    errorHandled.current = false;
-    const newUrl = getSurahUrl(reciter, reciterInfo);
-    if (audioRef.current.src !== newUrl) {
-      console.log('[AudioPlayer] Loading:', newUrl);
-      audioRef.current.src = newUrl;
-      setProgress(0);
-      setDuration(0);
-
-      // Notify if falling back
-      if (!reciterInfo?.surahBitrate && reciter !== FALLBACK_RECITER) {
-        showToast(`Surah audio not available for ${reciterName} — playing Alafasy`);
-      }
-    }
-  }, [currentSurah, reciter]);
-
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.play().catch(() => {});
-    } else {
-      audioRef.current.pause();
-    }
-  }, [isPlaying, currentSurah, reciter]);
-
-  // Media Session API
-  useEffect(() => {
-    if (!('mediaSession' in navigator) || !currentSurah || !meta) return;
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: `${meta.nm} (${meta.ar})`,
-      artist: reciterName,
-      album: 'Al-Quran',
-      artwork: [
-        { src: '/icons/icon-96.png', sizes: '96x96', type: 'image/png' },
-        { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-      ],
-    });
-
-    navigator.mediaSession.setActionHandler('play', () => onPlayPause());
-    navigator.mediaSession.setActionHandler('pause', () => onPlayPause());
-    navigator.mediaSession.setActionHandler('previoustrack', currentSurah > 1 ? () => onPrev() : null);
-    navigator.mediaSession.setActionHandler('nexttrack', currentSurah < 114 ? () => onNext() : null);
-  }, [currentSurah, reciter, meta, reciterName]);
 
   function handleSeek(e) {
-    if (!audioRef.current || !duration) return;
+    if (!duration) return;
     const rect = progressBarRef.current.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audioRef.current.currentTime = pct * duration;
+    onSeek?.(pct * duration);
   }
 
   function formatDur(s) {
@@ -136,27 +39,19 @@ export default function AudioPlayer({ currentSurah, isPlaying, onPlayPause, onCl
 
   return (
     <>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: 130, left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(6,74,55,0.92)', color: 'white', padding: '8px 16px',
-          borderRadius: 'var(--r-md)', fontSize: 'var(--text-xs)', zIndex: 100,
-          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          maxWidth: 'calc(100% - 32px)', textAlign: 'center',
-          animation: 'fadeUp 0.25s ease',
-        }}>
-          {toast}
-        </div>
-      )}
-
       <div className="audio-bar">
+        <button className="ab-btn pressable" onClick={onPrev} aria-label="Previous Surah">
+          ‹
+        </button>
         <button className="ab-btn pressable" onClick={onPlayPause} aria-label={isPlaying ? 'Pause' : 'Play'}>
           {isPlaying ? <IconPause size={14} /> : <IconPlay size={14} />}
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ab-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {meta?.nm} — {meta?.ar}
+          </div>
+          <div style={{ fontSize: '0.65rem', opacity: 0.72, marginTop: 1 }}>
+            {reciterInfo?.name || 'Reciter'}
           </div>
           <div
             ref={progressBarRef}
@@ -170,6 +65,9 @@ export default function AudioPlayer({ currentSurah, isPlaying, onPlayPause, onCl
             <span>{formatDur(duration)}</span>
           </div>
         </div>
+        <button className="ab-btn pressable" onClick={onNext} aria-label="Next Surah">
+          ›
+        </button>
         <button className="ab-btn pressable" onClick={onClose} aria-label="Close">
           <IconClose size={14} />
         </button>

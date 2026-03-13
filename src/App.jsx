@@ -11,6 +11,8 @@ import GuideReader from './components/GuideReader';
 import PrayerTimesPage from './components/PrayerTimesPage';
 import AudioPlayer from './components/AudioPlayer';
 import { calculatePrayerTimes } from './utils/prayerCalc';
+import audioManager from './utils/audioManager';
+import { surahAudioUrl } from './utils/quranAudio';
 
 const RECITERS = [
   { id: 'ar.alafasy', name: 'Mishary Rashid Alafasy', ayahBitrate: 128, surahBitrate: 128 },
@@ -35,11 +37,7 @@ export default function App() {
   const [activeGuide, setActiveGuide] = useState(null);
 
   // Audio state
-  const [currentSurah, setCurrentSurah] = useState(() => {
-    const saved = localStorage.getItem('mos_audio_surah');
-    return saved ? parseInt(saved) : null;
-  });
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioState, setAudioState] = useState(audioManager.getState());
   const [reciter, setReciter] = useState(() =>
     localStorage.getItem('mos_reciter') || 'ar.alafasy'
   );
@@ -92,6 +90,10 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    return audioManager.subscribe(setAudioState);
+  }, []);
+
   function handleNavigate(newPage) {
     setPage(newPage);
     setActiveCollection(null);
@@ -105,37 +107,47 @@ export default function App() {
     localStorage.setItem('mos_calc', next);
   }
 
+  async function startSurahPlayback(num, requestedReciter = reciter) {
+    try {
+      await audioManager.playSource({
+        playbackMode: 'surah',
+        src: surahAudioUrl(requestedReciter, num, RECITERS),
+        reciter: requestedReciter,
+        currentSurah: num,
+        onEnded: () => {
+          if (num < 114) {
+            startSurahPlayback(num + 1, requestedReciter);
+          } else {
+            audioManager.stop();
+          }
+        },
+      });
+      localStorage.setItem('mos_audio_surah', String(num));
+    } catch {}
+  }
+
   function handlePlaySurah(num) {
-    setCurrentSurah(num);
-    setIsPlaying(true);
-    localStorage.setItem('mos_audio_surah', num);
+    startSurahPlayback(num);
   }
 
   function handlePlayPause() {
-    setIsPlaying(!isPlaying);
+    audioManager.toggle();
   }
 
   function handleCloseAudio() {
-    setIsPlaying(false);
-    setCurrentSurah(null);
+    audioManager.stop();
     localStorage.removeItem('mos_audio_surah');
   }
 
   function handleNextSurah() {
-    if (currentSurah < 114) {
-      const next = currentSurah + 1;
-      setCurrentSurah(next);
-      setIsPlaying(true);
-      localStorage.setItem('mos_audio_surah', next);
+    if (audioState.currentSurah < 114) {
+      startSurahPlayback(audioState.currentSurah + 1);
     }
   }
 
   function handlePrevSurah() {
-    if (currentSurah > 1) {
-      const prev = currentSurah - 1;
-      setCurrentSurah(prev);
-      setIsPlaying(true);
-      localStorage.setItem('mos_audio_surah', prev);
+    if (audioState.currentSurah > 1) {
+      startSurahPlayback(audioState.currentSurah - 1);
     }
   }
 
@@ -154,7 +166,15 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }
 
-  const hasAudio = !!currentSurah;
+  useEffect(() => {
+    if (audioState.playbackMode === 'surah' && audioState.currentSurah) {
+      localStorage.setItem('mos_audio_surah', String(audioState.currentSurah));
+      return;
+    }
+    localStorage.removeItem('mos_audio_surah');
+  }, [audioState.playbackMode, audioState.currentSurah]);
+
+  const hasAudio = audioState.playbackMode === 'surah' && !!audioState.currentSurah;
 
   return (
     <div className="app" style={{ paddingBottom: hasAudio ? 140 : 100 }}>
@@ -192,12 +212,15 @@ export default function App() {
       )}
       {hasAudio && (
         <AudioPlayer
-          currentSurah={currentSurah}
-          isPlaying={isPlaying}
+          currentSurah={audioState.currentSurah}
+          isPlaying={audioState.isPlaying}
+          progress={audioState.currentTime}
+          duration={audioState.duration}
           onPlayPause={handlePlayPause}
           onClose={handleCloseAudio}
           onNext={handleNextSurah}
           onPrev={handlePrevSurah}
+          onSeek={(nextTime) => audioManager.seekTo(nextTime)}
           reciter={reciter}
           reciters={RECITERS}
         />
