@@ -320,3 +320,23 @@ test('browser back returns to home instead of leaving the app', async ({ page })
 
   await expect(page.getByRole('heading', { name: 'MuslimOS' })).toBeVisible();
 });
+
+test('floating player next button advances to next ayah during ayah playback', async ({ page }) => {
+  await installAudioHarness(page);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Open menu' }).first().click();
+  await page.getByRole('button', { name: /Settings/i }).click();
+  await page.getByRole('button', { name: 'On', exact: true }).click();
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await page.getByText('Al-Fatihah').first().click();
+  await page.locator('.ayah-card button').nth(3).click({ force: true });
+
+  await expect(page.locator('.audio-bar')).toBeVisible();
+  await page.locator('.audio-bar').getByRole('button', { name: 'Next Surah' }).click();
+
+  await expect.poll(async () => {
+    return page.evaluate(() => window.__mosAudioManager.getState().currentVerseKey);
+  }).toBe('1:2');
+});

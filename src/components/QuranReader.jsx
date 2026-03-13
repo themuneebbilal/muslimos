@@ -73,6 +73,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const isSeqRef = useRef(false);
   const seqIdxRef = useRef(-1);
+  const prevAyahHandlerRef = useRef(() => {});
+  const nextAyahHandlerRef = useRef(() => {});
 
   const [autoScrollOn, setAutoScrollOn] = useState(false);
   const rafRef = useRef(null);
@@ -920,22 +922,21 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }
 
   useEffect(() => {
-    function handleExternalPrevAyah() {
-      playPrevAyah();
-    }
-
-    function handleExternalNextAyah() {
-      playNextAyah();
-    }
-
-    window.addEventListener('mos:quran-prev-ayah', handleExternalPrevAyah);
-    window.addEventListener('mos:quran-next-ayah', handleExternalNextAyah);
-
-    return () => {
-      window.removeEventListener('mos:quran-prev-ayah', handleExternalPrevAyah);
-      window.removeEventListener('mos:quran-next-ayah', handleExternalNextAyah);
-    };
+    prevAyahHandlerRef.current = playPrevAyah;
+    nextAyahHandlerRef.current = playNextAyah;
   }, [seqIndex, activeSurah, verses.length, audioState.playbackMode]);
+
+  useEffect(() => {
+    window.__mosQuranReaderControls = {
+      prevAyah: () => prevAyahHandlerRef.current?.(),
+      nextAyah: () => nextAyahHandlerRef.current?.(),
+    };
+    return () => {
+      if (window.__mosQuranReaderControls) {
+        delete window.__mosQuranReaderControls;
+      }
+    };
+  }, []);
 
   async function copyText(text) {
     try { await navigator.clipboard.writeText(text); } catch {}

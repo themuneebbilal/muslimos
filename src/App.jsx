@@ -227,7 +227,7 @@ export default function App() {
 
   function handleNextSurah() {
     if (audioState.playbackMode === 'ayah') {
-      window.dispatchEvent(new CustomEvent('mos:quran-next-ayah'));
+      window.__mosQuranReaderControls?.nextAyah?.();
       return;
     }
     if (audioState.currentSurah < 114) {
@@ -238,7 +238,7 @@ export default function App() {
 
   function handlePrevSurah() {
     if (audioState.playbackMode === 'ayah') {
-      window.dispatchEvent(new CustomEvent('mos:quran-prev-ayah'));
+      window.__mosQuranReaderControls?.prevAyah?.();
       return;
     }
     if (audioState.currentSurah > 1) {

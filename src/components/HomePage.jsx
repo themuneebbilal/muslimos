@@ -77,6 +77,16 @@ function HomeQiblaNeedle({ angle }) {
   );
 }
 
+function HomeKaabaMark() {
+  return (
+    <div className="homev2-kaaba-mark" aria-hidden="true">
+      <span className="homev2-kaaba-top" />
+      <span className="homev2-kaaba-body" />
+      <span className="homev2-kaaba-band" />
+    </div>
+  );
+}
+
 function HomeDivider() {
   return (
     <div className="homev2-divider" aria-hidden="true">
@@ -231,9 +241,15 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
               onClick={() => onNavigate('qibla')}
             >
               <div className="homev2-qibla-ring">
+                <span className="homev2-qibla-north">N</span>
+                <span className="homev2-qibla-dot homev2-qibla-dot-top" />
+                <span className="homev2-qibla-dot homev2-qibla-dot-right" />
+                <span className="homev2-qibla-dot homev2-qibla-dot-bottom" />
+                <span className="homev2-qibla-dot homev2-qibla-dot-left" />
+                <HomeKaabaMark />
                 <HomeQiblaNeedle angle={qiblaAngle} />
               </div>
-              <div className="homev2-qibla-label">Qibla</div>
+              <div className="homev2-qibla-label">Qibla Direction</div>
               <div className="homev2-qibla-degree">{qiblaAngle}°</div>
             </button>
           </div>
