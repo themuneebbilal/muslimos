@@ -10,6 +10,10 @@ export const TAFSEER_EDITIONS = [
 
 export const DEFAULT_TAFSEER = 'en-tafisr-ibn-kathir';
 
+export function getDefaultTafseerForLang(lang) {
+  return lang === 'ur' ? 'tafseer-ibn-e-kaseer-urdu' : DEFAULT_TAFSEER;
+}
+
 function cacheKey(edition, surah, ayah) {
   return `mos_tafseer_${edition}_${surah}_${ayah}`;
 }

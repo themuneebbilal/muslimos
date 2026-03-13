@@ -3,7 +3,7 @@ import SURAHS_META from '../data/surahMeta';
 import SURAH_TEXT from '../data/quranText.json';
 import JUZ_DATA from '../data/juzData';
 import { getAbsoluteAyahNumber, toArabicNum } from '../utils/ayahMapping';
-import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER } from '../utils/tafseerApi';
+import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER, getDefaultTafseerForLang } from '../utils/tafseerApi';
 import { markTodayRead } from '../utils/streakTracker';
 import { markSurahProgress } from '../utils/khatmTracker';
 import { shareAyahAsImage } from '../utils/shareImage';
@@ -217,7 +217,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     const saved = localStorage.getItem('mos_tafseer_edition');
     if (saved && TAFSEER_EDITIONS.find(e => e.id === saved)) return saved;
     const userLang = localStorage.getItem('mos_lang') || 'en';
-    return userLang === 'ur' ? 'tafseer-ibn-e-kaseer-urdu' : DEFAULT_TAFSEER;
+    return getDefaultTafseerForLang(userLang);
   });
   const tafseerAbortRef = useRef(new AbortController());
 
@@ -663,15 +663,45 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     // Keep tafseerCache — abs keys are globally unique, so cache persists across surahs
   }, [activeSurah]);
 
-  function setLangPref(l) {
-    setLang(l);
-    localStorage.setItem('mos_lang', l);
-    // Reset per-card translation overrides so all cards follow new global lang
+  const applyLanguagePreference = useCallback((nextLang, options = {}) => {
+    const { persist = false, syncTafseer = true } = options;
+    setLang(nextLang);
+    if (persist) {
+      localStorage.setItem('mos_lang', nextLang);
+    }
     setTransOnCards(new Set());
     setTransOffCards(new Set());
+
+    if (syncTafseer) {
+      const nextEdition = getDefaultTafseerForLang(nextLang);
+      tafseerAbortRef.current.abort();
+      tafseerAbortRef.current = new AbortController();
+      setTafseerEdition(nextEdition);
+      localStorage.setItem('mos_tafseer_edition', nextEdition);
+      setTafseerCache({});
+      setTafseerLoading(new Set());
+      setTafseerErrors({});
+      setTafseerExpanded(new Set());
+    }
+  }, []);
+
+  function setLangPref(l) {
+    applyLanguagePreference(l, { persist: true, syncTafseer: true });
   }
   function saveArabicSize(v) { setArabicSize(v); localStorage.setItem('mos_arabicSize', v); }
   function saveTransSize(v) { setTransSize(v); localStorage.setItem('mos_transSize', v); }
+
+  useEffect(() => {
+    function handleLanguageSync() {
+      const nextLang = localStorage.getItem('mos_lang') || 'en';
+      if (nextLang !== lang) {
+        applyLanguagePreference(nextLang, { persist: false, syncTafseer: true });
+      }
+    }
+
+    window.addEventListener('storage', handleLanguageSync);
+    return () => window.removeEventListener('storage', handleLanguageSync);
+  }, [lang, applyLanguagePreference]);
 
   // ── Translation per-card logic ──
   function shouldShowTrans(abs) {
