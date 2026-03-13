@@ -5,9 +5,9 @@ import { IconBack, IconCalendar, IconCrescent } from './Icons';
 
 const WEEK_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function IslamicCalendarPage({ onBack }) {
-  const hijri = useMemo(() => getHijriDateParts(), []);
-  const hijriLabel = useMemo(() => getHijriDate(), []);
+export default function IslamicCalendarPage({ onBack, location }) {
+  const hijri = useMemo(() => getHijriDateParts(location), [location]);
+  const hijriLabel = useMemo(() => getHijriDate(location), [location]);
   const gregorianLabel = useMemo(() => new Date().toLocaleDateString([], {
     weekday: 'long',
     month: 'long',

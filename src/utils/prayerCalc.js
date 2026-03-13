@@ -11,6 +11,47 @@ function julianDate(y, m, d) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5;
 }
 
+function getDatePartsForLocation(location, baseDate = new Date()) {
+  const tz = typeof location?.tz === 'number'
+    ? location.tz
+    : -baseDate.getTimezoneOffset() / 60;
+  const shifted = new Date(baseDate.getTime() + (tz - baseDate.getTimezoneOffset() / -60) * 3600000);
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+  };
+}
+
+function getHijriAdjustment(location) {
+  const lat = location?.lat;
+  const lng = location?.lng;
+  if (typeof lat !== 'number' || typeof lng !== 'number') return 0;
+
+  // Pakistan commonly follows local moon-sighting decisions that can differ
+  // by one day from tabular/umalqura calculations.
+  const isPakistan =
+    lat >= 23.5 && lat <= 37.5 &&
+    lng >= 60.5 && lng <= 77.5;
+
+  return isPakistan ? -1 : 0;
+}
+
+function getHijriPartsFromGregorian(year, month, day, adjustment = 0) {
+  const jd = julianDate(year, month, day + adjustment);
+  let l = Math.floor(jd - 1948439.5) + 10632;
+  const n = Math.floor((l - 1) / 10631);
+  l = l - 10631 * n + 354;
+  const j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) +
+            (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
+  l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
+      (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
+  const hm = Math.floor((24 * l) / 709);
+  const hd = l - Math.floor((709 * hm) / 24);
+  const hy = 30 * n + j - 30;
+  return { day: hd, month: hm, year: hy };
+}
+
 function sunPosition(jd) {
   const D = jd - 2451545.0;
   const g = toRad((357.529 + 0.98560028 * D) % 360);
@@ -108,37 +149,13 @@ export function getCountdown(targetHours) {
   return `${h < 10 ? '0' : ''}${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
-export function getHijriDate() {
-  const today = new Date();
-  const gd = today.getDate(), gm = today.getMonth() + 1, gy = today.getFullYear();
-  const jd = julianDate(gy, gm, gd);
-  let l = Math.floor(jd - 1948439.5) + 10632;
-  const n = Math.floor((l - 1) / 10631);
-  l = l - 10631 * n + 354;
-  const j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) +
-            (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
-  l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
-      (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
-  const hm = Math.floor((24 * l) / 709);
-  const hd = l - Math.floor((709 * hm) / 24);
-  const hy = 30 * n + j - 30;
+export function getHijriDate(location) {
+  const { day, month, year } = getHijriDateParts(location);
   const months = ['Muharram','Safar',"Rabi' al-Awwal","Rabi' al-Thani","Jumada al-Ula","Jumada al-Thani",'Rajab',"Sha'ban",'Ramadan','Shawwal',"Dhul Qi'dah",'Dhul Hijjah'];
-  return `${hd} ${months[hm - 1]} ${hy} AH`;
+  return `${day} ${months[month - 1]} ${year} AH`;
 }
 
-export function getHijriDateParts() {
-  const today = new Date();
-  const gd = today.getDate(), gm = today.getMonth() + 1, gy = today.getFullYear();
-  const jd = julianDate(gy, gm, gd);
-  let l = Math.floor(jd - 1948439.5) + 10632;
-  const n = Math.floor((l - 1) / 10631);
-  l = l - 10631 * n + 354;
-  const j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) +
-            (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
-  l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
-      (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
-  const hm = Math.floor((24 * l) / 709);
-  const hd = l - Math.floor((709 * hm) / 24);
-  const hy = 30 * n + j - 30;
-  return { day: hd, month: hm, year: hy };
+export function getHijriDateParts(location, baseDate = new Date()) {
+  const { year, month, day } = getDatePartsForLocation(location, baseDate);
+  return getHijriPartsFromGregorian(year, month, day, getHijriAdjustment(location));
 }

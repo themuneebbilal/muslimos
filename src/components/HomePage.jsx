@@ -169,14 +169,14 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
 
   const greeting = useMemo(() => getHomeGreeting(), []);
   const gregorianDate = useMemo(() => formatHomeGregorianDate(), []);
-  const hijriDate = useMemo(() => getHijriDate(), []);
-  const hijriParts = useMemo(() => getHijriDateParts(), []);
+  const hijriDate = useMemo(() => getHijriDate(location), [location]);
+  const hijriParts = useMemo(() => getHijriDateParts(location), [location]);
   const ramadanProgress = useMemo(() => getRamadanProgress(hijriParts), [hijriParts]);
   const qiblaAngle = useMemo(
     () => Math.round(calculateQibla(location.lat, location.lng)),
     [location]
   );
-  const locationLabel = useMemo(() => formatHomeLocation(location.label), [location]);
+  const locationLabel = useMemo(() => formatHomeLocation(location), [location]);
 
   const lastReadInfo = useMemo(() => {
     try {
@@ -395,8 +395,8 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
       <section className="homev2-fold glass-card homev2-reveal-6">
         <div className="homev2-fold-header">
           <div>
-            <div className="homev2-sub-head homev2-sub-head-lightless">Use the existing subpages</div>
-            <h2 className="homev2-fold-title">Keep the flow moving</h2>
+            <div className="homev2-sub-head homev2-sub-head-lightless">Quick access</div>
+            <h2 className="homev2-fold-title">Open what you need next</h2>
           </div>
         </div>
 

@@ -14,10 +14,25 @@ export function formatHomeGregorianDate() {
   });
 }
 
-export function formatHomeLocation(label) {
-  if (!label || label.includes('default')) return 'Lahore, Pakistan';
-  if (label.includes('°')) return 'Your location';
-  return label;
+function formatCoordinate(value, positiveLabel, negativeLabel) {
+  const suffix = value >= 0 ? positiveLabel : negativeLabel;
+  return `${Math.abs(value).toFixed(2)}°${suffix}`;
+}
+
+export function formatHomeLocation(location) {
+  if (!location) return 'Lahore, Pakistan';
+  if (location.city && location.city !== 'Your location') return location.city;
+  if (location.label && location.label.includes('default')) return 'Lahore, Pakistan';
+  if (typeof location.lat === 'number' && typeof location.lng === 'number') {
+    const lat = formatCoordinate(location.lat, 'N', 'S');
+    const lng = formatCoordinate(location.lng, 'E', 'W');
+    if (typeof location.accuracy === 'number' && Number.isFinite(location.accuracy)) {
+      return `${lat}, ${lng} · ±${Math.round(location.accuracy)}m`;
+    }
+    return `${lat}, ${lng}`;
+  }
+  if (location.label) return location.label;
+  return 'Lahore, Pakistan';
 }
 
 export function getRamadanProgress(hijriParts) {

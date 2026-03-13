@@ -30,7 +30,7 @@ const RECITERS = [
 export default function App() {
   const [page, setPage] = useState('home');
   const [location, setLocation] = useState({
-    lat: 31.5204, lng: 74.3587, tz: 5, label: 'Lahore (default)'
+    lat: 31.5204, lng: 74.3587, tz: 5, label: 'Lahore (default)', city: 'Lahore, Pakistan', accuracy: null
   });
   const [calcMethodIdx, setCalcMethodIdx] = useState(() =>
     parseInt(localStorage.getItem('mos_calc') || '0')
@@ -105,7 +105,9 @@ export default function App() {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
             tz: -new Date().getTimezoneOffset() / 60,
-            label: `${pos.coords.latitude.toFixed(2)}\u00B0N, ${pos.coords.longitude.toFixed(2)}\u00B0E`,
+            label: 'Live location',
+            city: null,
+            accuracy: pos.coords.accuracy,
           });
         },
         () => {},
@@ -401,7 +403,7 @@ export default function App() {
         <JournalPage onBack={() => handleNavigate('home')} />
       )}
       {page === 'calendar' && (
-        <IslamicCalendarPage onBack={() => handleNavigate('home')} />
+        <IslamicCalendarPage location={location} onBack={() => handleNavigate('home')} />
       )}
       {hasAudio && (
         <AudioPlayer

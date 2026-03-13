@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { calculatePrayerTimes, formatTime, getNextPrayer, getCountdown, getHijriDate, CALC_METHODS } from '../utils/prayerCalc';
 import { IconBack, IconCrescent, IconSunrise, IconSun, IconMoon, IconCompass } from './Icons';
+import { formatHomeLocation } from '../utils/homePageUtils';
 
 const PRAYERS = [
   { key: 'Fajr', ar: '\u0627\u0644\u0641\u064E\u062C\u0652\u0631', icon: IconCrescent, color: 'var(--emerald-500)' },
@@ -40,8 +41,9 @@ export default function PrayerTimesPage({ location, calcMethodIdx, onNavigate, o
   }, [location, calcMethodIdx]);
 
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-  const hijriStr = getHijriDate();
+  const hijriStr = getHijriDate(location);
   const gregorian = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const locationLabel = formatHomeLocation(location);
 
   return (
     <div className="animate-fade-up">
@@ -155,7 +157,7 @@ export default function PrayerTimesPage({ location, calcMethodIdx, onNavigate, o
         fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)',
       }}>
         <IconCompass size={14} style={{ opacity: 0.6 }} />
-        {location.label}
+        {locationLabel}
       </div>
     </div>
   );
