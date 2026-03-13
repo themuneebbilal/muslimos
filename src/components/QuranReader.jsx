@@ -880,6 +880,12 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
             );
           })() : (
             <div style={{ marginBottom: 'var(--sp-4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' }}>
+                <button className="back-btn" onClick={() => setShowCollections(false)}>
+                  <IconBack size={16} />
+                </button>
+                <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>Collections</div>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-3)' }}>
                 {collections.map(c => (
                   <div
@@ -1163,7 +1169,28 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
   // ══════════════ READING VIEW ══════════════
   return (
-    <div>
+    <div className="quran-layout">
+      {/* Desktop surah sidebar */}
+      <aside className="quran-sidebar">
+        <div className="quran-sidebar-header">
+          <div className="font-amiri" style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--emerald-700)' }}>Surahs</div>
+        </div>
+        <div className="quran-sidebar-list">
+          {SURAHS_META.filter(s => !!SURAH_TEXT[s.n]).map(s => (
+            <div
+              key={s.n}
+              onClick={() => openSurah(s.n)}
+              className={`quran-sidebar-item${s.n === activeSurah ? ' active' : ''}`}
+            >
+              <span className="quran-sidebar-num">{s.n}</span>
+              <span className="quran-sidebar-name">{s.nm}</span>
+              <span className="quran-sidebar-ar font-amiri">{s.ar}</span>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <div className="quran-main">
       {/* Audio toast */}
       {audioToast && (
         <div style={{
@@ -1708,6 +1735,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           {collectionToast}
         </div>
       )}
+      </div>{/* end quran-main */}
     </div>
   );
 }
