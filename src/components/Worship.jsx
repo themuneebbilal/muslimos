@@ -183,11 +183,11 @@ export default function Worship() {
 
   return (
     <div className="animate-fade-up">
-      <div className="page-title">
+      <div className="page-title f1">
         <IconPrayer size={22} style={{ color: 'var(--emerald-500)' }} />
         Worship
       </div>
-      <div className="sub-tabs">
+      <div className="sub-tabs f2">
         {[
           { key: 'tasbeeh', label: 'Tasbeeh' },
           { key: 'duas', label: 'Duas' },
@@ -201,11 +201,11 @@ export default function Worship() {
 
       {/* ── TASBEEH TAB ── */}
       {tab === 'tasbeeh' && (
-        <div className="glass-elevated" style={{ padding: 'var(--sp-8) var(--sp-6)', textAlign: 'center', marginBottom: 'var(--sp-4)' }}>
+        <div className="glass-elevated f3" style={{ padding: 'var(--sp-8) var(--sp-6)', textAlign: 'center', marginBottom: 'var(--sp-4)' }}>
           <div className="font-amiri" style={{ fontSize: 'var(--text-4xl)', color: 'var(--emerald-700)', fontWeight: 700, lineHeight: 1 }}>{count}</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--sp-1)' }}>/ {target}</div>
           <div style={{ height: 4, background: 'var(--emerald-50)', borderRadius: 'var(--r-full)', margin: 'var(--sp-4) 0', overflow: 'hidden' }}>
-            <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--emerald-500), var(--gold-400))', borderRadius: 'var(--r-full)', width: `${pct}%`, transition: 'width 0.2s' }} />
+            <div className="progress-glow" style={{ height: '100%', background: 'linear-gradient(90deg, var(--emerald-500), var(--gold-400))', borderRadius: 'var(--r-full)', width: `${pct}%`, transition: 'width 0.2s' }} />
           </div>
 
           {/* Tap button with decorative rings */}
@@ -225,9 +225,9 @@ export default function Worship() {
               className="pressable"
               style={{
                 width: 100, height: 100, borderRadius: 'var(--r-full)',
-                background: 'linear-gradient(135deg, var(--emerald-500), var(--emerald-700))',
+                background: 'linear-gradient(145deg, var(--emerald-400) 0%, var(--emerald-500) 50%, var(--emerald-700) 100%)',
                 color: 'white', border: '4px solid var(--white)',
-                boxShadow: 'var(--shadow-md)',
+                boxShadow: '0 6px 24px rgba(11,107,79,0.35), 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
                 cursor: 'pointer', fontFamily: "'Amiri', serif",
                 fontSize: 'var(--text-xl)', fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -42,8 +42,8 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
 
   return (
     <div className="animate-fade-up">
-      <div className="page-title">More</div>
-      <div className="page-subtitle">Settings & Tools</div>
+      <div className="page-title f1">More</div>
+      <div className="page-subtitle f2">Settings & Tools</div>
 
       {settingRow(
         <IconCompass size={18} style={{ color: 'var(--emerald-500)' }} />,

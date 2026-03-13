@@ -64,22 +64,22 @@ export default function HadithPage({ onOpenCollection }) {
 
   return (
     <div className="animate-fade-up">
-      <div className="page-title">
+      <div className="page-title f1">
         <IconHadith size={22} style={{ color: 'var(--emerald-500)' }} />
         Hadith
       </div>
-      <div className="page-subtitle">
+      <div className="page-subtitle f2">
         Prophetic Traditions · أحاديث نبوية
       </div>
 
       {/* Hadith of the Day — always from Nawawi (offline) */}
       {dailyHadith && !search && (
-        <div className="glass-elevated" style={{
+        <div className="glass-elevated f3" style={{
           padding: 'var(--sp-5)', marginBottom: 'var(--sp-4)',
           borderLeft: '4px solid var(--gold-400)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--sp-3)' }}>
-            <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--gold-400)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 'var(--sp-1)' }}>
+            <div className="section-label">
               <IconStar size={12} style={{ color: 'var(--gold-400)' }} />
               Hadith of the Day
             </div>
@@ -93,7 +93,7 @@ export default function HadithPage({ onOpenCollection }) {
           <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
             &ldquo;{dailyHadith.english}&rdquo;
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--sp-2)' }}>
+          <div className="ref-text" style={{ marginTop: 'var(--sp-2)' }}>
             {dailyHadith.reference}
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function HadithPage({ onOpenCollection }) {
       {/* Collections grid */}
       {!search && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-4)' }}>
+          <div className="f5" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-4)' }}>
             {/* Saved/Bookmarks card */}
             <div
               onClick={() => onOpenCollection && onOpenCollection('_saved')}
