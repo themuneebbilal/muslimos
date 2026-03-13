@@ -260,3 +260,63 @@ test('long surah timing stays aligned through at least twenty ayahs', async ({ p
     return page.locator('.ayah-card.active').textContent();
   }).toContain('2.20');
 });
+
+test('playing a surah from the list opens the reader view', async ({ page }) => {
+  await installAudioHarness(page);
+  await page.goto('/');
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await page.getByRole('button', { name: 'Play Al-Fatihah' }).click();
+
+  await expect(page.locator('.surah-banner')).toBeVisible();
+  await expect(page.locator('.surah-banner')).toContainText('Al-Fatihah');
+});
+
+test('surah playback advances reader to the next surah when one finishes', async ({ page }) => {
+  await installAudioHarness(page);
+  await page.goto('/');
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await page.getByRole('button', { name: 'Play Al-Fatihah' }).click();
+  await expect(page.locator('.surah-banner')).toContainText('Al-Fatihah');
+
+  await page.evaluate(() => {
+    window.__mosAudioManager.audio.dispatchEvent(new Event('ended'));
+  });
+
+  await expect.poll(async () => {
+    return page.locator('.surah-banner').textContent();
+  }).toContain('Al-Baqarah');
+});
+
+test('ayah autoplay setting advances to the next ayah', async ({ page }) => {
+  await installAudioHarness(page);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Open menu' }).first().click();
+  await page.getByRole('button', { name: /Settings/i }).click();
+  await page.getByRole('button', { name: 'On', exact: true }).click();
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await page.getByText('Al-Fatihah').first().click();
+  await page.locator('.ayah-card button').nth(3).click({ force: true });
+
+  await page.evaluate(() => {
+    window.__mosAudioManager.audio.dispatchEvent(new Event('ended'));
+  });
+
+  await expect.poll(async () => {
+    return page.evaluate(() => window.__mosAudioManager.getState().currentVerseKey);
+  }).toBe('1:2');
+});
+
+test('browser back returns to home instead of leaving the app', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Hadith', exact: true }).click();
+  await expect(page.locator('.page-title').filter({ hasText: 'Hadith' })).toBeVisible();
+
+  await page.goBack();
+
+  await expect(page.getByRole('heading', { name: 'MuslimOS' })).toBeVisible();
+});

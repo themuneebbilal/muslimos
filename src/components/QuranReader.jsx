@@ -39,7 +39,7 @@ const SURAH_NAME_INDEX = SURAHS_META.map(s => ({
   ...s, nmLower: s.nm.toLowerCase(), mnLower: s.mn.toLowerCase(),
 }));
 
-export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', reciters }) {
+export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', reciters, ayahAutoplayEnabled = true, requestedSurahOpen = null }) {
   const [view, setView] = useState('list');
   const [activeSurah, setActiveSurah] = useState(null);
   const [search, setSearch] = useState('');
@@ -551,6 +551,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     }
   }, [view, activeSurah, verses.length, pendingPlayAyah]);
 
+  useEffect(() => {
+    if (!requestedSurahOpen?.surah) return;
+    if (view !== 'read' || activeSurah !== requestedSurahOpen.surah) {
+      openSurah(requestedSurahOpen.surah);
+    }
+  }, [requestedSurahOpen?.revision]);
+
   // Auto-fetch tafseer for visible ayahs via IntersectionObserver
   useEffect(() => {
     if (!showTafseer || view !== 'read' || verses.length === 0) return;
@@ -788,7 +795,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   }
 
   function playSingleAyah(verse, idx) {
-    setIsSequential(false);
+    setIsSequential(ayahAutoplayEnabled);
     if (audioState.playbackMode === 'ayah' && audioState.currentAyahAbs === verse.abs) {
       if (audioState.isPlaying) {
         audioManager.pause();

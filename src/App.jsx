@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import BottomNav from './components/BottomNav';
 import AppDrawer from './components/AppDrawer';
 import HomePage from './components/HomePage';
@@ -39,17 +39,34 @@ export default function App() {
   // Learn sub-navigation
   const [activeGuide, setActiveGuide] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [requestedSurahOpen, setRequestedSurahOpen] = useState(null);
 
   // Audio state
   const [audioState, setAudioState] = useState(audioManager.getState());
   const [reciter, setReciter] = useState(() =>
     localStorage.getItem('mos_reciter') || 'ar.alafasy'
   );
+  const [ayahAutoplay, setAyahAutoplay] = useState(() =>
+    localStorage.getItem('mos_ayahAutoplay') !== 'false'
+  );
 
   // Theme state
   const [theme, setTheme] = useState(() =>
     localStorage.getItem('mos_theme') || 'light'
   );
+  const pageRef = useRef(page);
+  const activeCollectionRef = useRef(activeCollection);
+  const activeGuideRef = useRef(activeGuide);
+  const drawerOpenRef = useRef(drawerOpen);
+
+  useEffect(() => { pageRef.current = page; }, [page]);
+  useEffect(() => { activeCollectionRef.current = activeCollection; }, [activeCollection]);
+  useEffect(() => { activeGuideRef.current = activeGuide; }, [activeGuide]);
+  useEffect(() => { drawerOpenRef.current = drawerOpen; }, [drawerOpen]);
+
+  const pushHistoryState = useCallback((reason) => {
+    window.history.pushState({ mosApp: true, reason, ts: Date.now() }, '', window.location.href);
+  }, []);
 
   const applyTheme = useCallback((mode) => {
     if (mode === 'auto') {
@@ -98,7 +115,56 @@ export default function App() {
     return audioManager.subscribe(setAudioState);
   }, []);
 
+  useEffect(() => {
+    if (!window.history.state?.mosApp) {
+      window.history.replaceState({ mosApp: true, reason: 'root', ts: Date.now() }, '', window.location.href);
+    }
+
+    function restoreSentinel(reason) {
+      window.history.pushState({ mosApp: true, reason, ts: Date.now() }, '', window.location.href);
+    }
+
+    function handlePopState() {
+      if (drawerOpenRef.current) {
+        setDrawerOpen(false);
+        restoreSentinel('drawer-close');
+        return;
+      }
+
+      if (activeCollectionRef.current) {
+        setActiveCollection(null);
+        setPage('hadith');
+        window.scrollTo({ top: 0 });
+        restoreSentinel('hadith-back');
+        return;
+      }
+
+      if (activeGuideRef.current) {
+        setActiveGuide(null);
+        setPage('learn');
+        window.scrollTo({ top: 0 });
+        restoreSentinel('learn-back');
+        return;
+      }
+
+      if (pageRef.current !== 'home') {
+        setPage('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        restoreSentinel('home-back');
+        return;
+      }
+
+      restoreSentinel('stay-in-app');
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   function handleNavigate(newPage) {
+    if (newPage !== page || activeCollection || activeGuide || drawerOpen) {
+      pushHistoryState(`page:${newPage}`);
+    }
     setPage(newPage);
     setActiveCollection(null);
     setActiveGuide(null);
@@ -112,6 +178,18 @@ export default function App() {
     localStorage.setItem('mos_calc', next);
   }
 
+  function openQuranSurah(num, shouldPushHistory = true) {
+    if (shouldPushHistory && (pageRef.current !== 'quran' || activeCollectionRef.current || activeGuideRef.current || drawerOpenRef.current)) {
+      pushHistoryState(`page:quran:${num}`);
+    }
+    setPage('quran');
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setDrawerOpen(false);
+    setRequestedSurahOpen({ surah: num, revision: Date.now() });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function startSurahPlayback(num, requestedReciter = reciter) {
     try {
       const src = await getSurahAudioUrl(requestedReciter, num, RECITERS);
@@ -122,6 +200,7 @@ export default function App() {
         currentSurah: num,
         onEnded: () => {
           if (num < 114) {
+            openQuranSurah(num + 1, false);
             startSurahPlayback(num + 1, requestedReciter);
           } else {
             audioManager.stop();
@@ -133,6 +212,7 @@ export default function App() {
   }
 
   function handlePlaySurah(num) {
+    openQuranSurah(num);
     startSurahPlayback(num);
   }
 
@@ -147,12 +227,14 @@ export default function App() {
 
   function handleNextSurah() {
     if (audioState.currentSurah < 114) {
+      openQuranSurah(audioState.currentSurah + 1, false);
       startSurahPlayback(audioState.currentSurah + 1);
     }
   }
 
   function handlePrevSurah() {
     if (audioState.currentSurah > 1) {
+      openQuranSurah(audioState.currentSurah - 1, false);
       startSurahPlayback(audioState.currentSurah - 1);
     }
   }
@@ -162,13 +244,21 @@ export default function App() {
     localStorage.setItem('mos_reciter', r);
   }
 
+  function handleAyahAutoplayChange(enabled) {
+    setAyahAutoplay(enabled);
+    localStorage.setItem('mos_ayahAutoplay', String(enabled));
+  }
+
   function handleOpenCollection(id) {
+    pushHistoryState(`hadith:${id}`);
     setDrawerOpen(false);
+    setPage('hadith');
     setActiveCollection(id);
     window.scrollTo({ top: 0 });
   }
 
   function handleOpenGuide(id) {
+    pushHistoryState(`guide:${id}`);
     setDrawerOpen(false);
     setPage('learn');
     setActiveGuide(id);
@@ -176,6 +266,7 @@ export default function App() {
   }
 
   function handleOpenQibla() {
+    pushHistoryState('page:qibla');
     setDrawerOpen(false);
     setActiveCollection(null);
     setActiveGuide(null);
@@ -184,6 +275,7 @@ export default function App() {
   }
 
   function handleOpenSettings() {
+    pushHistoryState('page:settings');
     setDrawerOpen(false);
     setActiveCollection(null);
     setActiveGuide(null);
@@ -198,6 +290,11 @@ export default function App() {
     }
     localStorage.removeItem('mos_audio_surah');
   }, [audioState.playbackMode, audioState.currentSurah]);
+
+  function handleOpenDrawer() {
+    pushHistoryState('drawer');
+    setDrawerOpen(true);
+  }
 
   const hasAudio = (!!audioState.sourceUrl || audioState.isPlaying) && !!audioState.currentSurah;
 
@@ -218,16 +315,16 @@ export default function App() {
         <button
           type="button"
           className="app-shell-menu"
-          onClick={() => setDrawerOpen(true)}
+          onClick={handleOpenDrawer}
           aria-label="Open menu"
         >
           <IconHamburger size={18} />
         </button>
       )}
 
-      {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} onOpenDrawer={() => setDrawerOpen(true)} />}
+      {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} onOpenDrawer={handleOpenDrawer} />}
       {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
-      {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} />}
+      {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} ayahAutoplayEnabled={ayahAutoplay} requestedSurahOpen={requestedSurahOpen} />}
       {page === 'worship' && <Worship />}
       {page === 'hadith' && !activeCollection && (
         <HadithPage onOpenCollection={handleOpenCollection} />
@@ -265,6 +362,8 @@ export default function App() {
           reciter={reciter}
           reciters={RECITERS}
           onReciterChange={handleReciterChange}
+          ayahAutoplay={ayahAutoplay}
+          onAyahAutoplayChange={handleAyahAutoplayChange}
         />
       )}
       {hasAudio && (

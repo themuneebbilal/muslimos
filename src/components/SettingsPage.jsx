@@ -19,6 +19,8 @@ export default function SettingsPage({
   reciter,
   reciters,
   onReciterChange,
+  ayahAutoplay,
+  onAyahAutoplayChange,
 }) {
   const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
 
@@ -129,6 +131,19 @@ export default function SettingsPage({
                 {item.name}
               </button>
             ))}
+          </div>
+        </div>
+        <div className="settingsv2-panel">
+          <div className="settingsv2-control-head">
+            <span className="settingsv2-icon settingsv2-icon-gold"><IconQuran size={18} /></span>
+            <span className="settingsv2-copy">
+              <strong>Ayah Autoplay</strong>
+              <small>Continue to the next ayah after you tap play on a verse</small>
+            </span>
+          </div>
+          <div className="settingsv2-pills">
+            <button type="button" className={`sub-tab${ayahAutoplay ? ' active' : ''}`} onClick={() => onAyahAutoplayChange(true)}>On</button>
+            <button type="button" className={`sub-tab${!ayahAutoplay ? ' active' : ''}`} onClick={() => onAyahAutoplayChange(false)}>Off</button>
           </div>
         </div>
       </section>
