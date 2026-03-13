@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calculatePrayerTimes, formatTime, getNextPrayer, getCountdown, getHijriDate } from '../utils/prayerCalc';
 import { calculateQibla } from '../utils/qiblaCalc';
-import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon } from './Icons';
+import { getStreakData, getRecentDays } from '../utils/streakTracker';
+import { IconQuran, IconWorship, IconCompass, IconStar, IconCrescent, IconSun, IconMoon, IconFlame } from './Icons';
 import HadithFooter from './HadithFooter';
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -128,6 +129,9 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
   const lastReadInfo = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('mos_lastRead')); } catch { return null; }
   }, []);
+
+  const streak = useMemo(() => getStreakData(), []);
+  const recentDays = useMemo(() => getRecentDays(7), []);
 
   const iconBox = (bg, children) => (
     <div style={{
@@ -278,6 +282,59 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, theme, o
             {tasbeehCount > 0 ? `${tasbeehCount} count` : 'Start counting'}
           </div>
         </div>
+      </div>
+
+      {/* DAILY STREAK */}
+      <div className="glass-card" style={{ padding: 'var(--sp-4) var(--sp-5)', marginBottom: 'var(--sp-4)', boxShadow: 'var(--shadow-xs)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+            <IconFlame size={18} style={{ color: streak.current > 0 ? 'var(--gold-400)' : 'var(--text-tertiary)' }} />
+            <div>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Reading Streak
+              </div>
+              <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
+                {streak.current > 0
+                  ? `${streak.current} day${streak.current !== 1 ? 's' : ''} · Best: ${streak.longest}`
+                  : 'Read Quran to start your streak'}
+              </div>
+            </div>
+          </div>
+          {streak.current > 0 && (
+            <div className="font-amiri" style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--gold-400)', lineHeight: 1 }}>
+              {streak.current}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {recentDays.map(d => (
+            <div key={d.date} style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{
+                width: '100%', aspectRatio: '1', borderRadius: 'var(--r-sm)',
+                background: d.read ? 'var(--emerald-500)' : 'var(--bg-glass)',
+                border: `1.5px solid ${d.read ? 'var(--emerald-500)' : 'var(--border)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: 3,
+              }}>
+                {d.read && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+              <div style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{d.label}</div>
+            </div>
+          ))}
+        </div>
+        {streak.current >= 7 && streak.current % 7 === 0 && (
+          <div style={{
+            marginTop: 'var(--sp-2)', padding: '6px 10px', borderRadius: 'var(--r-sm)',
+            background: 'rgba(201,168,76,0.12)', textAlign: 'center',
+            fontSize: '0.65rem', color: 'var(--gold-500)', fontWeight: 600,
+          }}>
+            {streak.current >= 100 ? 'Incredible! 100+ days!' : streak.current >= 30 ? 'Amazing! A full month!' : `${streak.current} day streak! Keep going!`}
+          </div>
+        )}
       </div>
 
       <div className="ornament-divider"><div className="ornament-diamond" /></div>

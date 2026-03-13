@@ -4,6 +4,7 @@ import SURAH_TEXT from '../data/quranText.json';
 import JUZ_DATA from '../data/juzData';
 import { getAbsoluteAyahNumber, toArabicNum } from '../utils/ayahMapping';
 import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER } from '../utils/tafseerApi';
+import { markTodayRead } from '../utils/streakTracker';
 import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch } from './Icons';
 import HadithFooter from './HadithFooter';
 
@@ -366,6 +367,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           if (dist < closestDist) { closestDist = dist; closestVn = v.vn; }
         }
         localStorage.setItem('mos_lastRead', JSON.stringify({ surah: activeSurah, ayah: closestVn, name: meta.nm, ar: meta.ar }));
+        markTodayRead();
       }, 600);
     }
     window.addEventListener('scroll', onScroll, { passive: true });
