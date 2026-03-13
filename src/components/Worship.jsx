@@ -25,7 +25,7 @@ function DuaCard({ dua }) {
   const [lang, setLang] = useState('en');
 
   return (
-    <div className="dua-card">
+    <div className="dua-card dua-card-v2">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--sp-2)' }}>
         <div>
           <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{dua.title}</div>
@@ -65,7 +65,7 @@ function DuaCard({ dua }) {
         ))}
       </div>
 
-      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+      <div className="dua-translation" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
         {lang === 'en' ? dua.english : dua.urdu}
       </div>
 
@@ -115,9 +115,8 @@ function AdhkarCard({ item, index, onTap, count }) {
 
   return (
     <div
-      className="adhkar-card"
+      className={`adhkar-card worshipv2-adhkar-card${done ? ' is-done' : ''}`}
       onClick={onTap}
-      style={{ opacity: done ? 0.5 : 1 }}
     >
       <div className="arabic-text" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--emerald-700)', marginBottom: 'var(--sp-2)' }}>
         {item.a}
@@ -129,6 +128,11 @@ function AdhkarCard({ item, index, onTap, count }) {
         <div style={{ fontSize: 'var(--text-xs)', color: done ? 'var(--success)' : 'var(--gold-500)', fontWeight: 600 }}>
           {done ? 'Completed' : `${count} / ${item.c}`}
         </div>
+        {done && (
+          <div className="worshipv2-adhkar-check" aria-hidden="true">
+            ✓
+          </div>
+        )}
       </div>
       <div className="adhkar-progress">
         <div className="adhkar-progress-fill" style={{ width: `${pct}%` }} />
@@ -182,7 +186,7 @@ export default function Worship() {
   const adhkarList = adhkarTab === 'morning' ? MORNING_ADHKAR : EVENING_ADHKAR;
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up worshipv2">
       <div className="page-title f1">
         <IconPrayer size={22} style={{ color: 'var(--emerald-500)' }} />
         Worship
@@ -201,7 +205,7 @@ export default function Worship() {
 
       {/* ── TASBEEH TAB ── */}
       {tab === 'tasbeeh' && (
-        <div className="glass-elevated f3" style={{ padding: 'var(--sp-8) var(--sp-6)', textAlign: 'center', marginBottom: 'var(--sp-4)' }}>
+        <div className="glass-elevated f3 worshipv2-tasbeeh-shell" style={{ padding: 'var(--sp-8) var(--sp-6)', textAlign: 'center', marginBottom: 'var(--sp-4)' }}>
           <div className="font-amiri" style={{ fontSize: 'var(--text-4xl)', color: 'var(--emerald-700)', fontWeight: 700, lineHeight: 1 }}>{count}</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--sp-1)' }}>/ {target}</div>
           <div style={{ height: 4, background: 'var(--emerald-50)', borderRadius: 'var(--r-full)', margin: 'var(--sp-4) 0', overflow: 'hidden' }}>
@@ -222,7 +226,7 @@ export default function Worship() {
             </svg>
             <button
               onClick={tap}
-              className="pressable"
+              className="pressable worshipv2-tap-btn"
               style={{
                 width: 100, height: 100, borderRadius: 'var(--r-full)',
                 background: 'linear-gradient(145deg, var(--emerald-400) 0%, var(--emerald-500) 50%, var(--emerald-700) 100%)',
@@ -252,7 +256,7 @@ export default function Worship() {
           </div>
           <button
             onClick={reset}
-            className="pressable"
+            className="pressable worshipv2-reset-btn"
             style={{
               marginTop: 'var(--sp-3)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)',
               cursor: 'pointer', background: 'none', border: 'none',

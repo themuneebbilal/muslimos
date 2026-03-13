@@ -193,9 +193,9 @@ export default function HadithCollection({ collectionId, onBack }) {
   const fullyDownloaded = collection ? (isBundled || isFullyDownloaded(collection.id)) : false;
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up hadithv2-collection">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
+      <div className="hadithv2-header" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
         <button className="back-btn" onClick={onBack}>
           <IconBack size={16} />
         </button>
@@ -224,7 +224,7 @@ export default function HadithCollection({ collectionId, onBack }) {
 
       {/* Collection info */}
       {collection && !isSaved && (
-        <div className="glass-surface" style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="glass-surface hadithv2-info" style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
               {collection.compilerDeath} · {collection.totalHadith.toLocaleString()} hadith
@@ -244,7 +244,7 @@ export default function HadithCollection({ collectionId, onBack }) {
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="pressable"
+              className="pressable hadithv2-download"
               style={{
                 padding: '6px 12px', borderRadius: 'var(--r-sm)',
                 background: 'var(--emerald-50)', border: '1px solid var(--emerald-200)',
@@ -330,9 +330,9 @@ export default function HadithCollection({ collectionId, onBack }) {
       {displayList.map(h => {
         const isBookmarked = bookmarks.includes(h.id);
         return (
-          <div key={h.id} className="glass-card" style={{ padding: '18px var(--sp-5)', marginBottom: 'var(--sp-3)', position: 'relative' }}>
+          <div key={h.id} className="glass-card hadithv2-card" style={{ padding: '18px var(--sp-5)', marginBottom: 'var(--sp-3)', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
-              <div style={{
+              <div className="hadithv2-number" style={{
                 width: 30, height: 30, borderRadius: 'var(--r-full)', background: 'var(--emerald-50)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: "'Amiri', serif", fontSize: 'var(--text-sm)', fontWeight: 700,
@@ -342,7 +342,7 @@ export default function HadithCollection({ collectionId, onBack }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 {h.chapter && (
-                  <span style={{ fontSize: '0.65rem', color: 'var(--gold-500)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  <span className="hadithv2-chapter" style={{ fontSize: '0.65rem', color: 'var(--gold-500)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     {h.chapter}
                   </span>
                 )}
@@ -374,7 +374,7 @@ export default function HadithCollection({ collectionId, onBack }) {
               <div>
                 <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>{h.reference}</div>
                 {h.grade && (
-                  <span style={{ fontSize: '0.6rem', color: 'var(--success)', fontWeight: 600 }}>{h.grade}</span>
+                  <span className="hadithv2-grade" style={{ fontSize: '0.6rem', color: 'var(--success)', fontWeight: 600 }}>{h.grade}</span>
                 )}
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>

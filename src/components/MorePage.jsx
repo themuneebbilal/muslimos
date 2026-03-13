@@ -21,19 +21,15 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
     );
   }
 
-  const settingRow = (icon, bg, title, subtitle, onClick) => (
+  const settingRow = (icon, tone, title, subtitle, onClick) => (
     <div
       onClick={onClick}
-      className="glass-card pressable"
+      className="glass-card pressable morev2-row"
       style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: '14px var(--sp-4)', marginBottom: 'var(--sp-2)' }}
     >
-      <div style={{
-        width: 40, height: 40, borderRadius: 'var(--r-md)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: bg, flexShrink: 0,
-      }}>{icon}</div>
+      <div className={`morev2-icon morev2-icon-${tone}`}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <strong style={{ fontSize: 'var(--text-base)', display: 'block' }}>{title}</strong>
+        <strong className="morev2-row-title" style={{ fontSize: 'var(--text-base)', display: 'block' }}>{title}</strong>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>{subtitle}</p>
       </div>
       {onClick && <IconForward size={16} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />}
@@ -41,13 +37,13 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
   );
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up morev2-page">
       <div className="page-title f1">More</div>
       <div className="page-subtitle f2">Settings & Tools</div>
 
       {settingRow(
         <IconLearn size={18} style={{ color: 'var(--emerald-500)' }} />,
-        'var(--emerald-50)',
+        'emerald',
         'Islamic Guides',
         'Step-by-step Salah, Wudu, Hajj & more',
         () => onNavigate('learn'),
@@ -55,7 +51,7 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
 
       {settingRow(
         <IconCompass size={18} style={{ color: 'var(--emerald-500)' }} />,
-        'var(--emerald-50)',
+        'emerald',
         'Qibla Compass',
         `${Math.round(calculateQibla(location.lat, location.lng))}° from North`,
         () => setShowQibla(true),
@@ -63,15 +59,15 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
 
       {settingRow(
         <IconSettings size={18} style={{ color: 'var(--gold-500)' }} />,
-        'var(--gold-100)',
+        'gold',
         'Calculation Method',
         CALC_METHODS[calcMethodIdx].name,
         onToggleCalcMethod,
       )}
 
       {/* Theme Selection */}
-      <div style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
-        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Theme</div>
+      <div className="morev2-section" style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+        <div className="morev2-section-title" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Theme</div>
         {[
           { id: 'light', label: 'Light', desc: 'Cream theme', icon: <IconSun size={16} /> },
           { id: 'dark', label: 'Dark', desc: 'AMOLED dark theme', icon: <IconMoon size={16} /> },
@@ -80,7 +76,7 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
           <div
             key={t.id}
             onClick={() => onThemeChange(t.id)}
-            className="pressable"
+            className={`pressable morev2-choice${theme === t.id ? ' is-active' : ''}`}
             style={{
               display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)',
               background: theme === t.id ? 'var(--emerald-50)' : 'var(--bg-glass)',
@@ -110,13 +106,13 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
       </div>
 
       {/* Reciter Selection */}
-      <div style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
-        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Quran Reciter</div>
+      <div className="morev2-section" style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+        <div className="morev2-section-title" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Quran Reciter</div>
         {reciters && reciters.map(r => (
           <div
             key={r.id}
             onClick={() => onReciterChange(r.id)}
-            className="pressable"
+            className={`pressable morev2-choice${reciter === r.id ? ' is-active' : ''}`}
             style={{
               display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)',
               background: reciter === r.id ? 'var(--emerald-50)' : 'var(--bg-glass)',
@@ -144,13 +140,13 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
       </div>
 
       {/* Data & Cache */}
-      <div style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
-        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Data & Cache</div>
-        {settingRow(
-          <IconRefresh size={18} style={{ color: 'var(--emerald-500)' }} />,
-          'var(--emerald-50)',
-          'Reset Reading Progress',
-          'Clear khatm, last read & streak data',
+      <div className="morev2-section" style={{ marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+        <div className="morev2-section-title" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--sp-2)', paddingLeft: 'var(--sp-1)' }}>Data & Cache</div>
+      {settingRow(
+        <IconRefresh size={18} style={{ color: 'var(--emerald-500)' }} />,
+        'emerald',
+        'Reset Reading Progress',
+        'Clear khatm, last read & streak data',
           () => {
             if (window.confirm('Reset all reading progress? This cannot be undone.')) {
               ['mos_khatm', 'mos_lastRead', 'mos_streak'].forEach(k => localStorage.removeItem(k));
@@ -158,11 +154,11 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
             }
           },
         )}
-        {settingRow(
-          <IconRefresh size={18} style={{ color: 'var(--gold-500)' }} />,
-          'var(--gold-100)',
-          'Reset Dhikr & Tasbeeh',
-          'Clear tasbeeh counters & adhkar progress',
+      {settingRow(
+        <IconRefresh size={18} style={{ color: 'var(--gold-500)' }} />,
+        'gold',
+        'Reset Dhikr & Tasbeeh',
+        'Clear tasbeeh counters & adhkar progress',
           () => {
             if (window.confirm('Reset all dhikr and tasbeeh data? This cannot be undone.')) {
               ['mos_tb_subhanallah', 'mos_tb_alhamdulillah', 'mos_tb_allahuakbar', 'mos_adhkar_counts'].forEach(k => localStorage.removeItem(k));
@@ -170,11 +166,11 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
             }
           },
         )}
-        {settingRow(
-          <IconRefresh size={18} style={{ color: 'var(--emerald-500)' }} />,
-          'var(--emerald-50)',
-          'Reset Guide Progress',
-          'Restart all step-by-step guides',
+      {settingRow(
+        <IconRefresh size={18} style={{ color: 'var(--emerald-500)' }} />,
+        'emerald',
+        'Reset Guide Progress',
+        'Restart all step-by-step guides',
           () => {
             if (window.confirm('Reset all guide progress? This cannot be undone.')) {
               ['salah', 'wudu', 'taraweeh', 'witr', 'janazah', 'eid', 'umrah', 'hajj'].forEach(id => localStorage.removeItem(`mos_guide_${id}_step`));
@@ -182,11 +178,11 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
             }
           },
         )}
-        {settingRow(
-          <IconTrash size={18} style={{ color: '#ef4444' }} />,
-          'rgba(239,68,68,0.1)',
-          'Clear Cached Data',
-          'Remove cached tafseer, hadith & bookmarks',
+      {settingRow(
+        <IconTrash size={18} style={{ color: '#ef4444' }} />,
+        'danger',
+        'Clear Cached Data',
+        'Remove cached tafseer, hadith & bookmarks',
           () => {
             if (window.confirm('Clear all cached data? Bookmarks and collections will be removed. This cannot be undone.')) {
               const keys = Object.keys(localStorage);
@@ -202,7 +198,7 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
 
       {settingRow(
         <IconHeart size={18} style={{ color: 'var(--emerald-500)' }} />,
-        'var(--emerald-50)',
+        'emerald',
         'About MuslimOS',
         'Prayer times, Quran, Hadith, dhikr & qibla',
         null,
@@ -216,12 +212,10 @@ export default function MorePage({ calcMethodIdx, onToggleCalcMethod, location, 
         </div>
       </div>
 
-      <div style={{
+      <div className="glass-card" style={{
         margin: '0 var(--sp-4) var(--sp-6)',
         padding: 'var(--sp-4)',
         borderRadius: 'var(--r-md)',
-        background: 'var(--bg-glass)',
-        border: '1px solid var(--border)',
       }}>
         <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--sp-2)' }}>
           Content Accuracy

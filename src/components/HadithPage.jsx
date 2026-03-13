@@ -74,7 +74,7 @@ export default function HadithPage({ onOpenCollection }) {
 
       {/* Hadith of the Day — always from Nawawi (offline) */}
       {dailyHadith && !search && (
-        <div className="glass-elevated f3" style={{
+        <div className="glass-elevated f3 hadithv2-feature" style={{
           padding: 'var(--sp-5)', marginBottom: 'var(--sp-4)',
           borderLeft: '4px solid var(--gold-400)',
         }}>
@@ -114,7 +114,7 @@ export default function HadithPage({ onOpenCollection }) {
             {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} in Nawawi collection
           </div>
           {searchResults.slice(0, 20).map(h => (
-            <div key={h.id} className="glass-card" style={{ padding: 'var(--sp-4)', marginBottom: 'var(--sp-2)' }}>
+            <div key={h.id} className="glass-card hadithv2-card hadithv2-search-card" style={{ padding: 'var(--sp-4)', marginBottom: 'var(--sp-2)', position: 'relative' }}>
               <div className="arabic-text" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--emerald-700)', marginBottom: 'var(--sp-2)', lineHeight: 1.9 }}>
                 {h.arabic}
               </div>
@@ -132,7 +132,7 @@ export default function HadithPage({ onOpenCollection }) {
             {/* Saved/Bookmarks card */}
             <div
               onClick={() => onOpenCollection && onOpenCollection('_saved')}
-              className="glass-card pressable"
+              className="glass-card pressable hadithv2-library-card"
               style={{ padding: '18px 14px', textAlign: 'center', marginBottom: 0, position: 'relative', overflow: 'hidden' }}
             >
               <div style={{ marginBottom: 'var(--sp-2)' }}>
@@ -154,7 +154,7 @@ export default function HadithPage({ onOpenCollection }) {
                 <div
                   key={c.id}
                   onClick={() => onOpenCollection && onOpenCollection(c.id)}
-                  className="glass-card pressable"
+                  className="glass-card pressable hadithv2-library-card"
                   style={{ padding: '18px 14px', textAlign: 'center', marginBottom: 0, position: 'relative', overflow: 'hidden' }}
                 >
                   {/* Watermark */}

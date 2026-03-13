@@ -835,7 +835,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           </div>
           <button
             onClick={() => setShowCollections(!showCollections)}
-            className="pressable"
+            className="pressable quranv2-collections-btn"
             style={{
               background: showCollections ? 'var(--emerald-500)' : 'var(--bg-glass)',
               border: `1.5px solid ${showCollections ? 'var(--emerald-500)' : 'var(--border)'}`,
@@ -856,7 +856,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         {!isSearching && lastRead && SURAH_TEXT[lastRead.surah] && (
           <div
             onClick={() => { setTargetAyah(lastRead.ayah); openSurah(lastRead.surah); }}
-            className="glass-dark pressable"
+            className="glass-dark pressable quran-continue-card"
             style={{
               display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
               background: 'linear-gradient(135deg, var(--emerald-700), var(--emerald-500))',
@@ -1119,13 +1119,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                     {filteredSurahs.map(s => {
                       const hasText = !!SURAH_TEXT[s.n];
                       return (
-                        <div key={s.n} className="glass-card pressable" style={{
+                        <div key={s.n} className="glass-card pressable quranv2-surah-card" style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)',
                           opacity: hasText ? 1 : 0.45, cursor: hasText ? 'pointer' : 'default',
                         }}>
                           <div onClick={() => hasText && openSurah(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1, minWidth: 0 }}>
-                            <div style={{
+                            <div className="quranv2-surah-index" style={{
                               width: 36, height: 36, borderRadius: 'var(--r-sm)', background: 'var(--emerald-50)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontFamily: "'Amiri', serif", fontSize: 'var(--text-base)', fontWeight: 700,
@@ -1134,7 +1134,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                               {s.n}
                             </div>
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{s.nm}</div>
+                              <div className="quranv2-surah-name" style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{s.nm}</div>
                               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 1 }}>
                                 {s.mn} · {s.v} verses · {s.type}
                               </div>
@@ -1144,7 +1144,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                             {hasText && onPlaySurah && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); onPlaySurah(s.n); }}
-                                className="pressable"
+                                className="pressable quranv2-mini-action"
                                 style={{
                                   width: 30, height: 30, borderRadius: 'var(--r-full)', border: '1.5px solid var(--border)',
                                   background: 'var(--bg-glass)', cursor: 'pointer', display: 'flex',
@@ -1155,7 +1155,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                                 <IconPlay size={12} style={{ color: 'var(--emerald-500)' }} />
                               </button>
                             )}
-                            <div className="font-amiri" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
+                            <div className="font-amiri quranv2-surah-ar" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
                               {s.ar}
                             </div>
                           </div>
@@ -1175,7 +1175,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                     <div
                       key={j.juz}
                       onClick={() => openJuz(j.juz)}
-                      className="glass-card pressable"
+                      className="glass-card pressable quranv2-juz-card"
                       style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 0, cursor: 'pointer' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-2)' }}>
@@ -1258,6 +1258,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
       {/* Surah banner */}
       <div className="surah-banner">
+        <div className="font-amiri quranv2-banner-watermark">بِسْمِ اللَّهِ</div>
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.05,
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='0.5'%3E%3Cpolygon points='30,0 60,15 60,45 30,60 0,45 0,15'/%3E%3Cpolygon points='30,8 52,19 52,41 30,52 8,41 8,19'/%3E%3C/g%3E%3C/svg%3E\")",
@@ -1346,7 +1347,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       {/* Bismillah divider */}
       {activeSurah !== 1 && activeSurah !== 9 && (
         <div style={{ padding: 'var(--sp-5) 0 var(--sp-4)' }}>
-          <div className="glass-surface" style={{
+          <div className="glass-surface quranv2-bismillah" style={{
             padding: 'var(--sp-4) var(--sp-3) var(--sp-3)', textAlign: 'center',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>

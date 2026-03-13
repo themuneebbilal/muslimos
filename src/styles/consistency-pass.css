@@ -1,0 +1,571 @@
+.page-title {
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  letter-spacing: 0.4px;
+}
+
+.sub-tab,
+.trans-pill {
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sub-tab.active,
+.trans-pill.active {
+  background: rgba(11,107,79,0.08);
+  color: var(--emerald-700);
+  border-color: rgba(11,107,79,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.search-box,
+.back-btn,
+.glass-card,
+.glass-elevated,
+.glass-surface,
+.dua-card,
+.adhkar-card,
+.category-header,
+.ayah-card,
+.nav-item,
+.audio-bar .ab-btn,
+.reading-controls button,
+.quran-continue-card,
+.morev2-row,
+.hadithv2-card {
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.glass-card.pressable:active,
+.glass-elevated.pressable:active,
+.morev2-row:active,
+.hadithv2-card:active {
+  transform: scale(0.98);
+}
+
+.search-box {
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58));
+  border: 1px solid rgba(255,255,255,0.4);
+  border-top: 1px solid rgba(255,255,255,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.035), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.surah-banner::before,
+.audio-bar::after,
+.reading-controls::after {
+  content: '';
+  position: absolute;
+  top: -36px;
+  right: -36px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.surah-banner .font-amiri:first-of-type::after {
+  content: 'بِسْمِ اللَّهِ';
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  font-size: 2.1rem;
+  color: rgba(255,255,255,0.03);
+  line-height: 1;
+}
+
+.audio-bar {
+  border-top: 1px solid rgba(255,255,255,0.11);
+}
+
+.reading-controls {
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.14);
+}
+
+.ayah-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.035), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.ayah-card.active {
+  background: linear-gradient(145deg, rgba(201,168,76,0.07) 0%, rgba(255,255,255,0.62) 100%);
+}
+
+.dua-card-v2 .dua-translation {
+  font-style: italic;
+}
+
+.worshipv2-tasbeeh-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.worshipv2-tasbeeh-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='.4'%3E%3Cpolygon points='36,0 72,18 72,54 36,72 0,54 0,18'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  opacity: 0.025;
+  pointer-events: none;
+}
+
+.worshipv2-tap-btn {
+  box-shadow: 0 10px 28px rgba(11,107,79,0.35), 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.24) !important;
+}
+
+.worshipv2-tap-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 5px 14px rgba(11,107,79,0.22), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+}
+
+.worshipv2-reset-btn {
+  text-decoration: none !important;
+}
+
+.worshipv2-reset-btn:hover {
+  color: var(--emerald-500) !important;
+}
+
+.morev2-row-title {
+  font-family: 'Amiri', serif;
+  color: var(--emerald-700);
+  font-weight: 700;
+}
+
+.morev2-section-title {
+  font-family: 'Amiri', serif;
+  color: var(--emerald-700) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+}
+
+.morev2-choice {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58)) !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  border-top: 1px solid rgba(255,255,255,0.6) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.035), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.morev2-choice.is-active {
+  background: linear-gradient(145deg, rgba(232,245,240,0.96), rgba(255,255,255,0.64)) !important;
+  border-color: rgba(11,107,79,0.16) !important;
+  box-shadow: 0 8px 22px rgba(11,107,79,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.morev2-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.morev2-icon-emerald {
+  background: linear-gradient(135deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04));
+  border: 1px solid rgba(11,107,79,0.1);
+}
+
+.morev2-icon-gold {
+  background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.06));
+  border: 1px solid rgba(201,168,76,0.12);
+}
+
+.morev2-icon-danger {
+  background: linear-gradient(135deg, rgba(192,57,43,0.12), rgba(192,57,43,0.04));
+  border: 1px solid rgba(192,57,43,0.1);
+}
+
+.qibla-page {
+  padding-bottom: var(--sp-5);
+}
+
+.qibla-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 28px 20px 26px;
+  text-align: center;
+}
+
+.qibla-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='.4'%3E%3Cpolygon points='36,0 72,18 72,54 36,72 0,54 0,18'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  opacity: 0.022;
+  pointer-events: none;
+}
+
+.qibla-shell-watermark {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  font-family: 'Amiri', serif;
+  font-size: 2.2rem;
+  color: rgba(11,107,79,0.05);
+}
+
+.qibla-orbit {
+  position: relative;
+  width: 264px;
+  height: 264px;
+  margin: 0 auto 22px;
+  display: grid;
+  place-items: center;
+}
+
+.qibla-orbit-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(11,107,79,0.08);
+}
+
+.qibla-orbit-ring-a { inset: 0; }
+.qibla-orbit-ring-b { inset: 22px; border-style: dashed; }
+
+.qibla-compass {
+  position: relative;
+  width: 244px;
+  height: 244px;
+  border-radius: 50%;
+  transform-origin: center;
+}
+
+.qibla-compass::before {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  border: 1px dashed rgba(201,168,76,0.18);
+}
+
+.qibla-north {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Amiri', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--emerald-700);
+}
+
+.qibla-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 92px;
+  background: linear-gradient(to top, transparent 0%, var(--emerald-500) 55%, var(--gold-400) 100%);
+  transform-origin: bottom center;
+  border-radius: 999px;
+  filter: drop-shadow(0 2px 8px rgba(11,107,79,0.24));
+}
+
+.qibla-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--emerald-700);
+  transform: translate(-50%, -50%);
+  border: 3px solid rgba(255,255,255,0.9);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.qibla-kaaba {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  font-size: 1.45rem;
+  transform-origin: 50% 106px;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.14));
+}
+
+.qibla-degree {
+  font-family: 'Amiri', serif;
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: var(--emerald-700);
+  line-height: 1;
+}
+
+.qibla-sub,
+.qibla-location,
+.qibla-copy {
+  color: var(--text-tertiary);
+}
+
+.qibla-sub {
+  margin-top: 6px;
+  font-size: var(--text-sm);
+}
+
+.qibla-location {
+  margin-top: 8px;
+  font-size: var(--text-xs);
+}
+
+.qibla-cta,
+.qibla-status {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04));
+  border: 1px solid rgba(11,107,79,0.1);
+  color: var(--emerald-600);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.qibla-cta {
+  cursor: pointer;
+}
+
+.qibla-copy {
+  max-width: 32ch;
+  margin: 20px auto 0;
+  line-height: 1.6;
+  font-size: 0.78rem;
+}
+
+.hadithv2-header .font-amiri,
+.hadithv2-info strong,
+.hadithv2-card .arabic-text {
+  font-family: 'Amiri', serif;
+}
+
+.hadithv2-feature,
+.hadithv2-library-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.hadithv2-feature::before,
+.hadithv2-library-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%230B6B4F' stroke-width='.35'%3E%3Cpolygon points='36,0 72,18 72,54 36,72 0,54 0,18'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  opacity: 0.025;
+  pointer-events: none;
+}
+
+.hadithv2-feature::after {
+  content: 'حَدِيث';
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font-family: 'Amiri', serif;
+  font-size: 2rem;
+  color: rgba(11,107,79,0.045);
+  pointer-events: none;
+}
+
+.hadithv2-library-card .font-amiri {
+  font-family: 'Amiri', serif;
+}
+
+.hadithv2-search-card .arabic-text,
+.hadithv2-library-card .font-amiri:first-of-type {
+  color: var(--gold-500) !important;
+}
+
+.hadithv2-card {
+  overflow: hidden;
+}
+
+.hadithv2-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.22), transparent);
+}
+
+.hadithv2-number {
+  background: linear-gradient(135deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04)) !important;
+  border: 1px solid rgba(11,107,79,0.1);
+}
+
+.hadithv2-chapter {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: var(--r-full);
+  background: linear-gradient(145deg, rgba(201,168,76,0.15), rgba(201,168,76,0.06));
+  border: 1px solid rgba(201,168,76,0.12);
+}
+
+.hadithv2-grade {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  background: linear-gradient(145deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04));
+  border: 1px solid rgba(11,107,79,0.1);
+}
+
+.hadithv2-download {
+  background: linear-gradient(145deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04)) !important;
+  border: 1px solid rgba(11,107,79,0.1) !important;
+}
+
+.quranv2-collections-btn {
+  background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.06)) !important;
+  border: 1px solid rgba(201,168,76,0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.quran-continue-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.quran-continue-card::before,
+.quranv2-surah-card::before,
+.quranv2-juz-card::before,
+.quranv2-bismillah::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='.4'%3E%3Cpolygon points='36,0 72,18 72,54 36,72 0,54 0,18'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  opacity: 0.025;
+  pointer-events: none;
+}
+
+.quran-continue-card::after {
+  content: 'ٱقْرَأْ';
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  font-family: 'Amiri', serif;
+  font-size: 2rem;
+  color: rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+
+.quranv2-surah-card,
+.quranv2-juz-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.quranv2-surah-card:hover,
+.quranv2-juz-card:hover {
+  box-shadow: 0 10px 24px rgba(11,107,79,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.quranv2-surah-index,
+.quranv2-juz-card > div:first-child > div:first-child {
+  background: linear-gradient(135deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04)) !important;
+  border: 1px solid rgba(11,107,79,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.quranv2-surah-name {
+  font-family: 'Amiri', serif;
+  color: var(--emerald-700);
+  font-size: 1.08rem !important;
+}
+
+.quranv2-surah-ar {
+  color: var(--gold-500) !important;
+}
+
+.quranv2-mini-action {
+  background: linear-gradient(135deg, rgba(11,107,79,0.12), rgba(11,107,79,0.04)) !important;
+  border: 1px solid rgba(11,107,79,0.12) !important;
+}
+
+.quranv2-banner-watermark {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  font-size: 2.1rem;
+  color: rgba(255,255,255,0.04);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.quranv2-bismillah {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(201,168,76,0.12);
+}
+
+.quranv2-bismillah::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 24px;
+  height: 24px;
+  border-top: 1px solid rgba(201,168,76,0.16);
+  border-left: 1px solid rgba(201,168,76,0.16);
+}
+
+.worshipv2-adhkar-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.worshipv2-adhkar-card.is-done {
+  border-color: rgba(201,168,76,0.18);
+  box-shadow: 0 8px 20px rgba(201,168,76,0.07), inset 0 1px 0 rgba(255,255,255,0.55);
+}
+
+.worshipv2-adhkar-card.is-done .arabic-text,
+.worshipv2-adhkar-card.is-done .adhkar-progress-fill {
+  color: var(--gold-500);
+  background: linear-gradient(90deg, var(--emerald-500), var(--gold-400));
+}
+
+.worshipv2-adhkar-check {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(145deg, rgba(201,168,76,0.15), rgba(201,168,76,0.06));
+  border: 1px solid rgba(201,168,76,0.12);
+  color: var(--gold-500);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .qibla-orbit {
+    width: 236px;
+    height: 236px;
+  }
+
+  .qibla-compass {
+    width: 216px;
+    height: 216px;
+  }
+
+  .qibla-kaaba {
+    transform-origin: 50% 94px;
+  }
+}
