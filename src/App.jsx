@@ -21,6 +21,21 @@ const Qibla = lazy(() => import('./components/Qibla'));
 const JournalPage = lazy(() => import('./components/JournalPage'));
 const IslamicCalendarPage = lazy(() => import('./components/IslamicCalendarPage'));
 
+// Preload all lazy chunks after initial render so navigation is instant
+function preloadAllChunks() {
+  import('./components/QuranReader');
+  import('./components/Worship');
+  import('./components/HadithPage');
+  import('./components/HadithCollection');
+  import('./components/LearnPage');
+  import('./components/GuideReader');
+  import('./components/PrayerTimesPage');
+  import('./components/SettingsPage');
+  import('./components/Qibla');
+  import('./components/JournalPage');
+  import('./components/IslamicCalendarPage');
+}
+
 const RECITERS = [
   { id: 'ar.alafasy', name: 'Mishary Rashid Alafasy', ayahBitrate: 128, surahBitrate: 128 },
   { id: 'ar.abdurrahmaansudais', name: 'Abdul Rahman Al-Sudais', ayahBitrate: 64, surahBitrate: null },
@@ -129,6 +144,15 @@ export default function App() {
 
   useEffect(() => {
     return audioManager.subscribe(setAudioState);
+  }, []);
+
+  // Preload all lazy chunks during idle time
+  useEffect(() => {
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(preloadAllChunks);
+    } else {
+      setTimeout(preloadAllChunks, 1500);
+    }
   }, []);
 
   useEffect(() => {
