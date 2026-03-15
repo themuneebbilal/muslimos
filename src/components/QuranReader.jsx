@@ -1503,7 +1503,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       {/* Audio toast */}
       {audioToast && (
         <div style={{
-          position: 'fixed', bottom: 130, left: '50%', transform: 'translateX(-50%)',
+          position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)',
           background: 'rgba(6,74,55,0.92)', color: 'white', padding: '8px 16px',
           borderRadius: 'var(--r-md)', fontSize: 'var(--text-xs)', zIndex: 100,
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
@@ -1615,6 +1615,92 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               Live timing sync unavailable for this reciter right now.
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Sticky reading controls — pins under banner on scroll */}
+      <div className="reading-controls">
+        <div className="reading-controls-row">
+          {/* Left: auto-scroll */}
+          <button
+            onClick={() => setAutoScrollOn(!autoScrollOn)}
+            className="pressable"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', color: 'white',
+              display: 'flex', alignItems: 'center', gap: 3, padding: 4,
+              fontFamily: "'DM Sans', sans-serif", fontSize: '0.62rem', opacity: autoScrollOn ? 1 : 0.5,
+            }}
+          >
+            <IconAutoScroll size={14} />
+            {autoScrollOn && <span style={{ width: 5, height: 5, borderRadius: 'var(--r-full)', background: '#4ADE80', flexShrink: 0 }} />}
+          </button>
+
+          {/* Center: prev | play/pause | next + ayah ref */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <button
+              onPointerDown={handlePrevPointerDown}
+              onPointerUp={handlePrevPointerUp}
+              onPointerCancel={handlePrevPointerUp}
+              className="pressable"
+              style={{
+                width: 30, height: 30, borderRadius: 'var(--r-full)',
+                background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <IconBack size={14} />
+            </button>
+
+            <button
+              onClick={toggleSequentialPlay}
+              className="pressable"
+              style={{
+                width: 38, height: 38, borderRadius: 'var(--r-full)',
+                background: 'white', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'var(--shadow-md)',
+              }}
+            >
+              {playingAyah && isSequential
+                ? <IconPause size={16} style={{ color: 'var(--emerald-700)' }} />
+                : <IconPlay size={16} style={{ color: 'var(--emerald-700)' }} />
+              }
+            </button>
+
+            <button
+              onPointerDown={handleNextPointerDown}
+              onPointerUp={handleNextPointerUp}
+              onPointerCancel={handleNextPointerUp}
+              className="pressable"
+              style={{
+                width: 30, height: 30, borderRadius: 'var(--r-full)',
+                background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <IconForward size={14} />
+            </button>
+
+            {playingRef && (
+              <div className="reading-controls-ref">{playingRef}</div>
+            )}
+          </div>
+
+          {/* Right: speed */}
+          <button
+            onClick={cycleSpeed}
+            className="pressable"
+            style={{
+              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 'var(--r-sm)',
+              cursor: 'pointer', color: 'white', padding: '3px 8px',
+              fontSize: '0.62rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+              display: 'flex', alignItems: 'center', gap: 3,
+            }}
+          >
+            <IconSpeed size={12} /> {playbackSpeed}x
+          </button>
         </div>
       </div>
 
@@ -1900,7 +1986,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       )}
 
       {/* Surah navigation */}
-      <div style={{ display: 'flex', gap: 'var(--sp-2)', margin: 'var(--sp-5) 0 80px' }}>
+      <div style={{ display: 'flex', gap: 'var(--sp-2)', margin: 'var(--sp-5) 0 var(--sp-4)' }}>
         {activeSurah > 1 && SURAH_TEXT[activeSurah - 1] && (
           <button
             onClick={() => { openSurah(activeSurah - 1); window.scrollTo({ top: 0 }); }}
@@ -1933,95 +2019,6 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         )}
       </div>
 
-      {/* Floating reading controls */}
-      <div className="reading-controls">
-        {/* Top row: ayah reference */}
-        {playingRef && (
-          <div className="reading-controls-ref">
-            {playingRef}
-          </div>
-        )}
-        {/* Bottom row: controls */}
-        <div className="reading-controls-row">
-          {/* Left: auto-scroll */}
-          <button
-            onClick={() => setAutoScrollOn(!autoScrollOn)}
-            className="pressable"
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer', color: 'white',
-              display: 'flex', alignItems: 'center', gap: 'var(--sp-1)', padding: 4,
-              fontFamily: "'DM Sans', sans-serif", fontSize: '0.68rem', opacity: autoScrollOn ? 1 : 0.6,
-            }}
-          >
-            <IconAutoScroll size={16} />
-            <span>Scroll</span>
-            {autoScrollOn && <span style={{ width: 6, height: 6, borderRadius: 'var(--r-full)', background: '#4ADE80', flexShrink: 0 }} />}
-          </button>
-
-          {/* Center: prev | play/pause | next */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              onPointerDown={handlePrevPointerDown}
-              onPointerUp={handlePrevPointerUp}
-              onPointerCancel={handlePrevPointerUp}
-              className="pressable"
-              style={{
-                width: 34, height: 34, borderRadius: 'var(--r-full)',
-                background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'white', WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <IconBack size={16} />
-            </button>
-
-            <button
-              onClick={toggleSequentialPlay}
-              className="pressable"
-              style={{
-                width: 44, height: 44, borderRadius: 'var(--r-full)',
-                background: 'white', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: 'var(--shadow-md)',
-              }}
-            >
-              {playingAyah && isSequential
-                ? <IconPause size={18} style={{ color: 'var(--emerald-700)' }} />
-                : <IconPlay size={18} style={{ color: 'var(--emerald-700)' }} />
-              }
-            </button>
-
-            <button
-              onPointerDown={handleNextPointerDown}
-              onPointerUp={handleNextPointerUp}
-              onPointerCancel={handleNextPointerUp}
-              className="pressable"
-              style={{
-                width: 34, height: 34, borderRadius: 'var(--r-full)',
-                background: 'rgba(255,255,255,0.12)', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'white', WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <IconForward size={16} />
-            </button>
-          </div>
-
-          {/* Right: speed */}
-          <button
-            onClick={cycleSpeed}
-            className="pressable"
-            style={{
-              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 'var(--r-sm)',
-              cursor: 'pointer', color: 'white', padding: '4px 10px',
-              fontSize: 'var(--text-xs)', fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-              display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
-            }}
-          >
-            <IconSpeed size={14} /> {playbackSpeed}x
-          </button>
-        </div>
-      </div>
 
       {/* Collection save bottom sheet */}
       {saveToCollectionAyah && (

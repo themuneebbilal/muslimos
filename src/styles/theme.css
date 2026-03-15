@@ -695,29 +695,25 @@ body.dark-mode .karaoke-word.read {
 }
 
 /* ══════════════════════════════════════════════════════
-   READING CONTROLS — Floating
+   READING CONTROLS — Sticky under banner
    ══════════════════════════════════════════════════════ */
 .reading-controls {
-  position: fixed;
-  bottom: calc(56px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 448px;
+  position: sticky;
+  top: 0;
+  z-index: 80;
   background: linear-gradient(135deg, var(--emerald-700) 0%, var(--emerald-500) 50%, var(--emerald-700) 100%);
   backdrop-filter: blur(16px) saturate(1.8);
   -webkit-backdrop-filter: blur(16px) saturate(1.8);
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding: var(--sp-2) var(--sp-5) var(--sp-3);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  padding: var(--sp-2) var(--sp-4);
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  z-index: 80;
+  align-items: center;
+  justify-content: space-between;
   color: white;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.12);
-  position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  margin: 0 calc(-1 * var(--sp-4)) var(--sp-3);
   overflow: hidden;
+  position: relative;
 }
 .reading-controls::before {
   content: '';
@@ -730,14 +726,16 @@ body.dark-mode .karaoke-word.read {
   pointer-events: none;
 }
 .reading-controls-ref {
-  text-align: center;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-family: 'DM Sans', sans-serif;
-  color: rgba(255,255,255,0.7);
-  padding-bottom: var(--sp-1);
+  color: rgba(255,255,255,0.6);
   letter-spacing: 0.3px;
   position: relative;
   z-index: 1;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .reading-controls-row {
   display: flex;
@@ -745,6 +743,7 @@ body.dark-mode .karaoke-word.read {
   justify-content: space-between;
   position: relative;
   z-index: 1;
+  width: 100%;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1646,11 +1645,8 @@ body.dark-mode .category-header {
     border-radius: var(--r-xl);
   }
   .reading-controls {
-    left: calc(72px + 280px + 50%);
-    margin-left: 0;
-    transform: translateX(-50%);
-    max-width: 600px;
-    border-radius: var(--r-lg);
+    margin: 0 0 var(--sp-3);
+    border-radius: 0 0 var(--r-md) var(--r-md);
   }
   .app > .animate-fade-up:has(> .page-title) {
     max-width: 960px;
