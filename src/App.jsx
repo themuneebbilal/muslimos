@@ -1,24 +1,25 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
 import BottomNav from './components/BottomNav';
 import AppDrawer from './components/AppDrawer';
 import HomePage from './components/HomePage';
-import QuranReader from './components/QuranReader';
-import Worship from './components/Worship';
-import HadithPage from './components/HadithPage';
-import HadithCollection from './components/HadithCollection';
-import LearnPage from './components/LearnPage';
-import GuideReader from './components/GuideReader';
-import PrayerTimesPage from './components/PrayerTimesPage';
-import SettingsPage from './components/SettingsPage';
 import AudioPlayer from './components/AudioPlayer';
-import Qibla from './components/Qibla';
-import JournalPage from './components/JournalPage';
-import IslamicCalendarPage from './components/IslamicCalendarPage';
 import { IconHamburger, IconBack } from './components/Icons';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 import audioManager from './utils/audioManager';
 import { getSurahAudioUrl } from './utils/quranAudio';
 import './styles/ritual-pages.css';
+
+const QuranReader = lazy(() => import('./components/QuranReader'));
+const Worship = lazy(() => import('./components/Worship'));
+const HadithPage = lazy(() => import('./components/HadithPage'));
+const HadithCollection = lazy(() => import('./components/HadithCollection'));
+const LearnPage = lazy(() => import('./components/LearnPage'));
+const GuideReader = lazy(() => import('./components/GuideReader'));
+const PrayerTimesPage = lazy(() => import('./components/PrayerTimesPage'));
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const Qibla = lazy(() => import('./components/Qibla'));
+const JournalPage = lazy(() => import('./components/JournalPage'));
+const IslamicCalendarPage = lazy(() => import('./components/IslamicCalendarPage'));
 
 const RECITERS = [
   { id: 'ar.alafasy', name: 'Mishary Rashid Alafasy', ayahBitrate: 128, surahBitrate: 128 },
@@ -26,6 +27,14 @@ const RECITERS = [
   { id: 'ar.abdulbasitmurattal', name: 'Abdul Basit Murattal', ayahBitrate: 64, surahBitrate: 128 },
   { id: 'ar.husary', name: 'Mahmoud Khalil Al-Husary', ayahBitrate: 128, surahBitrate: null },
 ];
+
+function RouteFallback() {
+  return (
+    <div className="animate-fade-up" style={{ padding: 'var(--sp-8) 0', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+      Loading...
+    </div>
+  );
+}
 
 export default function App() {
   const [page, setPage] = useState('home');
@@ -74,7 +83,9 @@ export default function App() {
   const applyTheme = useCallback((mode) => {
     if (mode === 'auto') {
       const times = calculatePrayerTimes(location.lat, location.lng, location.tz, calcMethodIdx);
-      const nowH = new Date().getHours() + new Date().getMinutes() / 60;
+      const now = new Date();
+      const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
+      const nowH = ((utcH + location.tz) % 24 + 24) % 24;
       const ishaH = times.Isha % 24;
       const fajrH = times.Fajr % 24;
       const isDark = nowH >= ishaH || nowH < fajrH;
@@ -330,7 +341,7 @@ export default function App() {
   const hasAudio = (!!audioState.sourceUrl || audioState.isPlaying) && !!audioState.currentSurah;
 
   return (
-    <div className="app" style={{ paddingBottom: hasAudio ? 140 : 100 }}>
+    <div className="app" style={{ paddingBottom: hasAudio ? 'calc(140px + env(safe-area-inset-bottom, 0px))' : 'calc(100px + env(safe-area-inset-bottom, 0px))' }}>
       <AppDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -356,54 +367,58 @@ export default function App() {
       )}
 
       {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} onOpenDrawer={handleOpenDrawer} />}
-      {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
-      {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} ayahAutoplayEnabled={ayahAutoplay} requestedSurahOpen={requestedSurahOpen} />}
-      {page === 'worship' && <Worship />}
-      {page === 'hadith' && !activeCollection && (
-        <HadithPage onOpenCollection={handleOpenCollection} />
-      )}
-      {page === 'hadith' && activeCollection && (
-        <HadithCollection
-          collectionId={activeCollection}
-          onBack={() => { setActiveCollection(null); window.scrollTo({ top: 0 }); }}
-        />
-      )}
-      {page === 'learn' && !activeGuide && (
-        <LearnPage onOpenGuide={handleOpenGuide} onBack={() => handleNavigate('home')} />
-      )}
-      {page === 'learn' && activeGuide && (
-        <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />
-      )}
-      {page === 'qibla' && (
-        <div className="animate-fade-up">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
-            <button className="back-btn" onClick={() => handleNavigate('home')}>
-              <IconBack size={16} />
-            </button>
-            <div className="page-title" style={{ padding: 0 }}>Qibla Direction</div>
-          </div>
-          <Qibla location={location} />
-        </div>
-      )}
-      {page === 'settings' && (
-        <SettingsPage
-          onBack={() => handleNavigate('home')}
-          calcMethodIdx={calcMethodIdx}
-          onToggleCalcMethod={toggleCalcMethod}
-          theme={theme}
-          onThemeChange={handleThemeChange}
-          reciter={reciter}
-          reciters={RECITERS}
-          onReciterChange={handleReciterChange}
-          ayahAutoplay={ayahAutoplay}
-          onAyahAutoplayChange={handleAyahAutoplayChange}
-        />
-      )}
-      {page === 'journal' && (
-        <JournalPage onBack={() => handleNavigate('home')} />
-      )}
-      {page === 'calendar' && (
-        <IslamicCalendarPage location={location} onBack={() => handleNavigate('home')} />
+      {page !== 'home' && (
+        <Suspense fallback={<RouteFallback />}>
+          {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
+          {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} ayahAutoplayEnabled={ayahAutoplay} requestedSurahOpen={requestedSurahOpen} />}
+          {page === 'worship' && <Worship />}
+          {page === 'hadith' && !activeCollection && (
+            <HadithPage onOpenCollection={handleOpenCollection} />
+          )}
+          {page === 'hadith' && activeCollection && (
+            <HadithCollection
+              collectionId={activeCollection}
+              onBack={() => { setActiveCollection(null); window.scrollTo({ top: 0 }); }}
+            />
+          )}
+          {page === 'learn' && !activeGuide && (
+            <LearnPage onOpenGuide={handleOpenGuide} onBack={() => handleNavigate('home')} />
+          )}
+          {page === 'learn' && activeGuide && (
+            <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />
+          )}
+          {page === 'qibla' && (
+            <div className="animate-fade-up">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
+                <button className="back-btn" onClick={() => handleNavigate('home')}>
+                  <IconBack size={16} />
+                </button>
+                <div className="page-title" style={{ padding: 0 }}>Qibla Direction</div>
+              </div>
+              <Qibla location={location} />
+            </div>
+          )}
+          {page === 'settings' && (
+            <SettingsPage
+              onBack={() => handleNavigate('home')}
+              calcMethodIdx={calcMethodIdx}
+              onToggleCalcMethod={toggleCalcMethod}
+              theme={theme}
+              onThemeChange={handleThemeChange}
+              reciter={reciter}
+              reciters={RECITERS}
+              onReciterChange={handleReciterChange}
+              ayahAutoplay={ayahAutoplay}
+              onAyahAutoplayChange={handleAyahAutoplayChange}
+            />
+          )}
+          {page === 'journal' && (
+            <JournalPage onBack={() => handleNavigate('home')} />
+          )}
+          {page === 'calendar' && (
+            <IslamicCalendarPage location={location} onBack={() => handleNavigate('home')} />
+          )}
+        </Suspense>
       )}
       {hasAudio && (
         <AudioPlayer

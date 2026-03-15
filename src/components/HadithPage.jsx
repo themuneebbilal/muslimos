@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
-import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconForward, IconShare } from './Icons';
+import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconForward, IconShare, IconImage } from './Icons';
 import { getCachedCount, hasIncludedHadith, isFullyDownloaded } from '../utils/hadithApi';
+import { shareHadithAsImage } from '../utils/shareImage';
 import HadithFooter from './HadithFooter';
 
 const TIER_STYLES = {
@@ -85,9 +86,14 @@ export default function HadithPage({ onOpenCollection }) {
               <IconStar size={12} style={{ color: 'var(--gold-400)' }} />
               Hadith of the Day
             </div>
-            <button onClick={shareDailyHadith} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }}>
-              <IconShare size={16} />
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+              <button onClick={() => shareHadithAsImage(dailyHadith.arabic, dailyHadith.english, dailyHadith.reference)} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }} title="Share as image">
+                <IconImage size={16} />
+              </button>
+              <button onClick={shareDailyHadith} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }} title="Share as text">
+                <IconShare size={16} />
+              </button>
+            </div>
           </div>
           <div className="arabic-text" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--emerald-700)', marginBottom: 'var(--sp-3)', lineHeight: 2 }}>
             {dailyHadith.arabic}

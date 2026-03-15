@@ -39,11 +39,32 @@ const SURAH_NAME_INDEX = SURAHS_META.map(s => ({
   ...s, nmLower: s.nm.toLowerCase(), mnLower: s.mn.toLowerCase(),
 }));
 
+const ARABIC_LETTER_RE = /[\u0621-\u063A\u0641-\u064A\u066E-\u066F\u0671-\u06D3\u06FA-\u06FF]/;
+
+function tokenizeArabicWords(text) {
+  const tokens = text.trim().split(/\s+/).map((token) => ({
+    token,
+    highlightable: ARABIC_LETTER_RE.test(token),
+  }));
+  const spokenIndices = tokens.reduce((acc, token, index) => {
+    if (token.highlightable) acc.push(index);
+    return acc;
+  }, []);
+  return { tokens, spokenIndices };
+}
+
+function resolveHighlightIndex(spokenIndices, rawIndex) {
+  if (!spokenIndices.length || rawIndex < 0) return -1;
+  if (rawIndex < spokenIndices.length) return spokenIndices[rawIndex];
+  if (rawIndex >= 1 && rawIndex <= spokenIndices.length) return spokenIndices[rawIndex - 1];
+  return -1;
+}
+
 export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', reciters, ayahAutoplayEnabled = true, requestedSurahOpen = null }) {
   const [view, setView] = useState('list');
   const [activeSurah, setActiveSurah] = useState(null);
   const [search, setSearch] = useState('');
-  const [listMode, setListMode] = useState('surahs'); // 'surahs' | 'juz'
+  const [listMode, setListMode] = useState('surahs'); // 'surahs' | 'favorites' | 'juz'
   const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
 
   // Full-text search
@@ -95,6 +116,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
   const [bookmarks, setBookmarks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mos_ayah_bm') || '[]'); } catch { return []; }
+  });
+  const [favoriteSurahs, setFavoriteSurahs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('mos_surah_favorites') || '[]'); } catch { return []; }
   });
 
   // ── Collections state ──
@@ -230,6 +254,10 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       s.nm.toLowerCase().includes(q) || s.mn.toLowerCase().includes(q) || String(s.n).includes(q)
     );
   }, [search]);
+  const filteredFavoriteSurahs = useMemo(
+    () => filteredSurahs.filter((surah) => favoriteSurahs.includes(surah.n)),
+    [filteredSurahs, favoriteSurahs]
+  );
 
   const availableCount = Object.keys(SURAH_TEXT).length;
   const meta = activeSurah ? SURAHS_META.find(s => s.n === activeSurah) : null;
@@ -477,21 +505,21 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       if (surahNum === activeSurah && ayahNum) {
         const abs = getAbsoluteAyahNumber(surahNum, ayahNum);
         const verse = verses.find((item) => item.abs === abs);
-        const words = verse?.ar.trim().split(/\s+/) || [];
+        const { tokens, spokenIndices } = tokenizeArabicWords(verse?.ar || '');
         setPlayingAyah(abs);
 
-        if (verseTiming?.segments?.length && words.length) {
+        if (verseTiming?.segments?.length && spokenIndices.length) {
           const segIdx = findSegmentIndex(verseTiming.segments, positionMs);
           const segment = verseTiming.segments[segIdx];
           const rawWordIndex = Number(segment?.wordIndex);
           const nextIdx = Number.isFinite(rawWordIndex)
-            ? rawWordIndex >= 1 && rawWordIndex <= words.length
+            ? rawWordIndex >= 1 && rawWordIndex <= spokenIndices.length
               ? rawWordIndex - 1
-              : rawWordIndex >= 0 && rawWordIndex < words.length
+              : rawWordIndex >= 0 && rawWordIndex < spokenIndices.length
                 ? rawWordIndex
-                : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0))
-            : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0));
-          setActiveWordIdx(nextIdx);
+                : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(spokenIndices.length - 1, 0))
+            : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(spokenIndices.length - 1, 0));
+          setActiveWordIdx(resolveHighlightIndex(spokenIndices, nextIdx));
         } else {
           setActiveWordIdx(-1);
         }
@@ -506,23 +534,23 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
         return;
       }
       const verse = verses.find((item) => item.abs === audioState.currentAyahAbs);
-      const words = verse?.ar.trim().split(/\s+/) || [];
+      const { spokenIndices } = tokenizeArabicWords(verse?.ar || '');
       const verseTiming = effectiveTimings.find((item) => item.verseKey === audioState.currentVerseKey);
       setPlayingAyah(audioState.currentAyahAbs);
 
-      if (verseTiming?.segments?.length && words.length) {
+      if (verseTiming?.segments?.length && spokenIndices.length) {
         const positionMs = Math.max(0, Math.round(audioState.currentTime * 1000) + verseTiming.timestampFrom);
         const segIdx = findSegmentIndex(verseTiming.segments, positionMs);
         const segment = verseTiming.segments[segIdx];
         const rawWordIndex = Number(segment?.wordIndex);
         const nextIdx = Number.isFinite(rawWordIndex)
-          ? rawWordIndex >= 1 && rawWordIndex <= words.length
+          ? rawWordIndex >= 1 && rawWordIndex <= spokenIndices.length
             ? rawWordIndex - 1
-            : rawWordIndex >= 0 && rawWordIndex < words.length
+            : rawWordIndex >= 0 && rawWordIndex < spokenIndices.length
               ? rawWordIndex
-              : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0))
-          : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(words.length - 1, 0));
-        setActiveWordIdx(nextIdx);
+              : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(spokenIndices.length - 1, 0))
+          : Math.round((segIdx / Math.max(verseTiming.segments.length - 1, 1)) * Math.max(spokenIndices.length - 1, 0));
+        setActiveWordIdx(resolveHighlightIndex(spokenIndices, nextIdx));
       } else {
         setActiveWordIdx(-1);
       }
@@ -991,6 +1019,14 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     setOpenMenu(null);
   }
 
+  function toggleSurahFavorite(surahNum) {
+    const updated = favoriteSurahs.includes(surahNum)
+      ? favoriteSurahs.filter((item) => item !== surahNum)
+      : [...favoriteSurahs, surahNum];
+    setFavoriteSurahs(updated);
+    localStorage.setItem('mos_surah_favorites', JSON.stringify(updated));
+  }
+
   function jumpToAyah() {
     const num = parseInt(jumpVal);
     if (!num || num < 1) return;
@@ -1289,6 +1325,11 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                   style={{ padding: '5px 14px', fontSize: '0.72rem' }}
                 >Surahs</button>
                 <button
+                  className={`trans-pill${listMode === 'favorites' ? ' active' : ''}`}
+                  onClick={() => setListMode('favorites')}
+                  style={{ padding: '5px 14px', fontSize: '0.72rem' }}
+                >Favorites</button>
+                <button
                   className={`trans-pill${listMode === 'juz' ? ' active' : ''}`}
                   onClick={() => setListMode('juz')}
                   style={{ padding: '5px 14px', fontSize: '0.72rem' }}
@@ -1296,7 +1337,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
               </div>
             )}
 
-            {listMode === 'surahs' ? (
+            {listMode === 'surahs' || listMode === 'favorites' ? (
               <>
                 {/* Surah filter (only when not doing full-text search) */}
                 {search || !ftSearch ? (
@@ -1311,8 +1352,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                       />
                     )}
 
-                    {filteredSurahs.map(s => {
+                    {(listMode === 'favorites' ? filteredFavoriteSurahs : filteredSurahs).map(s => {
                       const hasText = !!SURAH_TEXT[s.n];
+                      const isFavoriteSurah = favoriteSurahs.includes(s.n);
                       return (
                         <div key={s.n} className="glass-card pressable quranv2-surah-card" style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1336,6 +1378,21 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                             </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                            {hasText && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleSurahFavorite(s.n); }}
+                                className="pressable quranv2-mini-action"
+                                style={{
+                                  width: 30, height: 30, borderRadius: 'var(--r-full)', border: '1.5px solid var(--border)',
+                                  background: isFavoriteSurah ? 'rgba(201,168,76,0.14)' : 'var(--bg-glass)', cursor: 'pointer', display: 'flex',
+                                  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                  color: isFavoriteSurah ? 'var(--gold-500)' : 'var(--text-tertiary)',
+                                }}
+                                aria-label={`${isFavoriteSurah ? 'Remove' : 'Save'} ${s.nm} ${isFavoriteSurah ? 'from' : 'to'} favorites`}
+                              >
+                                {isFavoriteSurah ? <IconBookmarkFilled size={12} /> : <IconBookmark size={12} />}
+                              </button>
+                            )}
                             {hasText && onPlaySurah && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); onPlaySurah(s.n); }}
@@ -1357,6 +1414,16 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
                         </div>
                       );
                     })}
+                    {listMode === 'favorites' && filteredFavoriteSurahs.length === 0 && (
+                      <div className="glass-card" style={{ padding: 'var(--sp-5)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--sp-1)' }}>
+                          No favorite surahs yet
+                        </div>
+                        <div style={{ fontSize: 'var(--text-xs)' }}>
+                          Tap the bookmark icon on any surah to keep it here for quick access.
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : null}
               </>
@@ -1470,6 +1537,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
             </button>
 
             <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+              <button onClick={() => toggleSurahFavorite(activeSurah)} className="pressable" style={{
+                background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 'var(--r-sm)',
+                cursor: 'pointer', color: 'white', padding: 4, display: 'flex',
+              }} aria-label={`${favoriteSurahs.includes(activeSurah) ? 'Remove from' : 'Save to'} favorite surahs`}>
+                {favoriteSurahs.includes(activeSurah) ? <IconBookmarkFilled size={18} style={{ color: '#f1ddaa' }} /> : <IconBookmark size={18} style={{ color: 'white' }} />}
+              </button>
+
               <button onClick={() => setShowJump(!showJump)} className="pressable" style={{
                 background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 'var(--r-sm)',
                 cursor: 'pointer', color: 'white', padding: '4px 8px', fontSize: '0.68rem',
@@ -1684,13 +1758,13 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
             }}>
               {isActive ? (
                 <>
-                  {v.ar.trim().split(/\s+/).map((word, wi, words) => (
+                  {tokenizeArabicWords(v.ar).tokens.map(({ token, highlightable }, wi, words) => (
                     <span
                       key={wi}
                       ref={wi === activeWordIdx ? (el) => { activeWordElRef.current = el; } : null}
-                      className={`karaoke-word${wi === activeWordIdx ? ' active' : wi < activeWordIdx ? ' read' : ''}`}
+                      className={`karaoke-word${highlightable && wi === activeWordIdx ? ' active' : highlightable && wi < activeWordIdx ? ' read' : ''}`}
                     >
-                      {word}{wi < words.length - 1 ? ' ' : ''}
+                      {token}{wi < words.length - 1 ? ' ' : ''}
                     </span>
                   ))}
                   {' '}{'\uFD3F'}{toArabicNum(v.vn)}{'\uFD3E'}

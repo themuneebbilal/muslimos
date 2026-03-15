@@ -545,7 +545,7 @@ body::after {
    ══════════════════════════════════════════════════════ */
 .audio-bar {
   position: fixed;
-  bottom: 60px;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   left: 0; right: 0;
   background: linear-gradient(135deg, var(--emerald-700) 0%, var(--emerald-500) 50%, var(--emerald-700) 100%);
   backdrop-filter: blur(16px) saturate(1.8);

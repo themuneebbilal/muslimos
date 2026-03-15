@@ -124,22 +124,57 @@ export function formatTime(h) {
   return `${h12}:${mn < 10 ? '0' : ''}${mn} ${ampm}`;
 }
 
-export function getNextPrayer(times) {
+export const PRAYER_WINDOWS = {
+  Fajr: { startKey: 'Fajr', endKey: 'Sunrise' },
+  Sunrise: { startKey: 'Sunrise', endKey: 'Dhuhr' },
+  Dhuhr: { startKey: 'Dhuhr', endKey: 'Asr' },
+  Asr: { startKey: 'Asr', endKey: 'Maghrib' },
+  Maghrib: { startKey: 'Maghrib', endKey: 'Isha' },
+  Isha: { startKey: 'Isha', endKey: 'Fajr' },
+};
+
+function getLocalMinutes(tz) {
   const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const utcMin = now.getUTCHours() * 60 + now.getUTCMinutes() + now.getUTCSeconds() / 60;
+  const offset = typeof tz === 'number' ? tz * 60 : -now.getTimezoneOffset();
+  return ((utcMin + offset) % 1440 + 1440) % 1440;
+}
+
+export function getNextPrayer(times, tz) {
+  const nowMin = getLocalMinutes(tz);
   const prayerNames = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
   for (const name of prayerNames) {
-    const tMin = (times[name] % 24) * 60;
+    const tMin = Math.round((times[name] % 24) * 60);
     if (nowMin < tMin) return { name, time: times[name] };
   }
   // All passed — next is tomorrow's Fajr
   return { name: 'Fajr', time: times.Fajr + 24 };
 }
 
-export function getCountdown(targetHours) {
-  const now = new Date();
-  const nowH = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+export function getCurrentPrayer(times, tz) {
+  const nowMin = getLocalMinutes(tz);
+  const prayerNames = ['Isha', 'Maghrib', 'Asr', 'Dhuhr', 'Fajr'];
+
+  for (const name of prayerNames) {
+    const win = PRAYER_WINDOWS[name];
+    const startMin = Math.round((times[win.startKey] % 24) * 60);
+    let endMin = Math.round((times[win.endKey] % 24) * 60);
+
+    let nNow = nowMin;
+    let nEnd = endMin;
+    if (nEnd <= startMin) nEnd += 1440;
+    if (nNow < startMin) nNow += 1440;
+
+    if (nNow >= startMin && nNow < nEnd) {
+      return { name, time: times[name] };
+    }
+  }
+  return null;
+}
+
+export function getCountdown(targetHours, tz) {
+  const nowH = getLocalMinutes(tz) / 60;
   let diff = targetHours - nowH;
   if (diff < 0) diff += 24;
   const totalSec = Math.floor(diff * 3600);

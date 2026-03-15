@@ -1,3 +1,11 @@
 node_modules
 dist
 .vercel
+android/.gradle
+android/local.properties
+android/app/release
+android/app/debug
+*.jks
+*.keystore
+keystore.properties
+login-credentials.txt

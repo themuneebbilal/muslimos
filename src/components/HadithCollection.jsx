@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
 import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, hasIncludedHadith, isFullyDownloaded, loadAllCached } from '../utils/hadithApi';
-import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck } from './Icons';
+import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck, IconImage } from './Icons';
+import { shareHadithAsImage } from '../utils/shareImage';
 
 function SkeletonCard() {
   return (
@@ -381,6 +382,18 @@ export default function HadithCollection({ collectionId, onBack }) {
                 )}
               </div>
               <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                <button
+                  onClick={() => shareHadithAsImage(h.arabic, h.english, h.reference, lang)}
+                  className="pressable"
+                  style={{
+                    padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
+                    background: 'var(--bg-glass)', fontSize: '0.68rem', color: 'var(--text-tertiary)',
+                    cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                    display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
+                  }}
+                >
+                  <IconImage size={12} /> Image
+                </button>
                 <button
                   onClick={() => shareHadith(h)}
                   className="pressable"

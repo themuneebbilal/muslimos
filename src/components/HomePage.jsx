@@ -18,6 +18,7 @@ import {
   IconHadith,
   IconJournal,
   IconLearn,
+  IconPrayer,
   IconQuran,
   IconWorship,
 } from './Icons';
@@ -66,6 +67,13 @@ const PRAYER_ORDER = [
 ];
 
 const HOME_FOLD_ACTIONS = [
+  {
+    id: 'prayers',
+    title: 'Prayer Times',
+    subtitle: 'See the next prayer, full windows, and daily timings',
+    tone: 'gold',
+    Icon: IconPrayer,
+  },
   {
     id: 'worship',
     title: 'Tasbeeh',
@@ -134,20 +142,20 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
   const [times, setTimes] = useState(() =>
     calculatePrayerTimes(location.lat, location.lng, location.tz, calcMethodIdx)
   );
-  const [nextPrayer, setNextPrayer] = useState(() => getNextPrayer(times));
+  const [nextPrayer, setNextPrayer] = useState(() => getNextPrayer(times, location.tz));
   const [countdown, setCountdown] = useState('--:--:--');
 
   useEffect(() => {
     const prayerTimes = calculatePrayerTimes(location.lat, location.lng, location.tz, calcMethodIdx);
     setTimes(prayerTimes);
-    setNextPrayer(getNextPrayer(prayerTimes));
+    setNextPrayer(getNextPrayer(prayerTimes, location.tz));
   }, [location, calcMethodIdx]);
 
   useEffect(() => {
     if (!nextPrayer.time) return;
-    setCountdown(getCountdown(nextPrayer.time));
+    setCountdown(getCountdown(nextPrayer.time, location.tz));
     const interval = setInterval(() => {
-      setCountdown(getCountdown(nextPrayer.time));
+      setCountdown(getCountdown(nextPrayer.time, location.tz));
     }, 1000);
     return () => clearInterval(interval);
   }, [nextPrayer]);
@@ -156,7 +164,7 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
     const interval = setInterval(() => {
       const prayerTimes = calculatePrayerTimes(location.lat, location.lng, location.tz, calcMethodIdx);
       setTimes(prayerTimes);
-      setNextPrayer(getNextPrayer(prayerTimes));
+      setNextPrayer(getNextPrayer(prayerTimes, location.tz));
     }, 60000);
     return () => clearInterval(interval);
   }, [location, calcMethodIdx]);
@@ -190,14 +198,16 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
   const khatm = useMemo(() => getKhatmData(), []);
   const prayerCompletion = useMemo(() => {
     const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const utcMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const offset = typeof location.tz === 'number' ? location.tz * 60 : -now.getTimezoneOffset();
+    const currentMinutes = ((utcMin + offset) % 1440 + 1440) % 1440;
     const completed = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].filter((name) => {
       const time = times[name];
       if (!time && time !== 0) return false;
       return currentMinutes >= Math.round((time % 24) * 60);
     }).length;
     return { completed, total: 5 };
-  }, [times]);
+  }, [times, location.tz]);
 
   const eidEvent = useMemo(() => {
     const upcoming = getUpcomingEvents(hijriParts.day, hijriParts.month, 8);
