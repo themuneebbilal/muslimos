@@ -6,7 +6,7 @@ import { getAbsoluteAyahNumber, toArabicNum } from '../utils/ayahMapping';
 import { fetchTafseer, TAFSEER_EDITIONS, DEFAULT_TAFSEER, getDefaultTafseerForLang } from '../utils/tafseerApi';
 import { markTodayRead } from '../utils/streakTracker';
 import { markSurahProgress } from '../utils/khatmTracker';
-import { shareAyahAsImage } from '../utils/shareImage';
+import { shareAyahAsImage, shareText } from '../utils/shareImage';
 import audioManager from '../utils/audioManager';
 import { ayahAudioUrl } from '../utils/quranAudio';
 import { findSegmentIndex, findTimingIndex, getSurahTimingData } from '../utils/quranTiming';
@@ -1004,11 +1004,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   async function shareAyah(verse) {
     const t = lang === 'en' ? verse.en : (verse.ur || verse.en);
     const text = `${verse.ar}\n\n"${t}"\n\n-- Quran ${activeSurah}:${verse.vn}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: `Quran ${activeSurah}:${verse.vn}`, text }); } catch {}
-    } else {
-      await copyText(text);
-    }
+    await shareText(text, `Quran ${activeSurah}:${verse.vn}`);
     setOpenMenu(null);
   }
 

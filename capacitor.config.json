@@ -1,0 +1,9 @@
+{
+  "appId": "com.muslimos.app",
+  "appName": "MuslimOS",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

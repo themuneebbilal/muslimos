@@ -1,11 +1,22 @@
 node_modules
 dist
 .vercel
+.DS_Store
+test-results/
+
+# Android build artifacts
 android/.gradle
 android/local.properties
 android/app/release
 android/app/debug
+android/app/build
+
+# Signing
 *.jks
 *.keystore
 keystore.properties
 login-credentials.txt
+
+# Release binaries (built locally, not stored in git)
+playstore/apk/
+playstore/aab/

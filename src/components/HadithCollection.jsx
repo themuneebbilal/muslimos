@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
 import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, hasIncludedHadith, isFullyDownloaded, loadAllCached } from '../utils/hadithApi';
-import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck, IconImage } from './Icons';
-import { shareHadithAsImage } from '../utils/shareImage';
+import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck, IconImage, IconMenu, IconCopy } from './Icons';
+import { shareHadithAsImage, shareText } from '../utils/shareImage';
 
 function SkeletonCard() {
   return (
@@ -163,13 +163,25 @@ export default function HadithCollection({ collectionId, onBack }) {
     localStorage.setItem('mos_bookmarks', JSON.stringify(updated));
   }
 
+  const [openMenu, setOpenMenu] = useState(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!openMenu) return;
+    const close = () => setOpenMenu(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [openMenu]);
+
   async function shareHadith(h) {
-    const text = `${h.arabic}\n\n"${h.english}"\n\n\u2014 ${h.reference}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: h.reference, text }); } catch {}
-    } else {
-      try { await navigator.clipboard.writeText(text); } catch {}
-    }
+    const text = `${h.arabic}\n\n"${h.english}"\n\n— ${h.reference}`;
+    await shareText(text, h.reference);
+    setOpenMenu(null);
+  }
+
+  async function copyHadithText(text) {
+    try { await navigator.clipboard.writeText(text); } catch {}
+    setOpenMenu(null);
   }
 
   async function handleDownload() {
@@ -334,7 +346,7 @@ export default function HadithCollection({ collectionId, onBack }) {
       {displayList.map(h => {
         const isBookmarked = bookmarks.includes(h.id);
         return (
-          <div key={h.id} className="glass-card hadithv2-card" style={{ padding: '18px var(--sp-5)', marginBottom: 'var(--sp-3)', position: 'relative' }}>
+          <div key={h.id} className="glass-card hadithv2-card" style={{ padding: '18px var(--sp-5)', marginBottom: 'var(--sp-3)', position: 'relative', zIndex: openMenu === h.id ? 60 : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
               <div className="hadithv2-number" style={{
                 width: 30, height: 30, borderRadius: 'var(--r-full)', background: 'var(--emerald-50)',
@@ -349,6 +361,23 @@ export default function HadithCollection({ collectionId, onBack }) {
                   <span className="hadithv2-chapter" style={{ fontSize: '0.65rem', color: 'var(--gold-500)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     {h.chapter}
                   </span>
+                )}
+              </div>
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === h.id ? null : h.id); }}
+                  className="pressable"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', color: 'var(--text-tertiary)' }}
+                >
+                  <IconMenu size={18} />
+                </button>
+                {openMenu === h.id && (
+                  <div className="ayah-dropdown" style={{ right: 0, left: 'auto' }} onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => copyHadithText(h.arabic)}><IconCopy size={14} /> Copy Arabic</button>
+                    <button onClick={() => copyHadithText(h.english)}><IconCopy size={14} /> Copy Translation</button>
+                    <button onClick={() => shareHadith(h)}><IconShare size={14} /> Share Text</button>
+                    <button onClick={() => { shareHadithAsImage(h.arabic, h.english, h.reference, lang); setOpenMenu(null); }}><IconImage size={14} /> Share as Image</button>
+                  </div>
                 )}
               </div>
             </div>
@@ -381,45 +410,16 @@ export default function HadithCollection({ collectionId, onBack }) {
                   <span className="hadithv2-grade" style={{ fontSize: '0.6rem', color: 'var(--success)', fontWeight: 600 }}>{h.grade}</span>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-                <button
-                  onClick={() => shareHadithAsImage(h.arabic, h.english, h.reference, lang)}
-                  className="pressable"
-                  style={{
-                    padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-                    background: 'var(--bg-glass)', fontSize: '0.68rem', color: 'var(--text-tertiary)',
-                    cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                    display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
-                  }}
-                >
-                  <IconImage size={12} /> Image
-                </button>
-                <button
-                  onClick={() => shareHadith(h)}
-                  className="pressable"
-                  style={{
-                    padding: '5px 10px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-                    background: 'var(--bg-glass)', fontSize: '0.68rem', color: 'var(--text-tertiary)',
-                    cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                    display: 'flex', alignItems: 'center', gap: 'var(--sp-1)',
-                  }}
-                >
-                  <IconShare size={12} /> Share
-                </button>
-                <button
-                  onClick={() => toggleBookmark(h.id)}
-                  className="pressable"
-                  style={{
-                    width: 30, height: 30, borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-                    background: isBookmarked ? 'var(--danger)' : 'var(--bg-glass)',
-                    color: isBookmarked ? 'white' : 'var(--text-tertiary)',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {isBookmarked ? <IconBookmarkFilled size={14} /> : <IconBookmark size={14} />}
-                </button>
-              </div>
+              <button
+                onClick={() => toggleBookmark(h.id)}
+                className="pressable"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
+                  color: isBookmarked ? 'var(--danger)' : 'var(--text-tertiary)',
+                }}
+              >
+                {isBookmarked ? <IconBookmarkFilled size={16} /> : <IconBookmark size={16} />}
+              </button>
             </div>
           </div>
         );

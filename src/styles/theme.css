@@ -1487,63 +1487,47 @@ body.dark-mode .category-header {
      2. APP SHELL
      ═══════════════════════════════════════ */
   .app {
-    max-width: 1280px;
+    max-width: none;
+    width: min(1440px, calc(100vw - 72px));
     margin-left: 72px;
     margin-right: auto;
     padding: 0 var(--sp-8) var(--sp-8);
   }
 
+  .app-shell-menu {
+    top: calc(20px + env(safe-area-inset-top));
+    right: 24px;
+  }
+
   /* ═══════════════════════════════════════
-     3. HOME PAGE — 12-Column Dashboard Grid
+     3. HOME PAGE
      ═══════════════════════════════════════ */
-  .app > .animate-fade-up:has(> .glass-dark) {
+  .homev2 {
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .homev2-hero-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+    align-items: stretch;
+  }
+
+  .homev2-fold-list {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .homev2-journey {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
     gap: 20px;
     align-items: stretch;
   }
 
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(1),
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(2) {
-    grid-column: 1 / -1;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > .glass-dark {
-    grid-column: 1 / span 8;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > .glass-dark + * {
-    grid-column: 1 / span 8;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) .ornament-divider {
-    display: none;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(6) {
-    grid-column: 9 / span 4;
-    grid-row: 3 / span 2;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(8) {
-    grid-column: 1 / -1;
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 20px !important;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(9) {
-    grid-column: 1 / span 6;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(10) {
-    grid-column: 7 / span 6;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(11) {
-    grid-column: 1 / span 4;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(12) {
-    grid-column: 5 / span 8;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:nth-child(n+13) {
-    grid-column: span 6;
-  }
-  .app > .animate-fade-up:has(> .glass-dark) > *:last-child {
-    grid-column: 1 / -1;
-    text-align: center;
+  .homev2-eid-card,
+  .homev2-journal {
+    height: 100%;
   }
 
   /* ═══════════════════════════════════════
@@ -1648,55 +1632,55 @@ body.dark-mode .category-header {
     margin: 0 0 var(--sp-3);
     border-radius: 0 0 var(--r-md) var(--r-md);
   }
-  .app > .animate-fade-up:has(> .page-title) {
-    max-width: 960px;
+  /* ═══════════════════════════════════════
+     5. PAGE WIDTHS + DESKTOP GRIDS
+     ═══════════════════════════════════════ */
+  .prayer-times-page,
+  .worshipv2,
+  .ritual-page,
+  .learnv3,
+  .hadithv2-page {
+    max-width: 1120px;
+    margin: 0 auto;
   }
 
-  /* ═══════════════════════════════════════
-     5a. LEARN PAGE — 2-Column Grid + Centered Reader
-     ═══════════════════════════════════════ */
-  .guide-page {
-    max-width: 960px;
+  .learnv3-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .guide-page .guide-list {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-3) !important;
-  }
+
   .guide-reader-page {
-    max-width: 680px;
+    max-width: 760px;
     margin: 0 auto;
   }
 
-  /* ═══════════════════════════════════════
-     5. HADITH PAGE — 4-Column Grid
-     ═══════════════════════════════════════ */
-  .app > .animate-fade-up:not(:has(> .glass-dark)) [style*="grid-template-columns"] {
-    grid-template-columns: repeat(4, 1fr) !important;
-  }
-  .app > .animate-fade-up [style*="grid-template-columns: 1fr 1fr"] {
-    grid-template-columns: repeat(4, 1fr) !important;
+  .hadithv2-library-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 
-  /* ═══════════════════════════════════════
-     6. WORSHIP — Centered + Grid
-     ═══════════════════════════════════════ */
-  .glass-elevated {
-    max-width: 480px;
-    margin: 0 auto;
+  .worshipv3-tracker {
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+    align-items: start;
   }
-  .app > .animate-fade-up:has(> .page-title) > div:has(> .category-header) {
+
+  .worshipv3-hero,
+  .worshipv3-chip-row {
+    grid-column: 1 / -1;
+  }
+
+  .worshipv2-tasbeeh-shell {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .ritual-stack {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--sp-3);
   }
-  .app > .animate-fade-up:has(> .page-title) > div:has(> .adhkar-card) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-3);
-  }
-  .app > .animate-fade-up:has(> .page-title) > div:has(> .adhkar-card) .adhkar-card {
-    margin-bottom: 0;
+
+  .ritual-stack > :only-child {
+    grid-column: 1 / -1;
   }
 
   /* ═══════════════════════════════════════

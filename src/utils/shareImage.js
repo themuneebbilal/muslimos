@@ -500,33 +500,135 @@ export async function shareHadithAsImage(arabic, translation, reference, lang = 
 }
 
 // ═══════════════════════════════════════════════
-// SHARED SHARE/DOWNLOAD HELPER
+// CAPACITOR NATIVE HELPERS
+// ═══════════════════════════════════════════════
+
+let _Share, _Filesystem, _Directory;
+const isNative = () => window.Capacitor?.isNativePlatform?.();
+
+async function loadCapPlugins() {
+  if (_Share) return;
+  try {
+    const s = await import('@capacitor/share');
+    const f = await import('@capacitor/filesystem');
+    _Share = s.Share;
+    _Filesystem = f.Filesystem;
+    _Directory = f.Directory;
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════
+// TEXT SHARE HELPER
+// ═══════════════════════════════════════════════
+
+export async function shareText(text, title = '') {
+  if (isNative()) {
+    await loadCapPlugins();
+    if (_Share) {
+      try { await _Share.share({ title, text, dialogTitle: title }); return true; } catch { return false; }
+    }
+  }
+  if (navigator.share) {
+    try { await navigator.share({ title, text }); return true; } catch { return false; }
+  }
+  try { await navigator.clipboard.writeText(text); } catch {}
+  showToast('Copied to clipboard');
+  return true;
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)',
+    padding: '10px 20px', borderRadius: '12px', fontSize: '13px', fontWeight: '600',
+    color: 'white', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+    zIndex: '99999', transition: 'opacity 0.3s',
+  });
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 1800);
+}
+
+// ═══════════════════════════════════════════════
+// NATIVE IMAGE SHARE / SAVE
+// ═══════════════════════════════════════════════
+
+async function nativeShareImage(base64Data, filename, title) {
+  await loadCapPlugins();
+  if (!_Filesystem || !_Share) return false;
+  try {
+    const saved = await _Filesystem.writeFile({
+      path: filename,
+      data: base64Data,
+      directory: _Directory.Cache,
+    });
+    await _Share.share({
+      title,
+      dialogTitle: title,
+      url: saved.uri,
+    });
+    return true;
+  } catch { return false; }
+}
+
+async function nativeSaveImage(base64Data, filename) {
+  await loadCapPlugins();
+  if (!_Filesystem) return false;
+  try {
+    await _Filesystem.writeFile({
+      path: 'Download/' + filename,
+      data: base64Data,
+      directory: _Directory.ExternalStorage,
+      recursive: true,
+    });
+    showToast('Saved to Downloads');
+    return true;
+  } catch {
+    // Fallback: save to cache and notify
+    try {
+      await _Filesystem.writeFile({
+        path: filename,
+        data: base64Data,
+        directory: _Directory.Documents,
+        recursive: true,
+      });
+      showToast('Saved to Documents');
+      return true;
+    } catch { return false; }
+  }
+}
+
+function canvasToBase64(canvas) {
+  return canvas.toDataURL('image/png').split(',')[1];
+}
+
+// ═══════════════════════════════════════════════
+// SHARE CANVAS — native or web
 // ═══════════════════════════════════════════════
 
 function shareCanvas(canvas, filename, title) {
+  const base64 = canvasToBase64(canvas);
+
+  if (isNative()) {
+    // On native, go straight to Android share sheet
+    return nativeShareImage(base64, filename, title);
+  }
+
+  // Web: try navigator.share with file, fallback to download
   return new Promise((resolve) => {
     canvas.toBlob(async (blob) => {
       if (!blob) { resolve(false); return; }
-
       const file = new File([blob], filename, { type: 'image/png' });
-
       if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title });
-          resolve(true);
-          return;
-        } catch { /* fall through to download */ }
+        try { await navigator.share({ files: [file], title }); resolve(true); return; } catch {}
       }
-
       // Fallback: download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showToast('Image saved');
       resolve(true);
     }, 'image/png');
   });

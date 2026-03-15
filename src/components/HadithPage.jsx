@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
-import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconForward, IconShare, IconImage } from './Icons';
+import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconForward, IconShare, IconImage, IconMenu, IconCopy } from './Icons';
 import { getCachedCount, hasIncludedHadith, isFullyDownloaded } from '../utils/hadithApi';
-import { shareHadithAsImage } from '../utils/shareImage';
+import { shareHadithAsImage, shareText } from '../utils/shareImage';
 import HadithFooter from './HadithFooter';
 
 const TIER_STYLES = {
@@ -55,18 +55,30 @@ export default function HadithPage({ onOpenCollection }) {
     return n.toLocaleString();
   }
 
+  const [dailyMenu, setDailyMenu] = useState(false);
+
+  useEffect(() => {
+    if (!dailyMenu) return;
+    const close = () => setDailyMenu(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [dailyMenu]);
+
   async function shareDailyHadith() {
     if (!dailyHadith) return;
-    const text = `${dailyHadith.arabic}\n\n"${dailyHadith.english}"\n\n\u2014 ${dailyHadith.reference}`;
-    if (navigator.share) {
-      try { await navigator.share({ text }); } catch {}
-    } else {
-      try { await navigator.clipboard.writeText(text); } catch {}
-    }
+    const text = `${dailyHadith.arabic}\n\n"${dailyHadith.english}"\n\n— ${dailyHadith.reference}`;
+    await shareText(text, dailyHadith.reference);
+    setDailyMenu(false);
+  }
+
+  async function copyDailyText(field) {
+    const text = field === 'arabic' ? dailyHadith.arabic : dailyHadith.english;
+    try { await navigator.clipboard.writeText(text); } catch {}
+    setDailyMenu(false);
   }
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up hadithv2-page">
       <div className="page-title f1">
         <IconHadith size={22} style={{ color: 'var(--emerald-500)' }} />
         Hadith
@@ -80,19 +92,25 @@ export default function HadithPage({ onOpenCollection }) {
         <div className="glass-elevated f3 hadithv2-feature" style={{
           padding: 'var(--sp-5)', marginBottom: 'var(--sp-4)',
           borderLeft: '4px solid var(--gold-400)',
+          position: 'relative', zIndex: dailyMenu ? 60 : 'auto',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--sp-3)' }}>
             <div className="section-label">
               <IconStar size={12} style={{ color: 'var(--gold-400)' }} />
               Hadith of the Day
             </div>
-            <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-              <button onClick={() => shareHadithAsImage(dailyHadith.arabic, dailyHadith.english, dailyHadith.reference)} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }} title="Share as image">
-                <IconImage size={16} />
+            <div style={{ position: 'relative' }}>
+              <button onClick={(e) => { e.stopPropagation(); setDailyMenu(!dailyMenu); }} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '2px 6px' }}>
+                <IconMenu size={18} />
               </button>
-              <button onClick={shareDailyHadith} className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }} title="Share as text">
-                <IconShare size={16} />
-              </button>
+              {dailyMenu && (
+                <div className="ayah-dropdown" style={{ right: 0, left: 'auto' }} onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => copyDailyText('arabic')}><IconCopy size={14} /> Copy Arabic</button>
+                  <button onClick={() => copyDailyText('english')}><IconCopy size={14} /> Copy Translation</button>
+                  <button onClick={shareDailyHadith}><IconShare size={14} /> Share Text</button>
+                  <button onClick={() => { shareHadithAsImage(dailyHadith.arabic, dailyHadith.english, dailyHadith.reference); setDailyMenu(false); }}><IconImage size={14} /> Share as Image</button>
+                </div>
+              )}
             </div>
           </div>
           <div className="arabic-text" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--emerald-700)', marginBottom: 'var(--sp-3)', lineHeight: 2 }}>
@@ -136,7 +154,7 @@ export default function HadithPage({ onOpenCollection }) {
       {/* Collections grid */}
       {!search && (
         <>
-          <div className="f5" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-4)' }}>
+          <div className="f5 hadithv2-library-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 'var(--sp-4)' }}>
             {/* Saved/Bookmarks card */}
             <div
               onClick={() => onOpenCollection && onOpenCollection('_saved')}
