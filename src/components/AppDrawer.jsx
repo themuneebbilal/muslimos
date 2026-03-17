@@ -41,6 +41,7 @@ export default function AppDrawer({
   activePage,
   onNavigate,
   onOpenGuide,
+  onOpenTajweed,
   onOpenQibla,
   onOpenCalendar,
   onOpenJournal,
@@ -137,7 +138,7 @@ export default function AppDrawer({
         </div>
 
         <div className="appdrawer-section">
-          <div className="appdrawer-label">Learn Islam</div>
+          <div className="appdrawer-label">Learn</div>
           {GUIDES.map((guide) => drawerRow(
             guide.id,
             <IconLearn size={18} />,
@@ -146,6 +147,11 @@ export default function AppDrawer({
             null,
             () => onOpenGuide(guide.id)
           ))}
+        </div>
+
+        <div className="appdrawer-section">
+          <div className="appdrawer-label">Tajweed</div>
+          {drawerRow('tajweed', <IconLearn size={18} />, 'emerald', 'Tajweed', 'Learn Quran pronunciation', onOpenTajweed, activePage === 'tajweed')}
         </div>
 
         <div className="appdrawer-section">

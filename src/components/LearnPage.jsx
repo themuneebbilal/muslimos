@@ -53,7 +53,7 @@ const GUIDE_ICONS = {
   ),
 };
 
-export default function LearnPage({ onOpenGuide, onBack }) {
+export default function LearnPage({ onOpenGuide, onOpenTajweed, onBack }) {
   const progress = useMemo(() => {
     const p = {};
     GUIDES.forEach(g => {
@@ -130,6 +130,27 @@ export default function LearnPage({ onOpenGuide, onBack }) {
       </section>
 
       <div className="learnv3-grid">
+        <button type="button" className="learnv3-card glass-card pressable" onClick={onOpenTajweed}>
+          <div className="learnv3-card-top">
+            <div className="learnv3-card-icon" style={{ background: 'rgba(11,107,79,0.08)', color: 'var(--emerald-600)' }}>
+              {GUIDE_ICONS.star}
+            </div>
+            <div className="learnv3-card-step">New module</div>
+          </div>
+          <div className="learnv3-card-body">
+            <div className="learnv3-card-title-row">
+              <div className="learnv3-card-title font-amiri">Tajweed</div>
+              <div className="learnv3-card-ar font-amiri">تجويد</div>
+            </div>
+            <div className="learnv3-card-desc">Standalone pronunciation training with rule cards, tajweed colors, and verse-by-verse practice.</div>
+          </div>
+          <div className="learnv3-card-footer">
+            <div className="learnv3-card-state">
+              <span>Open tajweed</span>
+              <IconForward size={14} />
+            </div>
+          </div>
+        </button>
         {GUIDES.map((guide, i) => {
           const colors = ICON_COLORS[guide.color] || ICON_COLORS.emerald;
           const icon = GUIDE_ICONS[guide.icon];

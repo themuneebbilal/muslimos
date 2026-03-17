@@ -14,6 +14,7 @@ const Worship = lazy(() => import('./components/Worship'));
 const HadithPage = lazy(() => import('./components/HadithPage'));
 const HadithCollection = lazy(() => import('./components/HadithCollection'));
 const LearnPage = lazy(() => import('./components/LearnPage'));
+const TajweedPage = lazy(() => import('./tajweed/TajweedPage'));
 const GuideReader = lazy(() => import('./components/GuideReader'));
 const PrayerTimesPage = lazy(() => import('./components/PrayerTimesPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
@@ -28,6 +29,7 @@ function preloadAllChunks() {
   import('./components/HadithPage');
   import('./components/HadithCollection');
   import('./components/LearnPage');
+  import('./tajweed/TajweedPage');
   import('./components/GuideReader');
   import('./components/PrayerTimesPage');
   import('./components/SettingsPage');
@@ -52,7 +54,7 @@ function RouteFallback() {
 }
 
 export default function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(() => (window.location.pathname === '/tajweed' ? 'tajweed' : 'home'));
   const [location, setLocation] = useState({
     lat: 31.5204, lng: 74.3587, tz: 5, label: 'Lahore (default)', city: 'Lahore, Pakistan', accuracy: null
   });
@@ -91,8 +93,8 @@ export default function App() {
   useEffect(() => { activeGuideRef.current = activeGuide; }, [activeGuide]);
   useEffect(() => { drawerOpenRef.current = drawerOpen; }, [drawerOpen]);
 
-  const pushHistoryState = useCallback((reason) => {
-    window.history.pushState({ mosApp: true, reason, ts: Date.now() }, '', window.location.href);
+  const pushHistoryState = useCallback((reason, path = window.location.pathname) => {
+    window.history.pushState({ mosApp: true, reason, ts: Date.now() }, '', path);
   }, []);
 
   const applyTheme = useCallback((mode) => {
@@ -160,8 +162,8 @@ export default function App() {
       window.history.replaceState({ mosApp: true, reason: 'root', ts: Date.now() }, '', window.location.href);
     }
 
-    function restoreSentinel(reason) {
-      window.history.pushState({ mosApp: true, reason, ts: Date.now() }, '', window.location.href);
+    function restoreSentinel(reason, path = window.location.pathname) {
+      window.history.pushState({ mosApp: true, reason, ts: Date.now() }, '', path);
     }
 
     function handlePopState() {
@@ -190,7 +192,7 @@ export default function App() {
       if (pageRef.current !== 'home') {
         setPage('home');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        restoreSentinel('home-back');
+        restoreSentinel('home-back', '/');
         return;
       }
 
@@ -202,13 +204,23 @@ export default function App() {
   }, []);
 
   function handleNavigate(newPage) {
+    const targetPath = newPage === 'tajweed' ? '/tajweed' : '/';
     if (newPage !== page || activeCollection || activeGuide || drawerOpen) {
-      pushHistoryState(`page:${newPage}`);
+      pushHistoryState(`page:${newPage}`, targetPath);
     }
     setPage(newPage);
     setActiveCollection(null);
     setActiveGuide(null);
     setDrawerOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleOpenTajweed() {
+    pushHistoryState('page:tajweed', '/tajweed');
+    setDrawerOpen(false);
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setPage('tajweed');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -372,6 +384,7 @@ export default function App() {
         activePage={page}
         onNavigate={handleNavigate}
         onOpenGuide={handleOpenGuide}
+        onOpenTajweed={handleOpenTajweed}
         onOpenQibla={handleOpenQibla}
         onOpenCalendar={handleOpenCalendar}
         onOpenJournal={handleOpenJournal}
@@ -406,11 +419,12 @@ export default function App() {
             />
           )}
           {page === 'learn' && !activeGuide && (
-            <LearnPage onOpenGuide={handleOpenGuide} onBack={() => handleNavigate('home')} />
+            <LearnPage onOpenGuide={handleOpenGuide} onOpenTajweed={handleOpenTajweed} onBack={() => handleNavigate('home')} />
           )}
           {page === 'learn' && activeGuide && (
             <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />
           )}
+          {page === 'tajweed' && <TajweedPage />}
           {page === 'qibla' && (
             <div className="animate-fade-up">
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>

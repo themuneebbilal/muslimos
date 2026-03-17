@@ -600,3 +600,256 @@
     flex-direction: column;
   }
 }
+
+.tajweed-page {
+  padding-bottom: 32px;
+}
+
+.tajweed-hero h2 {
+  margin: 6px 0 4px;
+  font-family: 'Amiri', serif;
+  font-size: 2.2rem;
+}
+
+.tajweed-section {
+  margin-top: 18px;
+}
+
+.tajweed-section-label {
+  color: var(--gold-500);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.tajweed-section h3 {
+  margin: 8px 0 14px;
+  font-family: 'Amiri', serif;
+  font-size: 1.7rem;
+  color: var(--emerald-700);
+}
+
+.tajweed-rules {
+  display: grid;
+  gap: 12px;
+}
+
+.tajweed-rule-card {
+  padding: 18px;
+}
+
+.tajweed-rule-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tajweed-rule-title {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.tajweed-rule-title strong {
+  display: block;
+  color: var(--emerald-700);
+}
+
+.tajweed-rule-card p {
+  margin: 12px 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.tajweed-rule-example {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tajweed-rule-example .font-amiri {
+  font-size: 1.5rem;
+}
+
+.tajweed-rule-example small {
+  color: var(--text-tertiary);
+}
+
+.tajweed-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.tajweed-practice {
+  padding: 18px;
+}
+
+.tajweed-practice-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tajweed-select {
+  max-width: 180px;
+  margin: 0;
+}
+
+.tajweed-legend {
+  margin: 14px 0;
+  padding: 14px;
+}
+
+.tajweed-legend-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  color: var(--emerald-700);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tajweed-legend-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tajweed-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(11,107,79,0.1);
+  background: rgba(255,255,255,0.7);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.tajweed-verse {
+  line-height: 2.3;
+  font-size: 2rem;
+  color: var(--emerald-700);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.tajweed-word-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.tajweed-word-btn .tj-ghunnah { color: #C9A84C; }
+.tajweed-word-btn .tj-ikhfa { color: #0B6B4F; }
+.tajweed-word-btn .tj-idgham { color: #064A37; }
+.tajweed-word-btn .tj-qalqalah { color: #8B7330; }
+.tajweed-word-btn .tj-madd { color: #4A8B6F; }
+.tajweed-word-btn .tj-iqlab { color: #7B8B4A; }
+.tajweed-word-btn .tj-ikhfaShafawi { color: #5B7B6F; }
+.tajweed-word-btn .tj-idghamShafawi { color: #3B6B5F; }
+.tajweed-word-btn .tj-izhar { color: #A88435; }
+
+.tajweed-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.tajweed-nav-btn,
+.tajweed-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(11,107,79,0.12);
+  background: rgba(255,255,255,0.78);
+  color: var(--emerald-700);
+  border-radius: 999px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tajweed-empty {
+  color: var(--text-tertiary);
+  padding: 18px 0;
+}
+
+.tajweed-popup-shell {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 20, 15, 0.28);
+  display: grid;
+  place-items: center;
+  z-index: 120;
+  padding: 20px;
+}
+
+.tajweed-popup {
+  width: min(420px, 100%);
+  padding: 22px;
+  position: relative;
+}
+
+.tajweed-popup-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.tajweed-popup-word {
+  font-size: 2rem;
+  line-height: 1.8;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.tajweed-popup-rule {
+  color: var(--gold-500);
+  font-weight: 700;
+  text-align: center;
+}
+
+.tajweed-popup-translit {
+  text-align: center;
+  color: var(--text-secondary);
+  margin: 8px 0 16px;
+}
+
+@media (max-width: 640px) {
+  .tajweed-practice-head,
+  .tajweed-rule-head,
+  .tajweed-nav {
+    flex-direction: column;
+  }
+
+  .tajweed-select {
+    max-width: 100%;
+  }
+
+  .tajweed-verse {
+    font-size: 1.7rem;
+    gap: 10px;
+  }
+}
