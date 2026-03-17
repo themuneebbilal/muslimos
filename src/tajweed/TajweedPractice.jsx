@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PRACTICE_SURAHS } from './tajweedRulesData';
 import { TAJWEED_COLORS } from './tajweedColors';
-import { fetchTajweedVerse, fetchVerseWords, fetchVerseRecitation, getSegmentForWord, splitTajweedWords } from './tajweedApi';
+import { fetchTajweedVerse, fetchVerseWords, fetchVerseRecitation, getSegmentForWord, mapApiWordsToTajweedWords } from './tajweedApi';
 import TajweedLegend from './TajweedLegend';
 import TajweedWordPopup from './TajweedWordPopup';
 import { IconBack, IconForward } from '../components/Icons';
@@ -42,15 +42,13 @@ export default function TajweedPractice() {
       setLoading(true);
       setError('');
       try {
-        const [html, words] = await Promise.all([
+        const [, words] = await Promise.all([
           fetchTajweedVerse(verseKey),
           fetchVerseWords(verseKey),
         ]);
         if (cancelled) return;
-        const htmlWords = splitTajweedWords(html);
-        const merged = htmlWords.map((item, index) => ({
+        const merged = mapApiWordsToTajweedWords(words).map((item) => ({
           ...item,
-          transliteration: words[index]?.transliteration?.text || words[index]?.transliteration || '',
           ruleText: TAJWEED_COLORS[item.ruleKey]?.arabic || '',
         }));
         setVerseWords(merged);
