@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CALC_METHODS } from '../utils/prayerCalc';
+import { getOfflineStorageUsageBytes, subscribeHadithDownloads } from '../utils/hadithApi';
 import {
   IconBack,
   IconHeart,
@@ -23,6 +24,16 @@ export default function SettingsPage({
   onAyahAutoplayChange,
 }) {
   const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
+  const [offlineUsage, setOfflineUsage] = useState('0.0 MB');
+
+  useEffect(() => {
+    async function loadUsage() {
+      const bytes = await getOfflineStorageUsageBytes();
+      setOfflineUsage(`${(bytes / (1024 * 1024)).toFixed(1)} MB`);
+    }
+    loadUsage();
+    return subscribeHadithDownloads(loadUsage);
+  }, []);
 
   function updateLanguage(nextLang) {
     setLang(nextLang);
@@ -150,6 +161,7 @@ export default function SettingsPage({
 
       <section className="settingsv2-section">
         <div className="settingsv2-section-title">System</div>
+        {settingRow(<IconQuran size={18} />, 'emerald', 'Offline Data', 'Downloaded hadith collections stored on this device', offlineUsage)}
         {settingRow(<IconMoon size={18} />, 'gold', 'Notifications', 'Prayer nudges and reminders', 'Soon')}
         {settingRow(<IconHeart size={18} />, 'emerald', 'About MuslimOS', 'Open Source · Made for the Ummah', 'v2.0')}
       </section>

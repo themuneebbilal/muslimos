@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
-import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, hasIncludedHadith, isFullyDownloaded, loadAllCached } from '../utils/hadithApi';
-import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck, IconImage, IconMenu, IconCopy } from './Icons';
+import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, hasIncludedHadith, isFullyDownloaded, loadAllCached, getCollectionDownloadState, subscribeHadithDownloads, removeOfflineCollection } from '../utils/hadithApi';
+import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck, IconImage, IconMenu, IconCopy, IconDownload, IconTrash } from './Icons';
 import { shareHadithAsImage, shareText } from '../utils/shareImage';
 
 function SkeletonCard() {
@@ -36,6 +36,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   // Download state
   const [downloading, setDownloading] = useState(false);
   const [dlProgress, setDlProgress] = useState({ done: 0, total: 0 });
+  const [downloadTick, setDownloadTick] = useState(0);
 
   const sentinelRef = useRef(null);
   const loadedRef = useRef(false);
@@ -47,55 +48,59 @@ export default function HadithCollection({ collectionId, onBack }) {
   const isNawawi = collectionId === 'nawawi40';
 
   // Get all bookmarked hadith for saved view
-  const allBookmarkedHadith = useMemo(() => {
-    if (!isSaved) return [];
-    // Load from Nawawi + all cached collections
-    const all = [];
-    NAWAWI_DATA.forEach(h => {
-      if (bookmarks.includes(h.id)) all.push(h);
-    });
-    // Also check cached API hadith
-    HADITH_COLLECTIONS.forEach(c => {
-      if (c.bundled) return;
-      const cached = loadAllCached(c.apiName);
-      cached.forEach(apiH => {
-        const mapped = mapApiHadith(apiH, c.id, c.nameEn);
-        if (bookmarks.includes(mapped.id)) all.push(mapped);
-      });
-    });
-    return all;
-  }, [isSaved, bookmarks]);
+  const [savedHadith, setSavedHadith] = useState([]);
 
   // Load data on mount
+  useEffect(() => subscribeHadithDownloads(() => setDownloadTick((tick) => tick + 1)), []);
+
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
+    let cancelled = false;
 
-    if (isSaved) return;
+    async function loadInitial() {
+      if (isSaved) {
+        const all = [];
+        NAWAWI_DATA.forEach(h => {
+          if (bookmarks.includes(h.id)) all.push(h);
+        });
+        for (const c of HADITH_COLLECTIONS) {
+          if (c.bundled) continue;
+          const cached = await loadAllCached(c.id);
+          cached.forEach((apiH) => {
+            const mapped = mapApiHadith(apiH, c.id, c.nameEn);
+            if (bookmarks.includes(mapped.id)) all.push(mapped);
+          });
+        }
+        if (!cancelled) setSavedHadith(all);
+        return;
+      }
 
-    if (isNawawi) {
-      setHadithList(NAWAWI_DATA);
-      setHasMore(false);
-      return;
+      if (isNawawi) {
+        setHadithList(NAWAWI_DATA);
+        setHasMore(false);
+        return;
+      }
+
+      if (collection && (isIncluded || isFullyDownloaded(collection.id))) {
+        const all = await loadAllCached(collection.id);
+        const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
+        if (!cancelled) {
+          setHadithList(mapped);
+          setHasMore(false);
+        }
+        return;
+      }
+
+      if (collection?.apiName) {
+        loadPage(1);
+        fetchChapters(collection.apiName).then((chs) => {
+          if (!cancelled && chs.length > 0) setChapters(chs);
+        });
+      }
     }
 
-    // Local-included or fully-downloaded collection
-    if (collection && (isIncluded || isFullyDownloaded(collection.id))) {
-      const all = loadAllCached(collection.apiName || collection.id);
-      const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
-      setHadithList(mapped);
-      setHasMore(false);
-      return;
-    }
-
-    // Load first page from API
-    if (collection?.apiName) {
-      loadPage(1);
-      fetchChapters(collection.apiName).then(chs => {
-        if (chs.length > 0) setChapters(chs);
-      });
-    }
-  }, [collectionId, isIncluded]);
+    loadInitial();
+    return () => { cancelled = true; };
+  }, [collectionId, isIncluded, isSaved, isNawawi, bookmarks, downloadTick]);
 
   async function loadPage(p) {
     if (loading || !collection?.apiName) return;
@@ -133,7 +138,7 @@ export default function HadithCollection({ collectionId, onBack }) {
 
   // Filter
   const displayList = useMemo(() => {
-    const source = isSaved ? allBookmarkedHadith : hadithList;
+    const source = isSaved ? savedHadith : hadithList;
     let list = source;
     if (chapterFilter !== 'All') {
       list = list.filter(h => h.chapter === chapterFilter);
@@ -147,15 +152,15 @@ export default function HadithCollection({ collectionId, onBack }) {
       );
     }
     return list;
-  }, [isSaved, allBookmarkedHadith, hadithList, chapterFilter, search]);
+  }, [isSaved, savedHadith, hadithList, chapterFilter, search]);
 
   // Chapter list from data
   const chapterOptions = useMemo(() => {
     const set = new Set();
-    const source = isSaved ? allBookmarkedHadith : hadithList;
+    const source = isSaved ? savedHadith : hadithList;
     source.forEach(h => { if (h.chapter) set.add(h.chapter); });
     return ['All', ...Array.from(set)];
-  }, [hadithList, allBookmarkedHadith, isSaved]);
+  }, [hadithList, savedHadith, isSaved]);
 
   function toggleBookmark(id) {
     const updated = bookmarks.includes(id) ? bookmarks.filter(b => b !== id) : [...bookmarks, id];
@@ -193,7 +198,7 @@ export default function HadithCollection({ collectionId, onBack }) {
         setDlProgress({ done, total });
       });
       // Reload all data
-      const all = loadAllCached(collection.apiName || collection.id);
+      const all = await loadAllCached(collection.id);
       const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
       setHadithList(mapped);
       setHasMore(false);
@@ -203,7 +208,18 @@ export default function HadithCollection({ collectionId, onBack }) {
     setDownloading(false);
   }
 
-  const cachedCount = collection?.apiName ? getCachedCount(collection.apiName) : (isNawawi ? 42 : 0);
+  async function handleRemoveOffline() {
+    if (!collection || isIncluded || isBundled) return;
+    if (!window.confirm(`Remove offline data for ${collection.nameEn}?`)) return;
+    await removeOfflineCollection(collection.id);
+    setHadithList([]);
+    setHasMore(true);
+    loadedRef.current = false;
+    setDownloadTick((tick) => tick + 1);
+  }
+
+  const currentDownloadState = collection ? getCollectionDownloadState(collection.id) : null;
+  const cachedCount = collection ? getCachedCount(collection.id) : (isNawawi ? 42 : 0);
   const fullyDownloaded = collection ? (isBundled || isIncluded || isFullyDownloaded(collection.id)) : false;
 
   return (
@@ -268,9 +284,29 @@ export default function HadithCollection({ collectionId, onBack }) {
                 cursor: downloading ? 'default' : 'pointer',
                 fontFamily: "'DM Sans', sans-serif",
                 opacity: downloading ? 0.7 : 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              {downloading ? `${dlProgress.done} / ${dlProgress.total}` : 'Download All'}
+              <IconDownload size={12} />
+              {downloading ? `${dlProgress.done} / ${dlProgress.total}` : currentDownloadState?.status === 'error' ? 'Resume Download' : 'Download All'}
+            </button>
+          )}
+          {!isBundled && fullyDownloaded && !isIncluded && (
+            <button
+              onClick={handleRemoveOffline}
+              className="pressable hadithv2-download"
+              style={{
+                padding: '6px 12px', borderRadius: 'var(--r-sm)',
+                background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.24)',
+                fontSize: '0.68rem', fontWeight: 600, color: 'var(--gold-600)',
+                cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <IconTrash size={12} />
+              Remove Offline Data
             </button>
           )}
         </div>

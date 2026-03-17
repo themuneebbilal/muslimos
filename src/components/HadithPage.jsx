@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { HADITH_COLLECTIONS } from '../data/hadithCollections';
 import NAWAWI_DATA from '../data/hadith-nawawi.json';
-import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconForward, IconShare, IconImage, IconMenu, IconCopy } from './Icons';
-import { getCachedCount, hasIncludedHadith, isFullyDownloaded } from '../utils/hadithApi';
+import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconShare, IconImage, IconMenu, IconCopy, IconDownload } from './Icons';
+import { getCachedCount, getCollectionDownloadState, hasIncludedHadith, isFullyDownloaded, queueCollectionDownload, subscribeHadithDownloads, getDownloadQueue } from '../utils/hadithApi';
 import { shareHadithAsImage, shareText } from '../utils/shareImage';
 import HadithFooter from './HadithFooter';
 
@@ -14,6 +14,8 @@ const TIER_STYLES = {
 
 export default function HadithPage({ onOpenCollection }) {
   const [search, setSearch] = useState('');
+  const [downloadTick, setDownloadTick] = useState(0);
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
   const [bookmarks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mos_bookmarks') || '[]'); } catch { return []; }
   });
@@ -42,14 +44,15 @@ export default function HadithPage({ onOpenCollection }) {
       } else if (hasIncludedHadith(c.apiName || c.id)) {
         states[c.id] = { status: 'included', cached: getCachedCount(c.apiName || c.id) };
       } else if (isFullyDownloaded(c.id)) {
-        states[c.id] = { status: 'downloaded', cached: getCachedCount(c.apiName) };
+        states[c.id] = { ...getCollectionDownloadState(c.id), status: 'downloaded', cached: getCachedCount(c.id) };
       } else {
-        const count = getCachedCount(c.apiName);
-        states[c.id] = { status: count > 0 ? 'partial' : 'remote', cached: count };
+        const meta = getCollectionDownloadState(c.id);
+        const count = getCachedCount(c.id);
+        states[c.id] = { ...meta, status: meta.status || (count > 0 ? 'partial' : 'remote'), cached: count };
       }
     });
     return states;
-  }, []);
+  }, [downloadTick]);
 
   function formatNum(n) {
     return n.toLocaleString();
@@ -64,6 +67,18 @@ export default function HadithPage({ onOpenCollection }) {
     return () => document.removeEventListener('click', close);
   }, [dailyMenu]);
 
+  useEffect(() => subscribeHadithDownloads(() => setDownloadTick((tick) => tick + 1)), []);
+
+  useEffect(() => {
+    const handle = () => setIsOffline(!navigator.onLine);
+    window.addEventListener('online', handle);
+    window.addEventListener('offline', handle);
+    return () => {
+      window.removeEventListener('online', handle);
+      window.removeEventListener('offline', handle);
+    };
+  }, []);
+
   async function shareDailyHadith() {
     if (!dailyHadith) return;
     const text = `${dailyHadith.arabic}\n\n"${dailyHadith.english}"\n\n— ${dailyHadith.reference}`;
@@ -75,6 +90,23 @@ export default function HadithPage({ onOpenCollection }) {
     const text = field === 'arabic' ? dailyHadith.arabic : dailyHadith.english;
     try { await navigator.clipboard.writeText(text); } catch {}
     setDailyMenu(false);
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes) return '~0 MB';
+    return `~${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function handleDownload(event, collection) {
+    event.stopPropagation();
+    const state = getCollectionDownloadState(collection.id);
+    const total = collection.totalHadith.toLocaleString();
+    const approx = formatBytes(Math.max(state.bytes || 0, collection.totalHadith * 1500));
+    const prompt = state.status === 'error' || state.status === 'queued_resume'
+      ? `Resume download for ${collection.nameEn}? (${total} hadith · ${approx})`
+      : `Download ${collection.nameEn}? (${total} hadith · ${approx})`;
+    if (!window.confirm(prompt)) return;
+    queueCollectionDownload(collection.apiName, collection.id, collection.totalHadith);
   }
 
   return (
@@ -174,15 +206,33 @@ export default function HadithPage({ onOpenCollection }) {
             {HADITH_COLLECTIONS.map(c => {
               const state = collectionStates[c.id] || { status: 'remote', cached: 0 };
               const tier = TIER_STYLES[c.tier] || TIER_STYLES.secondary;
-              const hasCached = state.status === 'bundled' || state.status === 'downloaded' || state.status === 'partial';
+              const queueCount = getDownloadQueue().length;
+              const canOpen = !isOffline || c.bundled || state.status === 'included' || state.status === 'downloaded';
+              const pct = state.totalExpected ? Math.min(100, Math.round(((state.downloadedCount || 0) / state.totalExpected) * 100)) : 0;
 
               return (
                 <div
                   key={c.id}
-                  onClick={() => onOpenCollection && onOpenCollection(c.id)}
-                  className="glass-card pressable hadithv2-library-card"
+                  onClick={() => { if (canOpen) onOpenCollection && onOpenCollection(c.id); }}
+                  className={`glass-card hadithv2-library-card${canOpen ? ' pressable' : ''}`}
                   style={{ padding: '18px 14px', textAlign: 'center', marginBottom: 0, position: 'relative', overflow: 'hidden' }}
                 >
+                  {!c.bundled && state.status === 'downloaded' && (
+                    <div style={{ position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: '999px', background: 'rgba(11,107,79,0.16)', color: 'var(--emerald-600)', display: 'grid', placeItems: 'center', zIndex: 2 }}>
+                      <IconCheck size={12} />
+                    </div>
+                  )}
+
+                  {!c.bundled && !hasIncludedHadith(c.apiName || c.id) && (
+                    <button
+                      type="button"
+                      onClick={(event) => handleDownload(event, c)}
+                      style={{ position: 'absolute', top: 8, left: 8, width: 28, height: 28, borderRadius: '999px', border: '1px solid rgba(11,107,79,0.16)', background: 'rgba(255,255,255,0.82)', color: 'var(--emerald-600)', display: 'grid', placeItems: 'center', zIndex: 2 }}
+                    >
+                      <IconDownload size={14} />
+                    </button>
+                  )}
+
                   {/* Watermark */}
                   <div className="font-amiri" style={{
                     position: 'absolute', top: '50%', left: '50%',
@@ -203,8 +253,8 @@ export default function HadithPage({ onOpenCollection }) {
                     </div>
 
                     {/* Count */}
-                    <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', marginBottom: 'var(--sp-2)' }}>
-                      {formatNum(c.totalHadith)} hadith
+                    <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: state.status === 'downloaded' ? 'var(--emerald-600)' : 'var(--text-tertiary)', marginBottom: 'var(--sp-2)' }}>
+                      {state.status === 'downloaded' ? 'Available Offline' : `${formatNum(c.totalHadith)} hadith`}
                     </div>
 
                     {/* Tier badge */}
@@ -216,20 +266,34 @@ export default function HadithPage({ onOpenCollection }) {
                     </span>
 
                     {/* Status indicator */}
-                    <div style={{ marginTop: 'var(--sp-2)', fontSize: '0.6rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-1)' }}>
+                    <div style={{ marginTop: 'var(--sp-2)', fontSize: '0.6rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-1)', minHeight: 16 }}>
                       {(state.status === 'bundled' || state.status === 'downloaded') && (
                         <><IconCheck size={10} style={{ color: 'var(--success)' }} /> Available offline</>
                       )}
                       {state.status === 'included' && (
                         <><IconCheck size={10} style={{ color: 'var(--success)' }} /> {state.cached} included in app</>
                       )}
+                      {(state.status === 'queued' || state.status === 'queued_resume') && (
+                        <>Queued · {Math.max(queueCount - 1, 0)} remaining</>
+                      )}
+                      {state.status === 'downloading' && (
+                        <>Downloading... {(state.downloadedCount || 0).toLocaleString()} / {c.totalHadith.toLocaleString()} · {pct}%</>
+                      )}
+                      {state.status === 'error' && (
+                        <>Resume download</>
+                      )}
                       {state.status === 'partial' && (
-                        <>{state.cached} cached</>
+                        <>{state.cached} cached locally</>
                       )}
                       {state.status === 'remote' && (
-                        <>Tap to browse</>
+                        <>{isOffline ? 'Download required' : 'Tap to browse'}</>
                       )}
                     </div>
+                    {state.status === 'downloading' && (
+                      <div style={{ marginTop: 'var(--sp-2)', height: 5, borderRadius: 999, background: 'rgba(11,107,79,0.08)', overflow: 'hidden', boxShadow: '0 0 10px rgba(11,107,79,0.08)' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, var(--emerald-500), var(--gold-400))', boxShadow: '0 0 12px rgba(201,168,76,0.35)' }} />
+                      </div>
+                    )}
                   </div>
                 </div>
               );

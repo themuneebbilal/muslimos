@@ -124,6 +124,14 @@ export const IconCopy = (p) => (
   </I>
 );
 
+export const IconDownload = (p) => (
+  <I {...p}>
+    <path d="M12 3v11"/>
+    <path d="M7 10l5 5 5-5"/>
+    <path d="M4 21h16"/>
+  </I>
+);
+
 export const IconMenu = (p) => (
   <I {...p}>
     <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none"/>
