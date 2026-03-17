@@ -1,0 +1,218 @@
+/* Performance profile: keep the visual direction, reduce compositor cost. */
+
+.glass-card,
+.g-card,
+.card,
+.search-box,
+.ayah-card,
+.dua-card,
+.dua-card-v2,
+.adhkar-card,
+.hadithv2-card,
+.appdrawer-user-card,
+.appdrawer-search,
+.appdrawer-nav-chip,
+.quran-sidebar,
+.bottom-nav,
+.audio-bar {
+  backdrop-filter: blur(12px) saturate(1.18);
+  -webkit-backdrop-filter: blur(12px) saturate(1.18);
+}
+
+.glass-elevated,
+.g-elevated,
+.appdrawer {
+  backdrop-filter: blur(16px) saturate(1.22);
+  -webkit-backdrop-filter: blur(16px) saturate(1.22);
+}
+
+.glass-surface,
+.glass-input {
+  backdrop-filter: blur(5px) saturate(1.08);
+  -webkit-backdrop-filter: blur(5px) saturate(1.08);
+}
+
+.glass-dark,
+.reading-controls {
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+}
+
+.glass-card,
+.g-card,
+.card,
+.glass-elevated,
+.g-elevated,
+.hadithv2-card,
+.ayah-card,
+.bottom-nav,
+.appdrawer {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.glass-dark,
+.audio-bar,
+.reading-controls {
+  box-shadow: 0 8px 24px rgba(6, 74, 55, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+@supports (content-visibility: auto) {
+  .homev2 > section,
+  .ritual-page > section,
+  .ritual-stack > *,
+  .settingsv2-section,
+  .learnv3 > section,
+  .learnv3-grid > *,
+  .worshipv3-tracker > *,
+  .prayer-cards-grid > *,
+  .hadithv2-library-grid > *,
+  .hadithv2-card,
+  .dua-card-v2,
+  .ayah-card {
+    content-visibility: auto;
+    contain: layout style paint;
+    contain-intrinsic-size: 320px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root.lite-effects body {
+  background-attachment: scroll;
+}
+
+:root.lite-effects body::before {
+  background-size: 84px 84px;
+  opacity: 0.014;
+}
+
+:root.lite-effects body::after {
+  opacity: 0.01;
+}
+
+:root.lite-effects .glass-card,
+:root.lite-effects .g-card,
+:root.lite-effects .card,
+:root.lite-effects .search-box,
+:root.lite-effects .ayah-card,
+:root.lite-effects .dua-card,
+:root.lite-effects .dua-card-v2,
+:root.lite-effects .adhkar-card,
+:root.lite-effects .hadithv2-card,
+:root.lite-effects .appdrawer-nav-chip,
+:root.lite-effects .bottom-nav,
+:root.lite-effects .audio-bar {
+  backdrop-filter: blur(8px) saturate(1.08);
+  -webkit-backdrop-filter: blur(8px) saturate(1.08);
+}
+
+:root.lite-effects .glass-elevated,
+:root.lite-effects .g-elevated,
+:root.lite-effects .appdrawer,
+:root.lite-effects .quran-sidebar {
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+
+:root.lite-effects .glass-surface,
+:root.lite-effects .glass-input {
+  backdrop-filter: blur(3px) saturate(1.02);
+  -webkit-backdrop-filter: blur(3px) saturate(1.02);
+}
+
+:root.lite-effects .glass-dark,
+:root.lite-effects .reading-controls {
+  backdrop-filter: blur(8px) saturate(1.15);
+  -webkit-backdrop-filter: blur(8px) saturate(1.15);
+}
+
+:root.lite-effects .glass-card,
+:root.lite-effects .g-card,
+:root.lite-effects .card,
+:root.lite-effects .glass-elevated,
+:root.lite-effects .g-elevated,
+:root.lite-effects .hadithv2-card,
+:root.lite-effects .ayah-card,
+:root.lite-effects .bottom-nav,
+:root.lite-effects .appdrawer,
+:root.lite-effects .audio-bar,
+:root.lite-effects .reading-controls {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+:root.lite-effects .glass-dark::before,
+:root.lite-effects .glass-dark::after,
+:root.lite-effects .homev2-emerald-surface::before,
+:root.lite-effects .homev2-emerald-surface::after,
+:root.lite-effects .worshipv2-tasbeeh-shell::before,
+:root.lite-effects .surah-banner::before,
+:root.lite-effects .audio-bar::after,
+:root.lite-effects .reading-controls::after {
+  opacity: 0.35;
+}
+
+:root.lite-effects .homev2-gold-dot,
+:root.lite-effects .worshipv2-tap-btn,
+:root.lite-effects .homev2-thin-progress > span,
+:root.lite-effects .homev2-quran-progress > span {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+:root.lite-effects .animate-fade-up,
+:root.lite-effects .animate-spring,
+:root.lite-effects .f1,
+:root.lite-effects .f2,
+:root.lite-effects .f3,
+:root.lite-effects .f4,
+:root.lite-effects .f5,
+:root.lite-effects .f6,
+:root.lite-effects .f7,
+:root.lite-effects .f8,
+:root.lite-effects .f9,
+:root.lite-effects .f10,
+:root.lite-effects .f11,
+:root.lite-effects .f12,
+:root.lite-effects .homev2-header,
+:root.lite-effects .homev2-ramadan,
+:root.lite-effects .homev2-hero-grid,
+:root.lite-effects .homev2-fold,
+:root.lite-effects .homev2-path,
+:root.lite-effects .homev2-journey,
+:root.lite-effects .homev2-footer,
+:root.lite-effects .skeleton {
+  animation: none !important;
+}
+
+:root.lite-effects .pressable,
+:root.lite-effects .sub-tab,
+:root.lite-effects .trans-pill,
+:root.lite-effects .nav-item,
+:root.lite-effects .morev2-row,
+:root.lite-effects .hadithv2-card {
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease !important;
+}
+
+:root.lite-effects .card:hover,
+:root.lite-effects .glass-card.pressable:hover,
+:root.lite-effects .g-card.pressable:hover,
+:root.lite-effects .glass-dark.pressable:hover,
+:root.lite-effects .dua-card:hover,
+:root.lite-effects .adhkar-card:hover,
+:root.lite-effects .ayah-card:hover,
+:root.lite-effects .category-header:hover {
+  transform: none !important;
+}

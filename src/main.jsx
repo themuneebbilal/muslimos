@@ -1,12 +1,27 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles/theme.css';
 import './styles/consistency-pass.css';
 import './styles/drawer.css';
+import './styles/performance.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+function applyRuntimePerformanceProfile() {
+  const root = document.documentElement;
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  const narrowViewport = window.matchMedia?.('(max-width: 820px)').matches ?? false;
+  const saveData = navigator.connection?.saveData ?? false;
+  const lowMemory = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4;
+  const lowCpu = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4;
+  const liteEffects = prefersReducedMotion || saveData || lowMemory || lowCpu || (coarsePointer && narrowViewport);
+
+  root.classList.toggle('lite-effects', liteEffects);
+  root.classList.toggle('reduced-motion', prefersReducedMotion);
+}
+
+applyRuntimePerformanceProfile();
+window.addEventListener('resize', applyRuntimePerformanceProfile, { passive: true });
+window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change', applyRuntimePerformanceProfile);
+window.matchMedia?.('(pointer: coarse)').addEventListener?.('change', applyRuntimePerformanceProfile);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);

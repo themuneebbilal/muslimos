@@ -21,15 +21,11 @@ const Qibla = lazy(() => import('./components/Qibla'));
 const JournalPage = lazy(() => import('./components/JournalPage'));
 const IslamicCalendarPage = lazy(() => import('./components/IslamicCalendarPage'));
 
-// Preload all lazy chunks after initial render so navigation is instant
-function preloadAllChunks() {
-  import('./components/QuranReader');
+// Keep common pages warm, but avoid dragging the heaviest screens into startup.
+function preloadCommonChunks() {
   import('./components/Worship');
   import('./components/HadithPage');
-  import('./components/HadithCollection');
   import('./components/LearnPage');
-  import('./components/GuideReader');
-  import('./components/PrayerTimesPage');
   import('./components/SettingsPage');
   import('./components/Qibla');
   import('./components/JournalPage');
@@ -146,13 +142,17 @@ export default function App() {
     return audioManager.subscribe(setAudioState);
   }, []);
 
-  // Preload all lazy chunks during idle time
+  // Warm common routes only when the device profile can afford it.
   useEffect(() => {
+    if (document.documentElement.classList.contains('lite-effects') || navigator.connection?.saveData) return undefined;
+
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(preloadAllChunks);
-    } else {
-      setTimeout(preloadAllChunks, 1500);
+      const id = window.requestIdleCallback(preloadCommonChunks, { timeout: 2500 });
+      return () => window.cancelIdleCallback?.(id);
     }
+
+    const timeoutId = window.setTimeout(preloadCommonChunks, 2500);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {

@@ -13,31 +13,50 @@ import { findSegmentIndex, findTimingIndex, getSurahTimingData } from '../utils/
 import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch, IconImage, IconHeart } from './Icons';
 import HadithFooter from './HadithFooter';
 
-// Build search index once on module load
-const SEARCH_INDEX = [];
-for (const surahNum of Object.keys(SURAH_TEXT)) {
-  const s = parseInt(surahNum);
-  const text = SURAH_TEXT[s];
-  const meta = SURAHS_META.find(m => m.n === s);
-  if (!text || !meta) continue;
-  for (let i = 0; i < text.e.length; i++) {
-    SEARCH_INDEX.push({
-      surah: s, ayah: i + 1,
-      en: text.e[i].toLowerCase(),
-      ur: (text.u?.[i] || '').toLowerCase(),
-      ar: text.a[i],
-      enRaw: text.e[i],
-      urRaw: text.u?.[i] || '',
-      arRaw: text.a[i],
-      name: meta.nm, nameAr: meta.ar,
-      abs: getAbsoluteAyahNumber(s, i + 1),
-    });
+let searchIndexCache = null;
+let surahNameIndexCache = null;
+
+function getSurahNameIndex() {
+  if (!surahNameIndexCache) {
+    surahNameIndexCache = SURAHS_META.map((surah) => ({
+      ...surah,
+      nmLower: surah.nm.toLowerCase(),
+      mnLower: surah.mn.toLowerCase(),
+    }));
   }
+  return surahNameIndexCache;
 }
-// Also index surah names for search
-const SURAH_NAME_INDEX = SURAHS_META.map(s => ({
-  ...s, nmLower: s.nm.toLowerCase(), mnLower: s.mn.toLowerCase(),
-}));
+
+function getSearchIndex() {
+  if (searchIndexCache) return searchIndexCache;
+
+  const index = [];
+  for (const surahNum of Object.keys(SURAH_TEXT)) {
+    const surah = parseInt(surahNum, 10);
+    const text = SURAH_TEXT[surah];
+    const meta = SURAHS_META.find((item) => item.n === surah);
+    if (!text || !meta) continue;
+
+    for (let i = 0; i < text.e.length; i += 1) {
+      index.push({
+        surah,
+        ayah: i + 1,
+        en: text.e[i].toLowerCase(),
+        ur: (text.u?.[i] || '').toLowerCase(),
+        ar: text.a[i],
+        enRaw: text.e[i],
+        urRaw: text.u?.[i] || '',
+        arRaw: text.a[i],
+        name: meta.nm,
+        nameAr: meta.ar,
+        abs: getAbsoluteAyahNumber(surah, i + 1),
+      });
+    }
+  }
+
+  searchIndexCache = index;
+  return searchIndexCache;
+}
 
 const ARABIC_LETTER_RE = /[\u0621-\u063A\u0641-\u064A\u066E-\u066F\u0671-\u06D3\u06FA-\u06FF]/;
 
@@ -288,16 +307,21 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   // Full-text search results
   const ftResults = useMemo(() => {
     if (!ftQuery || ftQuery.length < 3) return [];
+
     const q = ftQuery.toLowerCase();
+    const searchIndex = getSearchIndex();
+    const surahNameIndex = getSurahNameIndex();
     const results = [];
-    for (const v of SEARCH_INDEX) {
+
+    for (const v of searchIndex) {
       if (results.length >= 50) break;
       if (v.en.includes(q) || v.ur.includes(q)) results.push(v);
     }
+
     if (results.length < 50) {
-      for (const s of SURAH_NAME_INDEX) {
+      for (const s of surahNameIndex) {
         if (s.nmLower.includes(q) || s.mnLower.includes(q)) {
-          const first = SEARCH_INDEX.find(v => v.surah === s.n && v.ayah === 1);
+          const first = searchIndex.find((v) => v.surah === s.n && v.ayah === 1);
           if (first && !results.find(r => r.surah === first.surah && r.ayah === first.ayah)) {
             results.push(first);
             if (results.length >= 50) break;
