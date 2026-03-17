@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PRACTICE_SURAHS } from './tajweedRulesData';
 import { TAJWEED_COLORS } from './tajweedColors';
-import { fetchTajweedVerse, fetchVerseWords, fetchVerseRecitation, getSegmentForWord, splitTajweedWords } from './tajweedApi';
+import { fetchTajweedVerse, fetchVerseWords, getWordAudioUrl, splitTajweedWords } from './tajweedApi';
 import TajweedLegend from './TajweedLegend';
 import TajweedWordPopup from './TajweedWordPopup';
 import { IconBack, IconForward } from '../components/Icons';
@@ -73,21 +73,8 @@ export default function TajweedPractice() {
   const legendItems = useMemo(() => Array.from(new Set(verseWords.map((word) => word.ruleKey))).filter((key) => key !== 'default'), [verseWords]);
 
   function playWord(word) {
-    fetchVerseRecitation(verseKey).then(({ audioUrl, timings }) => {
-      const verseTiming = timings.find((item) => item.verseKey === verseKey);
-      const segment = getSegmentForWord(verseTiming, word.position);
-      const audio = new Audio(audioUrl);
-      if (segment) {
-        audio.currentTime = Math.max(0, segment.timestampFrom / 1000);
-        audio.ontimeupdate = () => {
-          if (audio.currentTime >= segment.timestampTo / 1000) {
-            audio.pause();
-            audio.ontimeupdate = null;
-          }
-        };
-      }
-      audio.play().catch(() => {});
-    }).catch(() => {});
+    const audio = new Audio(getWordAudioUrl(surahId, ayah, word.position));
+    audio.play().catch(() => {});
   }
 
   function jumpToRule(ruleKey) {

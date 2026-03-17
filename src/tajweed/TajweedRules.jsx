@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TAJWEED_RULES } from './tajweedRulesData';
 import { TAJWEED_COLORS } from './tajweedColors';
-import { fetchVerseRecitation, getSegmentForWord } from './tajweedApi';
+import { getWordAudioUrl } from './tajweedApi';
 import { IconPlay } from '../components/Icons';
 
 export default function TajweedRules() {
@@ -10,20 +10,9 @@ export default function TajweedRules() {
   async function playRuleAudio(rule) {
     try {
       if (activeAudio) activeAudio.pause();
-      const { audioUrl, timings } = await fetchVerseRecitation(rule.verseKey);
-      const verseTiming = timings.find((item) => item.verseKey === rule.verseKey);
-      const segment = getSegmentForWord(verseTiming, rule.wordPosition);
-      const audio = new Audio(audioUrl);
+      const [surah, ayah] = rule.verseKey.split(':').map(Number);
+      const audio = new Audio(getWordAudioUrl(surah, ayah, rule.wordPosition));
       setActiveAudio(audio);
-      if (segment) {
-        audio.currentTime = Math.max(0, segment.timestampFrom / 1000);
-        audio.ontimeupdate = () => {
-          if (audio.currentTime >= segment.timestampTo / 1000) {
-            audio.pause();
-            audio.ontimeupdate = null;
-          }
-        };
-      }
       await audio.play();
     } catch {}
   }
