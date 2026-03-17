@@ -37,7 +37,7 @@ export async function fetchVerseWords(verseKey) {
   const cached = readCache(cacheKey);
   if (cached) return cached;
 
-  const response = await fetch(`${API_BASE}/verses/by_key/${verseKey}?words=true&word_fields=text_uthmani,text_uthmani_tajweed,transliteration,location&fields=text_uthmani`);
+  const response = await fetch(`${API_BASE}/verses/by_key/${verseKey}?words=true&word_fields=text_uthmani,transliteration&fields=text_uthmani`);
   if (!response.ok) throw new Error(`Failed to load verse words (${response.status})`);
   const json = await response.json();
   const words = json.verse?.words || [];
@@ -50,10 +50,6 @@ export function transformTajweedHtml(html) {
     const tone = getRuleTone(className);
     return `<span class="tj-mark tj-${tone}" data-rule="${tone}" data-class="${className}">${content}</span>`;
   });
-}
-
-export function transformTajweedWord(html) {
-  return transformTajweedHtml(html || '');
 }
 
 function escapeHtml(text) {
@@ -119,24 +115,6 @@ export function splitTajweedWords(html) {
 
   flushCurrent();
   return words;
-}
-
-export function mapApiWordsToTajweedWords(words) {
-  return words
-    .filter((word) => word?.text_uthmani || word?.text_uthmani_tajweed)
-    .map((word, index) => {
-      const html = transformTajweedWord(word.text_uthmani_tajweed || word.text_uthmani || '');
-      const match = html.match(/data-rule="([^"]+)"/);
-      const location = Number(word.location || index + 1);
-      return {
-        id: `${location}`,
-        position: location,
-        html,
-        plainText: word.text_uthmani || '',
-        ruleKey: match?.[1] || 'default',
-        transliteration: word.transliteration?.text || word.transliteration || '',
-      };
-    });
 }
 
 export function getWordAudioUrl(surah, ayah, wordPosition, reciter = DEFAULT_RECITER) {

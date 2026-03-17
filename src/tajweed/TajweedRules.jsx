@@ -1,35 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { TAJWEED_RULES } from './tajweedRulesData';
 import { TAJWEED_COLORS } from './tajweedColors';
-import { fetchVerseRecitation, fetchVerseWords, getSegmentForWord, mapApiWordsToTajweedWords } from './tajweedApi';
+import { fetchVerseRecitation, getSegmentForWord } from './tajweedApi';
 import { IconPlay } from '../components/Icons';
 
 export default function TajweedRules() {
   const [activeAudio, setActiveAudio] = useState(null);
-  const [exampleWords, setExampleWords] = useState({});
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadExamples() {
-      const entries = await Promise.all(TAJWEED_RULES.map(async (rule) => {
-        try {
-          const words = await fetchVerseWords(rule.verseKey);
-          const mapped = mapApiWordsToTajweedWords(words);
-          return [rule.id, mapped.find((word) => word.position === rule.wordPosition) || null];
-        } catch {
-          return [rule.id, null];
-        }
-      }));
-
-      if (!cancelled) {
-        setExampleWords(Object.fromEntries(entries));
-      }
-    }
-
-    loadExamples();
-    return () => { cancelled = true; };
-  }, []);
 
   async function playRuleAudio(rule) {
     try {
@@ -56,7 +32,6 @@ export default function TajweedRules() {
     <section className="tajweed-rules">
       {TAJWEED_RULES.map((rule) => {
         const tone = TAJWEED_COLORS[rule.colorKey];
-        const exampleWord = exampleWords[rule.id];
         return (
           <article key={rule.id} id={`tajweed-rule-${rule.id}`} className="glass-card tajweed-rule-card">
             <div className="tajweed-rule-head">
@@ -74,11 +49,7 @@ export default function TajweedRules() {
             </div>
             <p>{rule.explanation}</p>
             <div className="tajweed-rule-example">
-              {exampleWord ? (
-                <span className="font-amiri" dangerouslySetInnerHTML={{ __html: exampleWord.html }} />
-              ) : (
-                <span className="font-amiri" style={{ color: tone.color }}>{rule.example}</span>
-              )}
+              <span className="font-amiri" style={{ color: tone.color }}>{rule.example}</span>
               <small>{rule.note}</small>
             </div>
           </article>
