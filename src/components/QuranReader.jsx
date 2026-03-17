@@ -604,6 +604,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
   useEffect(() => {
     if (!requestedSurahOpen?.surah) return;
+    if (requestedSurahOpen?.ayah) {
+      setTargetAyah(requestedSurahOpen.ayah);
+    }
     if (view !== 'read' || activeSurah !== requestedSurahOpen.surah) {
       openSurah(requestedSurahOpen.surah);
     }

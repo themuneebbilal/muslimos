@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MORNING_ADHKAR, EVENING_ADHKAR } from '../data/adhkar';
 import DUAS_DATA from '../data/duas';
-import { IconShare, IconBookmark, IconChevronDown, IconSunrise, IconMoon, IconRefresh, IconPrayer, IconShield, IconLeaf, IconHeart, IconDua, IconCalendar, IconJournal, IconLearn } from './Icons';
+import { shareDuaAsImage, shareText } from '../utils/shareImage';
+import { IconShare, IconBookmark, IconChevronDown, IconSunrise, IconMoon, IconRefresh, IconPrayer, IconShield, IconLeaf, IconHeart, IconDua, IconCalendar, IconJournal, IconLearn, IconMenu, IconCopy, IconImage, IconCheck } from './Icons';
 import HadithFooter from './HadithFooter';
 
 const MODES = {
@@ -19,6 +20,15 @@ const CATEGORY_ICONS = {
   daily: IconDua,
   forgiveness: IconHeart,
   distress: IconHeart,
+  travel: IconCalendar,
+  food_drink: IconLeaf,
+  sleep: IconMoon,
+  masjid: IconPrayer,
+  weather: IconSunrise,
+  social: IconHeart,
+  hajj_umrah: IconLearn,
+  istikhara: IconDua,
+  quranic_duas: IconBookmark,
 };
 
 const TRACKER_STORAGE_KEY = 'mos_worship_tracker';
@@ -163,8 +173,45 @@ function getCurrentTrackerStreak(days) {
   return streak;
 }
 
-function DuaCard({ dua }) {
+function formatDuaShareText(dua) {
+  return [
+    dua.arabic,
+    '',
+    dua.transliteration,
+    '',
+    dua.english,
+    '',
+    `Reference: ${dua.source}`,
+  ].filter(Boolean).join('\n');
+}
+
+function DuaCard({ dua, onOpenQuranRef }) {
   const [lang, setLang] = useState('en');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [menuOpen]);
+
+  async function handleShareText() {
+    await shareText(formatDuaShareText(dua), dua.title);
+    setMenuOpen(false);
+  }
+
+  async function handleShareImage() {
+    await shareDuaAsImage(dua.arabic, dua.english, dua.source, lang);
+    setMenuOpen(false);
+  }
+
+  async function handleCopyArabic() {
+    try { await navigator.clipboard.writeText(dua.arabic); } catch {}
+    setMenuOpen(false);
+  }
+
+  const isQuranRef = dua.sourceType === 'quran' && dua.quranRef;
 
   return (
     <div className="dua-card dua-card-v2">
@@ -172,19 +219,30 @@ function DuaCard({ dua }) {
         <div>
           <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{dua.title}</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>{dua.context}</div>
+          {dua.titleAr && (
+            <div className="font-amiri" style={{ fontSize: '0.85rem', color: 'var(--gold-500)', marginTop: 4 }}>
+              {dua.titleAr}
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+        <div style={{ position: 'relative' }}>
           <button
             className="pressable"
-            onClick={() => {
-              const text = `${dua.arabic}\n\n${dua.english}\n\n— ${dua.ref}`;
-              if (navigator.share) navigator.share({ text }).catch(() => {});
-              else navigator.clipboard?.writeText(text);
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((current) => !current);
             }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4 }}
           >
             <IconShare size={16} />
           </button>
+          {menuOpen && (
+            <div className="ayah-dropdown" style={{ right: 0, left: 'auto' }} onClick={(e) => e.stopPropagation()}>
+              <button onClick={handleCopyArabic}><IconCopy size={14} /> Copy Arabic</button>
+              <button onClick={handleShareText}><IconShare size={14} /> Share as Text</button>
+              <button onClick={handleShareImage}><IconImage size={14} /> Share as Image</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,6 +250,10 @@ function DuaCard({ dua }) {
         <div className="arabic-text" style={{ fontSize: 'var(--arabic-base)', color: 'var(--emerald-700)', lineHeight: 2.2 }}>
           {dua.arabic}
         </div>
+      </div>
+
+      <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', lineHeight: 1.7, marginBottom: 'var(--sp-2)' }}>
+        {dua.transliteration}
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-2)' }}>
@@ -211,9 +273,27 @@ function DuaCard({ dua }) {
         {lang === 'en' ? dua.english : dua.urdu}
       </div>
 
-      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--gold-500)', marginTop: 'var(--sp-2)', fontWeight: 500 }}>
-        {dua.ref}
-      </div>
+      <button
+        type="button"
+        onClick={() => {
+          if (isQuranRef) onOpenQuranRef?.(dua.quranRef.surah, dua.quranRef.ayah);
+        }}
+        className={isQuranRef ? 'pressable ref-text' : 'ref-text'}
+        style={{
+          marginTop: 'var(--sp-2)',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          textAlign: 'left',
+          cursor: isQuranRef ? 'pointer' : 'default',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 'var(--sp-1)',
+        }}
+      >
+        <span>{dua.source}</span>
+        {dua.sourceVerified && <IconCheck size={12} style={{ color: 'var(--gold-500)' }} />}
+      </button>
       {dua.note && (
         <div style={{ fontSize: '0.65rem', color: 'var(--danger)', opacity: 0.8, marginTop: 'var(--sp-1)', lineHeight: 1.5, fontStyle: 'italic' }}>
           {dua.note}
@@ -223,7 +303,7 @@ function DuaCard({ dua }) {
   );
 }
 
-function DuaCategory({ cat }) {
+function DuaCategory({ cat, onOpenQuranRef }) {
   const [open, setOpen] = useState(false);
   const CatIcon = CATEGORY_ICONS[cat.id] || IconDua;
 
@@ -244,7 +324,7 @@ function DuaCategory({ cat }) {
       </div>
       {open && (
         <div style={{ paddingLeft: 'var(--sp-2)', paddingTop: 'var(--sp-2)' }} className="animate-fade-up">
-          {cat.duas.map(d => <DuaCard key={d.id} dua={d} />)}
+          {cat.duas.map(d => <DuaCard key={d.id} dua={d} onOpenQuranRef={onOpenQuranRef} />)}
         </div>
       )}
     </div>
@@ -283,7 +363,7 @@ function AdhkarCard({ item, index, onTap, count }) {
   );
 }
 
-export default function Worship() {
+export default function Worship({ onOpenQuranRef }) {
   const [tab, setTab] = useState('tracker');
   const [trackerTab, setTrackerTab] = useState('daily');
   const [mode, setMode] = useState('subhanallah');
@@ -575,7 +655,7 @@ export default function Worship() {
       {tab === 'duas' && (
         <div>
           {DUAS_DATA.map(cat => (
-            <DuaCategory key={cat.id} cat={cat} />
+            <DuaCategory key={cat.id} cat={cat} onOpenQuranRef={onOpenQuranRef} />
           ))}
         </div>
       )}

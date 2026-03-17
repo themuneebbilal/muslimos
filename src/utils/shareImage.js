@@ -499,6 +499,15 @@ export async function shareHadithAsImage(arabic, translation, reference, lang = 
   return shareCanvas(canvas, `hadith-${reference.replace(/[^a-zA-Z0-9]/g, '-')}.png`, reference);
 }
 
+export async function generateDuaImage(arabic, translation, reference, lang = 'en') {
+  return generateHadithImage(arabic, translation, reference, lang);
+}
+
+export async function shareDuaAsImage(arabic, translation, reference, lang = 'en') {
+  const canvas = await generateDuaImage(arabic, translation, reference, lang);
+  return shareCanvas(canvas, `dua-${reference.replace(/[^a-zA-Z0-9]/g, '-')}.png`, reference);
+}
+
 // ═══════════════════════════════════════════════
 // CAPACITOR NATIVE HELPERS
 // ═══════════════════════════════════════════════

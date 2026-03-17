@@ -218,15 +218,15 @@ export default function App() {
     localStorage.setItem('mos_calc', next);
   }
 
-  function openQuranSurah(num, shouldPushHistory = true) {
+  function openQuranSurah(num, shouldPushHistory = true, ayah = null) {
     if (shouldPushHistory && (pageRef.current !== 'quran' || activeCollectionRef.current || activeGuideRef.current || drawerOpenRef.current)) {
-      pushHistoryState(`page:quran:${num}`);
+      pushHistoryState(`page:quran:${num}${ayah ? `:${ayah}` : ''}`);
     }
     setPage('quran');
     setActiveCollection(null);
     setActiveGuide(null);
     setDrawerOpen(false);
-    setRequestedSurahOpen({ surah: num, revision: Date.now() });
+    setRequestedSurahOpen({ surah: num, ayah, revision: Date.now() });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -395,7 +395,7 @@ export default function App() {
         <Suspense fallback={<RouteFallback />}>
           {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
           {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} ayahAutoplayEnabled={ayahAutoplay} requestedSurahOpen={requestedSurahOpen} />}
-          {page === 'worship' && <Worship />}
+          {page === 'worship' && <Worship onOpenQuranRef={(surah, ayah) => openQuranSurah(surah, true, ayah)} />}
           {page === 'hadith' && !activeCollection && (
             <HadithPage onOpenCollection={handleOpenCollection} />
           )}
