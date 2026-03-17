@@ -1519,15 +1519,13 @@ body.dark-mode .category-header {
   }
 
   .homev2-journey {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-    gap: 20px;
-    align-items: stretch;
+    display: block;
   }
 
-  .homev2-eid-card,
-  .homev2-journal {
-    height: 100%;
+  .homev2-journey-layout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr);
+    gap: 26px;
+    align-items: start;
   }
 
   /* ═══════════════════════════════════════

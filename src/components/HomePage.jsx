@@ -439,69 +439,75 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
           <HomeDivider />
         </div>
 
-        <div className="homev2-metrics">
-          <article className="homev2-metric glass-card">
-            <div className="homev2-metric-label">Day Streak</div>
-            <div className="homev2-metric-value">{streak.current}</div>
-            <div className="homev2-metric-sub">days of consistency</div>
-          </article>
+        <div className="homev2-journey-layout">
+          <div className="homev2-journey-main">
+            {eidEvent && (
+              <article className="homev2-eid-card homev2-reveal-7">
+                <HomeIconWrap tone="gold">
+                  <IconCrescent size={20} />
+                </HomeIconWrap>
+                <div>
+                  <div className="homev2-eid-title">{eidEvent.name}</div>
+                  <div className="homev2-eid-ar">{eidEvent.nameAr}</div>
+                  <div className="homev2-eid-copy">in {eidEvent.daysUntil} days</div>
+                </div>
+                <div className="homev2-badge homev2-badge-light">Eid</div>
+              </article>
+            )}
 
-          <article className="homev2-metric glass-card">
-            <div className="homev2-metric-label">Khatm</div>
-            <div className="homev2-ring-wrap">
-              <svg viewBox="0 0 60 60" aria-hidden="true">
-                <circle className="homev2-ring-bg" cx="30" cy="30" r="24" fill="none" strokeWidth="4" />
-                <circle
-                  className="homev2-ring-fill"
-                  cx="30"
-                  cy="30"
-                  r="24"
-                  fill="none"
-                  strokeWidth="4"
-                  strokeDasharray="150.8"
-                  strokeDashoffset={150.8 - (150.8 * khatm.pct) / 100}
-                />
-              </svg>
-              <div className="homev2-ring-text">{khatm.pct}%</div>
-            </div>
-            <div className="homev2-metric-sub">{khatm.completedSurahs} surahs complete</div>
-          </article>
+            <button type="button" className="homev2-journal" onClick={() => onNavigate('journal')}>
+              How was your day? Tap to reflect...
+            </button>
 
-          <article className="homev2-metric glass-card">
-            <div className="homev2-metric-label">Prayers</div>
-            <div className="homev2-metric-value">
-              {prayerCompletion.completed}
-              <span className="homev2-metric-unit">/{prayerCompletion.total}</span>
+            <footer className="homev2-footer homev2-reveal-7">
+              <HomeDivider />
+              <div className="homev2-footer-ar">خَيْرُكُمْ خَيْرُكُمْ لِأَهْلِهِ</div>
+              <div className="homev2-footer-en">"The best of you are those who are best to their families."</div>
+              <div className="homev2-footer-ref">Jami at-Tirmidhi 3895</div>
+            </footer>
+          </div>
+
+          <div className="homev2-journey-side">
+            <div className="homev2-metrics">
+              <article className="homev2-metric glass-card">
+                <div className="homev2-metric-label">Day Streak</div>
+                <div className="homev2-metric-value">{streak.current}</div>
+                <div className="homev2-metric-sub">days of consistency</div>
+              </article>
+
+              <article className="homev2-metric glass-card">
+                <div className="homev2-metric-label">Khatm</div>
+                <div className="homev2-ring-wrap">
+                  <svg viewBox="0 0 60 60" aria-hidden="true">
+                    <circle className="homev2-ring-bg" cx="30" cy="30" r="24" fill="none" strokeWidth="4" />
+                    <circle
+                      className="homev2-ring-fill"
+                      cx="30"
+                      cy="30"
+                      r="24"
+                      fill="none"
+                      strokeWidth="4"
+                      strokeDasharray="150.8"
+                      strokeDashoffset={150.8 - (150.8 * khatm.pct) / 100}
+                    />
+                  </svg>
+                  <div className="homev2-ring-text">{khatm.pct}%</div>
+                </div>
+                <div className="homev2-metric-sub">{khatm.completedSurahs} surahs complete</div>
+              </article>
+
+              <article className="homev2-metric glass-card">
+                <div className="homev2-metric-label">Prayers</div>
+                <div className="homev2-metric-value">
+                  {prayerCompletion.completed}
+                  <span className="homev2-metric-unit">/{prayerCompletion.total}</span>
+                </div>
+                <div className="homev2-metric-sub">completed so far</div>
+              </article>
             </div>
-            <div className="homev2-metric-sub">completed so far</div>
-          </article>
+          </div>
         </div>
-
-        {eidEvent && (
-          <article className="homev2-eid-card homev2-reveal-7">
-            <HomeIconWrap tone="gold">
-              <IconCrescent size={20} />
-            </HomeIconWrap>
-            <div>
-              <div className="homev2-eid-title">{eidEvent.name}</div>
-              <div className="homev2-eid-ar">{eidEvent.nameAr}</div>
-              <div className="homev2-eid-copy">in {eidEvent.daysUntil} days</div>
-            </div>
-            <div className="homev2-badge homev2-badge-light">Eid</div>
-          </article>
-        )}
-
-        <button type="button" className="homev2-journal" onClick={() => onNavigate('journal')}>
-          How was your day? Tap to reflect...
-        </button>
       </section>
-
-      <footer className="homev2-footer homev2-reveal-7">
-        <HomeDivider />
-        <div className="homev2-footer-ar">خَيْرُكُمْ خَيْرُكُمْ لِأَهْلِهِ</div>
-        <div className="homev2-footer-en">"The best of you are those who are best to their families."</div>
-        <div className="homev2-footer-ref">Jami at-Tirmidhi 3895</div>
-      </footer>
     </div>
   );
 }

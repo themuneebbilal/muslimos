@@ -958,6 +958,16 @@
   padding: 24px 0 0;
 }
 
+.homev2-journey-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.homev2-journey-main,
+.homev2-journey-side {
+  min-width: 0;
+}
+
 .homev2-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1096,16 +1106,19 @@
   margin-top: 12px;
   width: 100%;
   border: none;
-  background: transparent;
-  padding: 14px 4px 0;
-  text-align: center;
-  color: rgba(74,74,74,0.45);
+  background: linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.52));
+  border-radius: 18px;
+  padding: 18px 20px;
+  text-align: left;
+  color: rgba(74,74,74,0.62);
   font-size: var(--text-sm);
   cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.44);
+  box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,0.45);
 }
 
 .homev2-footer {
-  padding: 34px 0 16px;
+  padding: 18px 0 16px;
   text-align: center;
 }
 
@@ -1276,5 +1289,21 @@
 
   .homev2-journey {
     padding-top: 28px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .homev2-journey-layout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr);
+    align-items: start;
+    gap: 26px;
+  }
+
+  .homev2-journey-side .homev2-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .homev2-journey-main .homev2-footer {
+    margin-top: 8px;
   }
 }
