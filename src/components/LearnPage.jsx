@@ -6,8 +6,8 @@ import { safeGetItem } from '../utils/safeStorage';
 const ICON_COLORS = {
   emerald: { bg: 'var(--emerald-50)', color: 'var(--emerald-500)' },
   gold: { bg: 'var(--gold-100)', color: 'var(--gold-500)' },
-  blue: { bg: 'rgba(59,130,246,0.1)', color: '#3B82F6' },
-  purple: { bg: 'rgba(139,92,246,0.1)', color: '#8B5CF6' },
+  blue: { bg: 'var(--gold-100)', color: 'var(--gold-500)' },
+  purple: { bg: 'rgba(11,107,79,0.1)', color: 'var(--emerald-600)' },
   gray: { bg: 'var(--bg-secondary)', color: 'var(--text-secondary)' },
 };
 
@@ -74,15 +74,15 @@ export default function LearnPage({ onOpenGuide, onBack }) {
         )}
         <div>
           <div className="page-title" style={{ padding: 0 }}>Learn</div>
-          <div className="page-subtitle" style={{ padding: 0 }}>Reference guides you can return to anytime.</div>
+          <div className="page-subtitle" style={{ padding: 0, color: 'var(--gold-500)' }}>عِلْمٌ نَافِع</div>
         </div>
       </div>
 
       <section className="learnv3-hero settingsv2-panel settingsv2-panel-hero">
         <div className="settingsv2-watermark">عِلْم</div>
         <div className="settingsv2-label">Knowledge Library</div>
-        <h2>Study without the pressure of daily completion.</h2>
-        <p>These guides are meant to be reference material first. Guided progress is available only when you choose it inside a guide.</p>
+        <h2>Guides for practice, revision, and return.</h2>
+        <p>Open any topic like a handbook. Guided progress is there when you want structure, not as the default frame for sacred knowledge.</p>
 
         <div className="learnv3-hero-meta">
           <div className="learnv3-hero-metric">
@@ -102,13 +102,13 @@ export default function LearnPage({ onOpenGuide, onBack }) {
 
       <section className="learnv3-overview">
         <article className="learnv3-feature glass-card">
-          <div className="learnv3-feature-label">How It Works</div>
+          <div className="learnv3-feature-label">كيف تقرأها</div>
           <div className="learnv3-feature-row">
             <div>
-              <div className="learnv3-feature-title">Open any guide like a handbook</div>
-              <div className="learnv3-feature-copy">Browse freely, jump between sections, and only switch to guided mode if you want a sequential walkthrough.</div>
+              <div className="learnv3-feature-title">Open any guide like a reference companion</div>
+              <div className="learnv3-feature-copy">Move freely between sections, revisit practical steps, and switch to guided mode only when you want a structured walkthrough.</div>
             </div>
-            <div className="learnv3-feature-pill">Perpetual</div>
+            <div className="learnv3-feature-pill">Open-ended</div>
           </div>
         </article>
       </section>
@@ -148,7 +148,7 @@ export default function LearnPage({ onOpenGuide, onBack }) {
 
               <div className="learnv3-card-footer">
                 <div className="learnv3-card-state">
-                  <span>{lastStep ? `Last viewed section ${lastStep}` : 'Open reference guide'}</span>
+                  <span>{lastStep ? `Last viewed section ${lastStep}` : 'Open guide'}</span>
                   <IconForward size={14} />
                 </div>
               </div>

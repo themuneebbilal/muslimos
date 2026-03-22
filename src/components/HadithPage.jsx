@@ -314,18 +314,11 @@ export default function HadithPage({ onOpenCollection }) {
                         type="button"
                         onClick={(event) => handleDownload(event, c)}
                         disabled={state.status === 'downloading' || state.status === 'queued' || state.status === 'queued_resume'}
+                        className={`hadithv2-download hadithv2-download-block${state.status === 'error' ? ' hadithv2-download-gold' : ''}`}
                         style={{
                           marginTop: 'var(--sp-3)',
                           width: '100%',
-                          borderRadius: 999,
-                          border: '1px solid rgba(11,107,79,0.16)',
-                          background: state.status === 'error'
-                            ? 'rgba(201,168,76,0.12)'
-                            : 'rgba(11,107,79,0.08)',
-                          color: state.status === 'error' ? 'var(--gold-600)' : 'var(--emerald-600)',
                           padding: '8px 10px',
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
                           opacity: state.status === 'queued' || state.status === 'queued_resume' ? 0.7 : 1,
                         }}
                       >

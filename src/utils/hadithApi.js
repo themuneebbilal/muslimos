@@ -341,7 +341,7 @@ async function fetchRemotePage(collection, page = 1, limit = 20) {
 }
 
 export async function fetchHadith(collection, page = 1, limit = 20) {
-  if (hasIncludedHadith(collection)) {
+  if (!navigator.onLine && hasIncludedHadith(collection)) {
     return localHadithPage(collection, page, limit);
   }
 
@@ -366,7 +366,7 @@ export async function fetchHadith(collection, page = 1, limit = 20) {
 
 export async function fetchChapters(collection) {
   const localCollection = getLocalCollection(collection);
-  if (localCollection) return localCollection.chapters || [];
+  if (!navigator.onLine && localCollection) return localCollection.chapters || [];
 
   const cacheKey = `${CHAPTER_CACHE_PREFIX}${collection}`;
   const cached = safeGetJSON(cacheKey, null);

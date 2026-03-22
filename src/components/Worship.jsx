@@ -115,6 +115,30 @@ function getSuggestedDuas(period) {
   return DUAS_DATA.filter((category) => categories.includes(category.id)).flatMap((category) => category.duas).slice(0, 4);
 }
 
+function WorshipSectionHeader({ arabic, english, detail = null, action = null, centered = false }) {
+  return (
+    <div style={{ marginBottom: 'var(--sp-3)', textAlign: centered ? 'center' : 'left' }}>
+      <div style={{ display: 'flex', alignItems: centered ? 'center' : 'flex-end', justifyContent: centered ? 'center' : 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div className="font-amiri" style={{ color: 'var(--gold-500)', fontSize: centered ? '2rem' : '1.55rem', lineHeight: 1, marginBottom: 6 }}>
+            {arabic}
+          </div>
+          <div style={{ color: 'var(--emerald-700)', fontFamily: "'Amiri', serif", fontSize: centered ? '1.5rem' : '1.1rem', fontWeight: 700 }}>
+            {english}
+          </div>
+          {detail && <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{detail}</div>}
+        </div>
+        {action}
+      </div>
+      <div style={{ width: centered ? 132 : 116, margin: centered ? '14px auto 0' : '12px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.55), transparent)' }} />
+        <span style={{ width: 7, height: 7, background: 'var(--gold-400)', transform: 'rotate(45deg)', opacity: 0.72 }} />
+        <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.55), transparent)' }} />
+      </div>
+    </div>
+  );
+}
+
 function WorshipAdhkarCard({ item, count, onCount }) {
   const [lang, setLang] = useState('en');
   const target = parseCount(item.c);
@@ -125,7 +149,7 @@ function WorshipAdhkarCard({ item, count, onCount }) {
     <div
       role="button"
       tabIndex={0}
-      className="glass-card"
+      className={`adhkar-card worshipv2-adhkar-card${complete ? ' is-done' : ''}`}
       onClick={onCount}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -133,44 +157,43 @@ function WorshipAdhkarCard({ item, count, onCount }) {
           onCount();
         }
       }}
-      style={{
-        padding: 'var(--sp-4)',
-        marginBottom: 'var(--sp-3)',
-        textAlign: 'left',
-        position: 'relative',
-        overflow: 'hidden',
-        opacity: complete ? 0.78 : 1,
-        background: `linear-gradient(90deg, rgba(11,107,79,${0.08 + (pct / 100) * 0.16}), rgba(255,255,255,0.72))`,
-      }}
+      style={{ position: 'relative', overflow: 'hidden', opacity: complete ? 0.86 : 1 }}
     >
-      <div className="arabic-text" style={{ fontSize: '1.1rem', color: 'var(--emerald-700)', lineHeight: 1.9, marginBottom: 'var(--sp-2)' }}>{item.a}</div>
+      <div className="dua-arabic-block" style={{ marginTop: 0, marginBottom: 'var(--sp-3)' }}>
+        <div className="arabic-text" style={{ fontSize: '1.08rem', color: 'var(--emerald-700)', lineHeight: 1.9 }}>{item.a}</div>
+      </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--sp-2)' }}>
         <button type="button" className={`trans-pill${lang === 'en' ? ' active' : ''}`} onClick={(event) => { event.stopPropagation(); setLang('en'); }}>English</button>
         <button type="button" className={`trans-pill${lang === 'ur' ? ' active' : ''}`} onClick={(event) => { event.stopPropagation(); setLang('ur'); }}>Urdu</button>
       </div>
       <div style={{ color: 'var(--text-secondary)', lineHeight: 1.65 }}>{lang === 'ur' ? item.ur : item.en}</div>
+      <div className="adhkar-progress">
+        <div className="adhkar-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--sp-3)' }}>
-        <div style={{ color: 'var(--gold-500)', fontSize: '0.8rem' }}>{count} / {target}</div>
+        <div style={{ color: 'var(--gold-500)', fontSize: '0.78rem', fontWeight: 700 }}>{count} / {target}</div>
         <div style={{ color: 'var(--gold-500)', fontSize: '0.72rem' }}>{item.source}</div>
       </div>
-      {complete && <div style={{ position: 'absolute', top: 12, right: 12, color: 'var(--gold-500)' }}><IconCheck size={16} /></div>}
+      {complete && <div className="worshipv2-adhkar-check" style={{ position: 'absolute', top: 16, right: 16 }}><IconCheck size={12} /></div>}
     </div>
   );
 }
 
 function DuaPreviewCard({ dua, isFavorite, onToggleFavorite, onOpenQuranRef }) {
   return (
-    <article className="glass-card" style={{ padding: 'var(--sp-4)', marginBottom: 'var(--sp-3)' }}>
+    <article className="dua-card" style={{ marginBottom: 'var(--sp-3)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <div style={{ fontWeight: 700, color: 'var(--emerald-700)' }}>{dua.title}</div>
+          <div className="font-amiri" style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--emerald-700)' }}>{dua.title}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: 2 }}>{dua.context}</div>
         </div>
         <button type="button" onClick={() => onToggleFavorite(dua.id)} style={{ border: 0, background: 'none', color: 'var(--gold-500)' }}>
           {isFavorite ? <IconBookmarkFilled size={18} /> : <IconBookmark size={18} />}
         </button>
       </div>
-      <div className="arabic-text" style={{ fontSize: '1.05rem', color: 'var(--emerald-700)', lineHeight: 2, marginTop: 'var(--sp-3)' }}>{dua.arabic}</div>
+      <div className="dua-arabic-block">
+        <div className="arabic-text" style={{ fontSize: '1.05rem', color: 'var(--emerald-700)', lineHeight: 2 }}>{dua.arabic}</div>
+      </div>
       <div style={{ color: 'var(--text-secondary)', lineHeight: 1.65, marginTop: 'var(--sp-2)' }}>{dua.english}</div>
       <button type="button" onClick={() => dua.quranRef && onOpenQuranRef?.(dua.quranRef.surah, dua.quranRef.ayah)} style={{ marginTop: 'var(--sp-2)', border: 0, background: 'none', padding: 0, color: 'var(--gold-500)', cursor: dua.quranRef ? 'pointer' : 'default' }}>
         {dua.source}
@@ -238,13 +261,16 @@ export default function Worship({ onOpenQuranRef }) {
   }
 
   return (
-    <div className="animate-fade-up">
-      <div className="page-title" style={{ paddingBottom: 0 }}>Worship</div>
-      <div className="page-subtitle" style={{ color: 'var(--gold-500)' }}>عبادات</div>
-      <div style={{ color: 'var(--text-secondary)', marginBottom: 'var(--sp-4)' }}>{period === 'morning' ? 'Morning Worship' : period === 'evening' ? 'Evening Worship' : 'Night Worship'}</div>
+    <div className="animate-fade-up worshipv2">
+      <WorshipSectionHeader
+        arabic="عبادات"
+        english="Worship"
+        detail={period === 'morning' ? 'Morning worship' : period === 'evening' ? 'Evening worship' : 'Night worship'}
+        centered
+      />
 
       <section
-        className="glass-card"
+        className="glass-card worshipv2-tasbeeh-shell worshipv3-hero"
         onClick={incrementTasbeeh}
         style={{
           padding: 'var(--sp-5)',
@@ -268,14 +294,28 @@ export default function Worship({ onOpenQuranRef }) {
           <div style={{ width: `${tasbeehPct}%`, height: '100%', background: 'linear-gradient(90deg, var(--gold-300), var(--gold-500))' }} />
         </div>
         <div style={{ textAlign: 'center', marginTop: 8, color: 'var(--gold-200)' }}>{tasbeehCount}/{activeMode.target}</div>
+        <div className="worshipv3-hero-stats">
+          <div className="worshipv3-stat">
+            <strong>{tasbeehCount}</strong>
+            <span>Count</span>
+          </div>
+          <div className="worshipv3-stat">
+            <strong>{activeMode.target}</strong>
+            <span>Target</span>
+          </div>
+          <div className="worshipv3-stat">
+            <strong>{tasbeehPct}%</strong>
+            <span>Progress</span>
+          </div>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 'var(--sp-4)' }}>
           {TASBEEH_MODES.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={(event) => { event.stopPropagation(); setMode(item.id); }}
-              className={`ritual-pill${mode === item.id ? ' active' : ''}`}
-              style={mode === item.id ? { background: 'rgba(201,168,76,0.22)', color: 'white' } : { color: 'rgba(255,255,255,0.82)', borderColor: 'rgba(255,255,255,0.12)' }}
+              className={`worshipv3-chip${mode === item.id ? ' active' : ''}`}
+              style={mode === item.id ? undefined : { background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.86)' }}
             >
               {item.label}
             </button>
@@ -283,20 +323,19 @@ export default function Worship({ onOpenQuranRef }) {
         </div>
         <div style={{ marginTop: 'var(--sp-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>Target: {activeMode.target}</div>
-          <button type="button" onClick={(event) => { event.stopPropagation(); setTasbeehCounts((current) => ({ ...current, [mode]: 0 })); }} className="ritual-link-btn" style={{ color: 'var(--gold-200)' }}>Reset</button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); setTasbeehCounts((current) => ({ ...current, [mode]: 0 })); }} className="ritual-link-btn worshipv2-reset-btn" style={{ color: 'var(--gold-200)' }}>Reset</button>
         </div>
       </section>
 
       <section style={{ marginBottom: 'var(--sp-5)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: 'var(--sp-2)' }}>
-          <div>
-            <div className="section-label">{section.title} · {section.arabicTitle}</div>
-            <div style={{ color: 'var(--text-secondary)' }}>{adhkarProgress} of {section.items.length} complete</div>
-          </div>
-          <button type="button" className="ritual-link-btn" onClick={() => setShowAllAdhkar((value) => !value)}>{showAllAdhkar ? 'Focused View' : 'View All Adhkar'}</button>
-        </div>
-        <div style={{ height: 8, borderRadius: 999, background: 'rgba(11,107,79,0.1)', overflow: 'hidden', marginBottom: 'var(--sp-3)' }}>
-          <div style={{ width: `${(adhkarProgress / section.items.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg, var(--emerald-500), var(--gold-400))' }} />
+        <WorshipSectionHeader
+          arabic={section.arabicTitle}
+          english={section.title}
+          detail={`${adhkarProgress} of ${section.items.length} complete`}
+          action={<button type="button" className="ritual-link-btn" onClick={() => setShowAllAdhkar((value) => !value)}>{showAllAdhkar ? 'Focused View' : 'View All Adhkar'}</button>}
+        />
+        <div className="worshipv3-progress-bar" style={{ marginBottom: 'var(--sp-3)' }}>
+          <div className="worshipv3-progress-fill" style={{ width: `${(adhkarProgress / section.items.length) * 100}%` }} />
         </div>
         {(showAllAdhkar ? [
           ...getActiveAdhkarSection('morning').items,
@@ -315,11 +354,11 @@ export default function Worship({ onOpenQuranRef }) {
       <section style={{ marginBottom: 'var(--sp-5)' }}>
         {pinnedDuas.length > 0 && (
           <>
-            <div className="section-label" style={{ marginBottom: 'var(--sp-2)' }}>Pinned Duas</div>
+            <WorshipSectionHeader arabic="المحفوظة" english="Pinned Duas" />
             <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, marginBottom: 'var(--sp-4)' }}>
               {pinnedDuas.map((dua) => (
-                <button key={dua.id} type="button" className="glass-card" onClick={() => setSelectedCategory(DUAS_DATA.find((category) => category.duas.some((item) => item.id === dua.id))?.id || null)} style={{ minWidth: 220, padding: 'var(--sp-3)', textAlign: 'left' }}>
-                  <div style={{ fontWeight: 700, color: 'var(--emerald-700)' }}>{dua.title}</div>
+                <button key={dua.id} type="button" className="dua-card" onClick={() => setSelectedCategory(DUAS_DATA.find((category) => category.duas.some((item) => item.id === dua.id))?.id || null)} style={{ minWidth: 220, padding: 'var(--sp-4)', textAlign: 'left', marginBottom: 0 }}>
+                  <div className="font-amiri" style={{ fontSize: '1.08rem', fontWeight: 700, color: 'var(--emerald-700)' }}>{dua.title}</div>
                   <div className="arabic-text" style={{ marginTop: 6, fontSize: '0.95rem', color: 'var(--emerald-700)' }}>{dua.arabic.slice(0, 46)}...</div>
                 </button>
               ))}
@@ -327,7 +366,7 @@ export default function Worship({ onOpenQuranRef }) {
           </>
         )}
 
-        <div className="section-label" style={{ marginBottom: 'var(--sp-3)' }}>Suggested Now</div>
+        <WorshipSectionHeader arabic="المناسب الآن" english="Suggested Now" />
         {suggestedDuas.map((dua) => (
           <DuaPreviewCard
             key={dua.id}
@@ -338,16 +377,16 @@ export default function Worship({ onOpenQuranRef }) {
           />
         ))}
 
-        <div className="section-label" style={{ margin: 'var(--sp-4) 0 var(--sp-3)' }}>All Categories</div>
+        <WorshipSectionHeader arabic="الفئات" english="All Categories" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {DUAS_DATA.map((category) => {
             const iconMeta = CATEGORY_META[category.id] || { Icon: IconLearn, tone: 'var(--emerald-600)' };
             return (
-              <button key={category.id} type="button" className="glass-card" onClick={() => setSelectedCategory(category.id)} style={{ padding: 'var(--sp-4)', textAlign: 'left', borderColor: activeCategory?.id === category.id ? 'rgba(11,107,79,0.24)' : undefined }}>
+              <button key={category.id} type="button" className="category-header" onClick={() => setSelectedCategory(category.id)} style={{ marginBottom: 0, padding: 'var(--sp-4)', borderColor: activeCategory?.id === category.id ? 'rgba(11,107,79,0.24)' : undefined }}>
                 <div style={{ width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 12, background: 'rgba(11,107,79,0.08)', color: iconMeta.tone, marginBottom: 10 }}>
                   <iconMeta.Icon size={18} />
                 </div>
-                <div style={{ fontWeight: 700, color: 'var(--emerald-700)' }}>{category.title}</div>
+                <div className="font-amiri" style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--emerald-700)' }}>{category.title}</div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{category.duas.length} duas</div>
               </button>
             );
@@ -356,7 +395,7 @@ export default function Worship({ onOpenQuranRef }) {
 
         {activeCategory && (
           <div style={{ marginTop: 'var(--sp-4)' }}>
-            <div className="section-label" style={{ marginBottom: 'var(--sp-2)' }}>{activeCategory.title} · {activeCategory.titleAr}</div>
+            <WorshipSectionHeader arabic={activeCategory.titleAr} english={activeCategory.title} />
             {activeCategory.duas.map((dua) => (
               <DuaPreviewCard
                 key={dua.id}
@@ -370,29 +409,44 @@ export default function Worship({ onOpenQuranRef }) {
         )}
       </section>
 
-      <section className="glass-card" style={{ padding: 'var(--sp-4)', marginBottom: 'var(--sp-5)' }}>
+      <section className="glass-card worshipv3-checklist" style={{ marginBottom: 'var(--sp-5)' }}>
         <button type="button" onClick={() => setChecklistOpen((value) => !value)} style={{ width: '100%', border: 0, background: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0 }}>
-          <div style={{ textAlign: 'left' }}>
-            <div className="section-label">Daily Worship Checklist</div>
-            <div style={{ color: 'var(--text-secondary)' }}>{checklistCompleted} / {checklistItems.length} complete today</div>
+          <div style={{ textAlign: 'left', flex: 1 }}>
+            <div className="worshipv3-checklist-head">
+              <span className="worshipv3-checklist-icon worshipv3-checklist-icon-emerald">
+                <IconCalendar size={18} />
+              </span>
+              <span>
+                <span className="worshipv3-checklist-title">Daily Worship Checklist</span>
+                <span className="worshipv3-checklist-sub">{checklistCompleted} / {checklistItems.length} complete today</span>
+              </span>
+            </div>
           </div>
           <IconChevronDown size={18} className={checklistOpen ? 'appdrawer-chevron-open' : ''} />
         </button>
-        <div style={{ height: 8, borderRadius: 999, background: 'rgba(11,107,79,0.1)', overflow: 'hidden', marginTop: 'var(--sp-3)' }}>
-          <div style={{ width: `${(checklistCompleted / checklistItems.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg, var(--emerald-500), var(--gold-400))' }} />
+        <div className="worshipv3-progress-shell">
+          <div className="worshipv3-progress-top">
+            <span>Today</span>
+            <strong>{checklistCompleted} / {checklistItems.length}</strong>
+          </div>
+          <div className="worshipv3-progress-bar">
+            <div className="worshipv3-progress-fill" style={{ width: `${(checklistCompleted / checklistItems.length) * 100}%` }} />
+          </div>
         </div>
         {checklistOpen && (
-          <div style={{ marginTop: 'var(--sp-4)', display: 'grid', gap: 10 }}>
+          <div className="worshipv3-item-list">
             {checklistItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className="glass-card"
+                className={`worshipv3-item${checklistState.items[item.id] ? ' is-done' : ''}`}
                 onClick={() => setChecklistState((current) => ({ ...current, items: { ...current.items, [item.id]: !current.items[item.id] } }))}
-                style={{ padding: 'var(--sp-3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}
               >
-                <span>{checklistState.items[item.id] ? '☑' : '☐'} {item.label}</span>
-                {checklistState.items[item.id] && <IconCheck size={16} style={{ color: 'var(--gold-500)' }} />}
+                <span className={`worshipv3-check${checklistState.items[item.id] ? ' checked' : ''}`}>{checklistState.items[item.id] ? '✓' : ''}</span>
+                <span className="worshipv3-item-copy">
+                  <strong>{item.label}</strong>
+                  <small>Tap to mark {checklistState.items[item.id] ? 'incomplete' : 'complete'}</small>
+                </span>
               </button>
             ))}
           </div>

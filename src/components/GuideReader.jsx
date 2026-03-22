@@ -81,8 +81,8 @@ export default function GuideReader({ guideId, onBack }) {
 
   if (!guide) {
     return (
-      <div className="animate-fade-up" style={{ padding: 'var(--sp-10) 0', textAlign: 'center' }}>
-        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>Loading guide...</div>
+      <div className="animate-fade-up guide-reader-loading">
+        <div className="guide-reader-loading-copy">Loading guide...</div>
       </div>
     );
   }
@@ -93,26 +93,21 @@ export default function GuideReader({ guideId, onBack }) {
 
   return (
     <div className="animate-fade-up guide-reader-page" ref={contentRef}>
-      {/* Header */}
-      <div className="page-title f1" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+      <div className="guide-reader-header f1">
         <button className="back-btn" onClick={onBack}>
           <IconBack size={16} />
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="font-amiri" style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--emerald-700)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {guide.title}
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
+        <div className="guide-reader-header-copy">
+          <div className="guide-reader-title">{guide.title}</div>
+          <div className="guide-reader-meta">
             {guidedMode ? `Guided mode · step ${step + 1} of ${total}` : `Reference mode · section ${step + 1} of ${total}`}
           </div>
         </div>
-        <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
-          {guide.titleAr}
-        </div>
+        <div className="guide-reader-title-ar">{guide.titleAr}</div>
       </div>
 
-      <div className="glass-card" style={{ padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--sp-3)' }}>
+      <div className="glass-card guide-reader-mode-card">
+        <div className="guide-reader-mode-tabs">
           <button
             type="button"
             className={`sub-tab${!guidedMode ? ' active' : ''}`}
@@ -128,7 +123,7 @@ export default function GuideReader({ guideId, onBack }) {
             Guided Mode
           </button>
         </div>
-        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+        <div className="guide-reader-mode-copy">
           {guidedMode
             ? 'Sequential walkthrough with remembered progress.'
             : 'Open-ended reading. Jump anywhere without the guide feeling like a daily task.'}
@@ -140,9 +135,9 @@ export default function GuideReader({ guideId, onBack }) {
         )}
       </div>
 
-      <div className="glass-card" style={{ padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)', display: 'grid', gap: 8 }}>
+      <div className="glass-card guide-reader-sections-card">
         <div className="section-label">Sections</div>
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+        <div className="guide-reader-sections-row">
           {guide.steps.map((guideStep, index) => (
             <button
               key={guideStep.id}
@@ -160,50 +155,41 @@ export default function GuideReader({ guideId, onBack }) {
         </div>
       </div>
 
-      {/* Step card */}
-      <div className="glass-card f1" style={{ padding: 'var(--sp-5)', marginBottom: 'var(--sp-3)' }}>
-        {/* Illustration */}
+      <div className="glass-card guide-reader-step-card f1">
         {current.illustration && (
-          <div style={{ marginBottom: 'var(--sp-4)' }}>
+          <div className="guide-reader-illustration">
             <GuideIllustration type={current.illustration} size={100} />
           </div>
         )}
 
-        {/* Step badge + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
+        <div className="guide-reader-step-head">
           <div className="guide-step-badge">{current.id}</div>
           <div>
-            <div className="font-amiri" style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--emerald-700)' }}>
-              {current.title}
-            </div>
-            <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: 'var(--gold-400)' }}>
-              {current.titleAr}
-            </div>
+            <div className="guide-reader-step-title">{current.title}</div>
+            <div className="guide-reader-step-title-ar">{current.titleAr}</div>
           </div>
         </div>
 
-        {/* Body text */}
-        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: current.arabic ? 'var(--sp-3)' : 0 }}>
+        <div className={`guide-reader-body${current.arabic ? ' guide-reader-body-with-arabic' : ''}`}>
           {current.body}
         </div>
 
-        {/* Arabic dua block */}
         {current.arabic && (
           <div className="guide-dua-block">
-            <div className="arabic-text" style={{ fontSize: 'var(--arabic-sm)', color: 'var(--emerald-700)', lineHeight: 2.2, marginBottom: 'var(--sp-2)' }}>
+            <div className="arabic-text guide-reader-dua-ar">
               {current.arabic.split('\n').map((line, i) => (
                 <span key={i}>{line}{i < current.arabic.split('\n').length - 1 && <br />}</span>
               ))}
             </div>
             {current.transliteration && (
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic', lineHeight: 1.6, marginBottom: 'var(--sp-1)' }}>
+              <div className="guide-reader-transliteration">
                 {current.transliteration.split('\n').map((line, i) => (
                   <span key={i}>{line}{i < current.transliteration.split('\n').length - 1 && <br />}</span>
                 ))}
               </div>
             )}
             {current.translation && (
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <div className="guide-reader-translation">
                 {current.translation.split('\n').map((line, i) => (
                   <span key={i}>{line}{i < current.translation.split('\n').length - 1 && <br />}</span>
                 ))}
@@ -212,47 +198,32 @@ export default function GuideReader({ guideId, onBack }) {
           </div>
         )}
 
-        {/* Tip box */}
         {current.tip && (
           <div className="guide-tip-box">
-            <strong style={{ fontSize: 'var(--text-xs)', color: 'var(--gold-500)', display: 'block', marginBottom: 2 }}>Tip</strong>
+            <strong className="guide-reader-tip-label">Tip</strong>
             <div>{current.tip}</div>
           </div>
         )}
 
-        {/* Note */}
         {current.note && (
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--sp-3)', lineHeight: 1.6, fontStyle: 'italic', padding: '0 var(--sp-1)' }}>
+          <div className="guide-reader-note">
             {current.note}
           </div>
         )}
       </div>
 
-      {/* Navigation */}
-      <div style={{ display: 'flex', gap: 'var(--sp-3)', marginBottom: 'var(--sp-6)' }}>
+      <div className="guide-reader-nav">
         <button
           className="guide-nav-btn"
           onClick={goPrev}
           disabled={step === 0}
-          style={{
-            flex: 1,
-            background: step === 0 ? 'var(--bg-secondary)' : 'var(--emerald-50)',
-            color: step === 0 ? 'var(--text-tertiary)' : 'var(--emerald-700)',
-            opacity: step === 0 ? 0.5 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
-          }}
+          style={{ opacity: step === 0 ? 0.5 : 1 }}
         >
           <IconBack size={14} /> Previous
         </button>
         <button
-          className="guide-nav-btn"
+          className={`guide-nav-btn${step === total - 1 ? ' guide-nav-btn-primary' : ''}`}
           onClick={step === total - 1 ? onBack : goNext}
-          style={{
-            flex: 1,
-            background: step === total - 1 ? 'var(--emerald-500)' : 'var(--emerald-50)',
-            color: step === total - 1 ? 'white' : 'var(--emerald-700)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
-          }}
         >
           {step === total - 1 ? (guidedMode ? 'Finish Guided Path' : 'Back to Guide') : 'Next'} {step < total - 1 && <IconForward size={14} />}
         </button>

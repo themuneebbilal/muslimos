@@ -36,6 +36,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   const [downloading, setDownloading] = useState(false);
   const [dlProgress, setDlProgress] = useState({ done: 0, total: 0 });
   const [downloadTick, setDownloadTick] = useState(0);
+  const [usingIncludedFallback, setUsingIncludedFallback] = useState(false);
 
   const sentinelRef = useRef(null);
   const loadedRef = useRef(false);
@@ -44,6 +45,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   const collection = HADITH_COLLECTIONS.find(c => c.id === collectionId);
   const isBundled = collection?.bundled;
   const isIncluded = collection ? hasIncludedHadith(collection.apiName || collection.id) : false;
+  const collectionDownloaded = collection ? (isBundled || isFullyDownloaded(collection.id)) : false;
   const isNawawi = collectionId === 'nawawi40';
 
   // Get all bookmarked hadith for saved view
@@ -76,21 +78,34 @@ export default function HadithCollection({ collectionId, onBack }) {
       if (isNawawi) {
         setHadithList(NAWAWI_DATA);
         setHasMore(false);
+        setUsingIncludedFallback(false);
         return;
       }
 
-      if (collection && (isIncluded || isFullyDownloaded(collection.id))) {
-        const cacheKey = isIncluded && !isFullyDownloaded(collection.id) ? (collection.apiName || collection.id) : collection.id;
-        const all = await loadAllCached(cacheKey);
+      if (collection && collectionDownloaded) {
+        const all = await loadAllCached(collection.id);
         const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
         if (!cancelled) {
           setHadithList(mapped);
           setHasMore(false);
+          setUsingIncludedFallback(false);
         }
         return;
       }
 
       if (collection?.apiName) {
+        if (!navigator.onLine && isIncluded) {
+          const all = await loadAllCached(collection.apiName || collection.id);
+          const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
+          if (!cancelled) {
+            setHadithList(mapped);
+            setHasMore(false);
+            setUsingIncludedFallback(true);
+          }
+          return;
+        }
+
+        setUsingIncludedFallback(false);
         loadPage(1);
         fetchChapters(collection.apiName).then((chs) => {
           if (!cancelled && chs.length > 0) setChapters(chs);
@@ -124,7 +139,7 @@ export default function HadithCollection({ collectionId, onBack }) {
 
   // Infinite scroll observer
   useEffect(() => {
-    if (!hasMore || loading || isSaved || isNawawi || isIncluded) return;
+    if (!hasMore || loading || isSaved || isNawawi || usingIncludedFallback || collectionDownloaded) return;
     const el = sentinelRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(([e]) => {
@@ -134,7 +149,7 @@ export default function HadithCollection({ collectionId, onBack }) {
     }, { rootMargin: '400px' });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [hasMore, loading, page, isIncluded]);
+  }, [hasMore, loading, page, usingIncludedFallback, collectionDownloaded, isSaved, isNawawi]);
 
   // Filter
   const displayList = useMemo(() => {
@@ -222,7 +237,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   const includedCount = collection && isIncluded ? getCachedCount(collection.apiName || collection.id) : 0;
   const offlineCount = collection ? getCachedCount(collection.id) : 0;
   const cachedCount = collection ? Math.max(includedCount, offlineCount) : (isNawawi ? 42 : 0);
-  const fullyDownloaded = collection ? (isBundled || isFullyDownloaded(collection.id)) : false;
+  const fullyDownloaded = collectionDownloaded;
   const isQueued = currentDownloadState?.status === 'queued' || currentDownloadState?.status === 'queued_resume';
   const isPartial = currentDownloadState?.status === 'partial' || (!fullyDownloaded && cachedCount > 0);
 
@@ -265,8 +280,10 @@ export default function HadithCollection({ collectionId, onBack }) {
             </div>
             {cachedCount > 0 && (
               <div style={{ fontSize: '0.6rem', color: 'var(--success)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 'var(--sp-1)' }}>
-                {isIncluded ? (
-                  <><IconCheck size={10} /> {includedCount} included in app</>
+                {usingIncludedFallback ? (
+                  <><IconCheck size={10} /> Showing {includedCount} included hadith while offline</>
+                ) : isIncluded ? (
+                  <><IconCheck size={10} /> {includedCount} starter hadith included in app</>
                 ) : fullyDownloaded ? (
                   <><IconCheck size={10} /> Fully available offline</>
                 ) : (
@@ -280,17 +297,10 @@ export default function HadithCollection({ collectionId, onBack }) {
             <button
               onClick={handleDownload}
               disabled={downloading || isQueued}
-              className="pressable hadithv2-download"
+              className={`pressable hadithv2-download${currentDownloadState?.status === 'error' ? ' hadithv2-download-gold' : ''}`}
               style={{
-                padding: '6px 12px', borderRadius: 'var(--r-sm)',
-                background: 'var(--emerald-50)', border: '1px solid var(--emerald-200)',
-                fontSize: '0.68rem', fontWeight: 600, color: 'var(--emerald-600)',
                 cursor: downloading ? 'default' : 'pointer',
-                fontFamily: "'DM Sans', sans-serif",
                 opacity: downloading ? 0.7 : 1,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
               }}
             >
               <IconDownload size={12} />
@@ -310,13 +320,9 @@ export default function HadithCollection({ collectionId, onBack }) {
           {!isBundled && fullyDownloaded && !isIncluded && (
             <button
               onClick={handleRemoveOffline}
-              className="pressable hadithv2-download"
+              className="pressable hadithv2-download hadithv2-download-gold"
               style={{
-                padding: '6px 12px', borderRadius: 'var(--r-sm)',
-                background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.24)',
-                fontSize: '0.68rem', fontWeight: 600, color: 'var(--gold-600)',
-                cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                display: 'inline-flex', alignItems: 'center', gap: 6,
+                cursor: 'pointer',
               }}
             >
               <IconTrash size={12} />
