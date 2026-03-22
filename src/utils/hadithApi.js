@@ -333,7 +333,7 @@ async function fetchRemotePage(collection, page = 1, limit = 20) {
     const start = (page - 1) * limit;
     const items = bundle.items.slice(start, start + limit);
     safeSetJSON(pageCacheKey(collection, page), items);
-    return { data: items, hasMore: start + limit < bundle.items.length };
+    return { data: items, hasMore: start + limit < bundle.items.length, source: 'remote' };
   } catch (error) {
     logError('hadith:fetchRemotePage', error, { collection, page, limit });
     return { data: [], hasMore: false, error: error.message };
@@ -341,10 +341,6 @@ async function fetchRemotePage(collection, page = 1, limit = 20) {
 }
 
 export async function fetchHadith(collection, page = 1, limit = 20) {
-  if (!navigator.onLine && hasIncludedHadith(collection)) {
-    return localHadithPage(collection, page, limit);
-  }
-
   const meta = getOfflineMeta(collection);
   if (meta?.status === 'downloaded') {
     const record = await idbGetCollection(collection);
@@ -353,20 +349,28 @@ export async function fetchHadith(collection, page = 1, limit = 20) {
     return {
       data: items.slice(start, start + limit),
       hasMore: start + limit < items.length,
+      source: 'offline',
     };
   }
 
   const cached = safeGetJSON(pageCacheKey(collection, page), null);
   if (Array.isArray(cached)) {
-    return { data: cached, hasMore: cached.length >= limit };
+    return { data: cached, hasMore: cached.length >= limit, source: 'cache' };
   }
 
-  return fetchRemotePage(collection, page, limit);
+  const remote = await fetchRemotePage(collection, page, limit);
+  if (!remote.error) return remote;
+
+  if (hasIncludedHadith(collection)) {
+    const local = localHadithPage(collection, page, limit);
+    return { ...local, source: 'included', fallbackError: remote.error };
+  }
+
+  return remote;
 }
 
 export async function fetchChapters(collection) {
   const localCollection = getLocalCollection(collection);
-  if (!navigator.onLine && localCollection) return localCollection.chapters || [];
 
   const cacheKey = `${CHAPTER_CACHE_PREFIX}${collection}`;
   const cached = safeGetJSON(cacheKey, null);
@@ -377,6 +381,7 @@ export async function fetchChapters(collection) {
     safeSetJSON(cacheKey, bundle.chapters);
     return bundle.chapters;
   } catch (error) {
+    if (localCollection) return localCollection.chapters || [];
     logWarn('hadith:fetchChapters', `Falling back to empty chapter list for ${collection}`, error);
     return [];
   }

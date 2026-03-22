@@ -94,19 +94,8 @@ export default function HadithCollection({ collectionId, onBack }) {
       }
 
       if (collection?.apiName) {
-        if (!navigator.onLine && isIncluded) {
-          const all = await loadAllCached(collection.apiName || collection.id);
-          const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
-          if (!cancelled) {
-            setHadithList(mapped);
-            setHasMore(false);
-            setUsingIncludedFallback(true);
-          }
-          return;
-        }
-
         setUsingIncludedFallback(false);
-        loadPage(1);
+        await loadPage(1);
         fetchChapters(collection.apiName).then((chs) => {
           if (!cancelled && chs.length > 0) setChapters(chs);
         });
@@ -122,7 +111,7 @@ export default function HadithCollection({ collectionId, onBack }) {
     setLoading(true);
     setError(null);
     try {
-      const { data, hasMore: more, error: err } = await fetchHadith(collection.apiName, p, 20);
+      const { data, hasMore: more, error: err, source, fallbackError } = await fetchHadith(collection.apiName, p, 20);
       if (err) { setError(err); setLoading(false); return; }
       const mapped = data.map(h => mapApiHadith(h, collection.id, collection.nameEn));
       setHadithList(prev => {
@@ -131,6 +120,10 @@ export default function HadithCollection({ collectionId, onBack }) {
       });
       setHasMore(more);
       setPage(p);
+      setUsingIncludedFallback(source === 'included');
+      if (fallbackError && p === 1) {
+        setError(`Showing starter hadith because the full collection could not be reached.`);
+      }
     } catch (e) {
       setError(e.message);
     }
