@@ -1,3 +1,5 @@
+import { safeGetJSON, safeSetJSON } from './safeStorage';
+
 const STORAGE_KEY = 'mos_journal_entries';
 
 const PROMPTS = [
@@ -16,13 +18,9 @@ export function getDailyJournalPrompt() {
 }
 
 export function getJournalEntries() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    if (!Array.isArray(raw)) return [];
-    return raw.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  } catch {
-    return [];
-  }
+  const raw = safeGetJSON(STORAGE_KEY, []);
+  if (!Array.isArray(raw)) return [];
+  return raw.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
 export function saveJournalEntry(entry) {
@@ -35,12 +33,12 @@ export function saveJournalEntry(entry) {
     createdAt: entry.createdAt || new Date().toISOString(),
   };
   const next = [nextEntry, ...entries].slice(0, 50);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  safeSetJSON(STORAGE_KEY, next);
   return next;
 }
 
 export function deleteJournalEntry(id) {
   const next = getJournalEntries().filter((entry) => entry.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  safeSetJSON(STORAGE_KEY, next);
   return next;
 }

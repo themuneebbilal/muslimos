@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { GUIDES } from '../data/guides/index.js';
 import { IconBack, IconForward } from './Icons';
+import { safeGetItem } from '../utils/safeStorage';
 
 const ICON_COLORS = {
   emerald: { bg: 'var(--emerald-50)', color: 'var(--emerald-500)' },
@@ -54,28 +55,14 @@ const GUIDE_ICONS = {
 };
 
 export default function LearnPage({ onOpenGuide, onBack }) {
-  const progress = useMemo(() => {
-    const p = {};
-    GUIDES.forEach(g => {
-      const saved = localStorage.getItem(`mos_guide_${g.id}_step`);
-      p[g.id] = saved ? parseInt(saved) : 0;
+  const recents = useMemo(() => {
+    const map = {};
+    GUIDES.forEach((guide) => {
+      const saved = safeGetItem(`mos_guide_${guide.id}_last_step`, null);
+      map[guide.id] = saved ? parseInt(saved, 10) : null;
     });
-    return p;
+    return map;
   }, []);
-
-  const startedCount = useMemo(
-    () => GUIDES.filter((guide) => (progress[guide.id] || 0) > 0).length,
-    [progress]
-  );
-  const totalSteps = useMemo(
-    () => GUIDES.reduce((sum, guide) => sum + guide.stepCount, 0),
-    []
-  );
-  const completedSteps = useMemo(
-    () => GUIDES.reduce((sum, guide) => sum + (progress[guide.id] || 0), 0),
-    [progress]
-  );
-  const completionPct = Math.max(6, Math.min(100, Math.round((completedSteps / totalSteps) * 100)));
 
   return (
     <div className="learnv3 animate-fade-up">
@@ -87,15 +74,15 @@ export default function LearnPage({ onOpenGuide, onBack }) {
         )}
         <div>
           <div className="page-title" style={{ padding: 0 }}>Learn</div>
-          <div className="page-subtitle" style={{ padding: 0 }}>Guides designed for quick return and steady progress.</div>
+          <div className="page-subtitle" style={{ padding: 0 }}>Reference guides you can return to anytime.</div>
         </div>
       </div>
 
       <section className="learnv3-hero settingsv2-panel settingsv2-panel-hero">
         <div className="settingsv2-watermark">عِلْم</div>
-        <div className="settingsv2-label">Study Path</div>
-        <h2>Learn with structure, not clutter.</h2>
-        <p>Short practical guides, clear re-entry points, and visible progress across the essentials of worship.</p>
+        <div className="settingsv2-label">Knowledge Library</div>
+        <h2>Study without the pressure of daily completion.</h2>
+        <p>These guides are meant to be reference material first. Guided progress is available only when you choose it inside a guide.</p>
 
         <div className="learnv3-hero-meta">
           <div className="learnv3-hero-metric">
@@ -103,28 +90,25 @@ export default function LearnPage({ onOpenGuide, onBack }) {
             <span>Guides</span>
           </div>
           <div className="learnv3-hero-metric">
-            <strong>{startedCount}</strong>
-            <span>Started</span>
+            <strong>Reference</strong>
+            <span>Default mode</span>
           </div>
           <div className="learnv3-hero-metric">
-            <strong>{completedSteps}</strong>
-            <span>Steps done</span>
+            <strong>Optional</strong>
+            <span>Guided mode</span>
           </div>
         </div>
       </section>
 
       <section className="learnv3-overview">
         <article className="learnv3-feature glass-card">
-          <div className="learnv3-feature-label">Reading Progress</div>
+          <div className="learnv3-feature-label">How It Works</div>
           <div className="learnv3-feature-row">
             <div>
-              <div className="learnv3-feature-title">Your study arc</div>
-              <div className="learnv3-feature-copy">Across all guides, you are building consistency one ritual at a time.</div>
+              <div className="learnv3-feature-title">Open any guide like a handbook</div>
+              <div className="learnv3-feature-copy">Browse freely, jump between sections, and only switch to guided mode if you want a sequential walkthrough.</div>
             </div>
-            <div className="learnv3-feature-pill">{completionPct}%</div>
-          </div>
-          <div className="guide-progress-bar learnv3-progress">
-            <div className="guide-progress-fill" style={{ width: `${completionPct}%` }} />
+            <div className="learnv3-feature-pill">Perpetual</div>
           </div>
         </article>
       </section>
@@ -133,9 +117,7 @@ export default function LearnPage({ onOpenGuide, onBack }) {
         {GUIDES.map((guide, i) => {
           const colors = ICON_COLORS[guide.color] || ICON_COLORS.emerald;
           const icon = GUIDE_ICONS[guide.icon];
-          const completed = progress[guide.id] || 0;
-          const pct = Math.round((completed / guide.stepCount) * 100);
-          const isStarted = completed > 0;
+          const lastStep = recents[guide.id];
 
           return (
             <button
@@ -152,7 +134,7 @@ export default function LearnPage({ onOpenGuide, onBack }) {
                   {icon}
                 </div>
                 <div className="learnv3-card-step">
-                  {isStarted ? `${completed}/${guide.stepCount}` : `${guide.stepCount} steps`}
+                  {guide.stepCount} sections
                 </div>
               </div>
 
@@ -165,11 +147,8 @@ export default function LearnPage({ onOpenGuide, onBack }) {
               </div>
 
               <div className="learnv3-card-footer">
-                <div className="guide-progress-bar learnv3-card-progress">
-                  <div className="guide-progress-fill" style={{ width: `${pct}%` }} />
-                </div>
                 <div className="learnv3-card-state">
-                  <span>{isStarted ? 'Continue guide' : 'Start guide'}</span>
+                  <span>{lastStep ? `Last viewed section ${lastStep}` : 'Open reference guide'}</span>
                   <IconForward size={14} />
                 </div>
               </div>

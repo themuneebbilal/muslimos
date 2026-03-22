@@ -1,7 +1,10 @@
 import HADITH_DATA from '../data/hadith.json';
+import { logError, logWarn } from './logger';
+import { safeGetJSON, safeSetJSON } from './safeStorage';
 
-const API_BASE = 'https://api.sunnah.com/v1';
-const API_KEY = import.meta.env.VITE_SUNNAH_API_KEY || '';
+const API_VERSION = 1;
+const CDN_BASE = `https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@${API_VERSION}`;
+const RAW_BASE = `https://raw.githubusercontent.com/fawazahmed0/hadith-api/${API_VERSION}`;
 const DB_NAME = 'muslimos-hadith-offline';
 const DB_VERSION = 1;
 const COLLECTION_STORE = 'collections';
@@ -21,13 +24,31 @@ const LOCAL_COLLECTION_ALIASES = {
   nawawi40: 'nawawi',
 };
 
+const REMOTE_EDITIONS = {
+  riyad: ['eng-riyadussalihin', 'eng-riyadusshaliheen', 'eng-riyadussaliheen'],
+  bukhari: ['eng-bukhari'],
+  muslim: ['eng-muslim'],
+  tirmidhi: ['eng-tirmidhi'],
+  abu_dawud: ['eng-abudawud'],
+  abudawud: ['eng-abudawud'],
+  nasai: ['eng-nasai'],
+  ibnmajah: ['eng-ibnmajah'],
+  malik: ['eng-malik'],
+  ahmad: ['eng-ahmad'],
+};
+
 const listeners = new Set();
+const remoteCollectionCache = new Map();
 let downloadWorker = null;
 let dbPromise = null;
 
 function emit() {
   listeners.forEach((listener) => {
-    try { listener(); } catch {}
+    try {
+      listener();
+    } catch (error) {
+      logError('hadith:emit', error);
+    }
   });
 }
 
@@ -61,20 +82,12 @@ function localHadithPage(collectionId, page = 1, limit = 20) {
   return { data: items, hasMore: start + limit < collection.hadith.length };
 }
 
-function headers() {
-  return { 'x-api-key': API_KEY, 'Content-Type': 'application/json' };
-}
-
 function readMeta() {
-  try {
-    return JSON.parse(localStorage.getItem(META_KEY) || '{}');
-  } catch {
-    return {};
-  }
+  return safeGetJSON(META_KEY, {}) || {};
 }
 
 function writeMeta(meta) {
-  localStorage.setItem(META_KEY, JSON.stringify(meta));
+  safeSetJSON(META_KEY, meta);
   emit();
 }
 
@@ -104,16 +117,12 @@ export function getAllOfflineMeta() {
 }
 
 function readQueue() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const parsed = safeGetJSON(QUEUE_KEY, []);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 function writeQueue(queue) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  safeSetJSON(QUEUE_KEY, queue);
   emit();
 }
 
@@ -147,19 +156,28 @@ function pageCacheKey(collection, page) {
   return `${PAGE_CACHE_PREFIX}${collection}_p${page}`;
 }
 
-function getDb() {
+async function getDb() {
   if (dbPromise) return dbPromise;
+
   dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(COLLECTION_STORE)) {
-        db.createObjectStore(COLLECTION_STORE, { keyPath: 'id' });
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onerror = () => reject(request.error);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(COLLECTION_STORE)) {
+          db.createObjectStore(COLLECTION_STORE, { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+    } catch (error) {
+      reject(error);
+    }
+  }).catch((error) => {
+    logError('hadith:indexedDB', error);
+    throw error;
   });
+
   return dbPromise;
 }
 
@@ -207,23 +225,118 @@ function measureBytes(data) {
   return new Blob([JSON.stringify(data)]).size;
 }
 
-async function fetchRemotePage(collection, page = 1, limit = 20) {
-  if (!API_KEY) {
-    return { data: [], hasMore: false, error: 'API key not configured' };
+function getEditionCandidates(collectionId) {
+  const normalized = normalizeLocalCollectionId(collectionId);
+  return REMOTE_EDITIONS[normalized] || [`eng-${normalized}`];
+}
+
+async function fetchJsonWithFallback(endpoint) {
+  const urls = [
+    `${CDN_BASE}/${endpoint}.min.json`,
+    `${CDN_BASE}/${endpoint}.json`,
+    `${RAW_BASE}/${endpoint}.min.json`,
+    `${RAW_BASE}/${endpoint}.json`,
+  ];
+
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+    }
   }
 
+  throw lastError || new Error(`Unable to fetch ${endpoint}`);
+}
+
+function inferChapterLabel(item, sectionsMap) {
+  const sectionKey = item.reference?.book ?? item.book ?? item.chapterNumber;
+  if (sectionKey !== undefined && sectionsMap[String(sectionKey)]) {
+    return sectionsMap[String(sectionKey)];
+  }
+  return item.chapterTitle || item.bookName || item.chapter || '';
+}
+
+function normalizeRemoteBundle(bundle, collectionId) {
+  const metadata = bundle?.metadata || {};
+  const sectionsMap = metadata.section || {};
+  const sectionDetailMap = metadata.section_detail || {};
+  const rawItems = Array.isArray(bundle?.hadiths)
+    ? bundle.hadiths
+    : Array.isArray(bundle?.data)
+      ? bundle.data
+      : Array.isArray(bundle)
+        ? bundle
+        : [];
+
+  const items = rawItems.map((item, index) => {
+    const hadithNumber = Number(item.hadithnumber || item.hadithNumber || item.number || index + 1);
+    return {
+      id: `${collectionId}_${hadithNumber}`,
+      hadithNumber,
+      text: item.text || item.english || item.hadithEnglish || '',
+      arab: item.arab || item.arabic || item.hadithArabic || '',
+      grades: Array.isArray(item.grades) ? item.grades : item.grade ? [{ name: 'Grade', grade: item.grade }] : [],
+      reference: item.reference || { book: item.book || '', hadith: item.hadith || hadithNumber },
+      chapterTitle: inferChapterLabel(item, sectionsMap),
+    };
+  });
+
+  const chapters = Object.entries(sectionsMap).map(([id, title]) => ({
+    id,
+    title,
+    hadithnumber_first: sectionDetailMap[id]?.hadithnumber_first ?? null,
+    hadithnumber_last: sectionDetailMap[id]?.hadithnumber_last ?? null,
+  }));
+
+  return {
+    items,
+    chapters,
+    metadata,
+  };
+}
+
+async function fetchRemoteCollectionBundle(collectionId) {
+  const cacheKey = normalizeLocalCollectionId(collectionId);
+  if (remoteCollectionCache.has(cacheKey)) {
+    return remoteCollectionCache.get(cacheKey);
+  }
+
+  const promise = (async () => {
+    let lastError = null;
+    for (const edition of getEditionCandidates(cacheKey)) {
+      try {
+        const bundle = await fetchJsonWithFallback(`editions/${edition}`);
+        return normalizeRemoteBundle(bundle, cacheKey);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error(`Unsupported hadith collection: ${collectionId}`);
+  })();
+
+  remoteCollectionCache.set(cacheKey, promise);
   try {
-    const res = await fetch(
-      `${API_BASE}/collections/${collection}/hadiths?page=${page}&limit=${limit}`,
-      { headers: headers() }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const items = json.data || [];
-    localStorage.setItem(pageCacheKey(collection, page), JSON.stringify(items));
-    return { data: items, hasMore: items.length >= limit };
-  } catch (err) {
-    return { data: [], hasMore: false, error: err.message };
+    return await promise;
+  } catch (error) {
+    remoteCollectionCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+async function fetchRemotePage(collection, page = 1, limit = 20) {
+  try {
+    const bundle = await fetchRemoteCollectionBundle(collection);
+    const start = (page - 1) * limit;
+    const items = bundle.items.slice(start, start + limit);
+    safeSetJSON(pageCacheKey(collection, page), items);
+    return { data: items, hasMore: start + limit < bundle.items.length };
+  } catch (error) {
+    logError('hadith:fetchRemotePage', error, { collection, page, limit });
+    return { data: [], hasMore: false, error: error.message };
   }
 }
 
@@ -243,10 +356,9 @@ export async function fetchHadith(collection, page = 1, limit = 20) {
     };
   }
 
-  const cached = localStorage.getItem(pageCacheKey(collection, page));
-  if (cached) {
-    const parsed = JSON.parse(cached);
-    return { data: parsed, hasMore: parsed.length >= limit };
+  const cached = safeGetJSON(pageCacheKey(collection, page), null);
+  if (Array.isArray(cached)) {
+    return { data: cached, hasMore: cached.length >= limit };
   }
 
   return fetchRemotePage(collection, page, limit);
@@ -257,19 +369,15 @@ export async function fetchChapters(collection) {
   if (localCollection) return localCollection.chapters || [];
 
   const cacheKey = `${CHAPTER_CACHE_PREFIX}${collection}`;
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) return JSON.parse(cached);
-
-  if (!API_KEY) return [];
+  const cached = safeGetJSON(cacheKey, null);
+  if (Array.isArray(cached)) return cached;
 
   try {
-    const res = await fetch(`${API_BASE}/collections/${collection}/chapters`, { headers: headers() });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const chapters = json.data || [];
-    localStorage.setItem(cacheKey, JSON.stringify(chapters));
-    return chapters;
-  } catch {
+    const bundle = await fetchRemoteCollectionBundle(collection);
+    safeSetJSON(cacheKey, bundle.chapters);
+    return bundle.chapters;
+  } catch (error) {
+    logWarn('hadith:fetchChapters', `Falling back to empty chapter list for ${collection}`, error);
     return [];
   }
 }
@@ -288,13 +396,15 @@ export function mapApiHadith(h, collectionId, collectionName) {
     };
   }
 
+  const bookRef = h.reference?.book ? `Book ${h.reference.book}` : collectionName;
+  const hadithRef = h.reference?.hadith ? `Hadith ${h.reference.hadith}` : h.hadithNumber;
   return {
     id: `${collectionId}_${h.hadithNumber}`,
     number: String(h.hadithNumber),
     arabic: h.arab || h.hadithArabic || '',
     english: h.text || h.hadithEnglish || '',
     urdu: '',
-    reference: `${collectionName} ${h.hadithNumber}`,
+    reference: `${bookRef}${hadithRef ? ` · ${hadithRef}` : ''}`,
     grade: h.grades?.[0]?.grade || h.grade || '',
     chapter: h.chapterTitle || h.bookName || '',
   };
@@ -345,41 +455,17 @@ async function processQueue() {
     while (readQueue().length > 0) {
       const task = readQueue()[0];
       const { collectionApiName, collectionId, totalExpected } = task;
-      const existing = await idbGetCollection(collectionId);
-      let items = existing?.items || [];
-      let page = (getOfflineMeta(collectionId)?.resumePage || 1);
 
       updateMeta(collectionId, {
         status: 'downloading',
         totalExpected,
-        downloadedCount: items.length,
+        downloadedCount: 0,
         active: true,
       });
 
       try {
-        while (true) {
-          const { data, hasMore, error } = await fetchRemotePage(collectionApiName, page, 50);
-          if (error) throw new Error(error);
-          if (!data.length) break;
-
-          const seen = new Set(items.map((item) => item.id || `${item.hadithNumber}-${item.chapterTitle || item.bookName || ''}`));
-          const nextItems = data.filter((item) => {
-            const key = item.id || `${item.hadithNumber}-${item.chapterTitle || item.bookName || ''}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          items = [...items, ...nextItems];
-          await persistCollectionSnapshot(collectionId, collectionApiName, items, totalExpected, {
-            status: 'downloading',
-            resumePage: page + 1,
-          });
-
-          if (!hasMore || data.length < 50 || items.length >= totalExpected) break;
-          page += 1;
-        }
-
-        await persistCollectionSnapshot(collectionId, collectionApiName, items, totalExpected, {
+        const bundle = await fetchRemoteCollectionBundle(collectionApiName);
+        await persistCollectionSnapshot(collectionId, collectionApiName, bundle.items, totalExpected || bundle.items.length, {
           status: 'downloaded',
           resumePage: null,
           lastError: null,
@@ -387,10 +473,10 @@ async function processQueue() {
         });
         dequeue(collectionId);
       } catch (error) {
+        logError('hadith:downloadCollection', error, { collectionId, collectionApiName });
         updateMeta(collectionId, {
           status: 'error',
           lastError: error.message,
-          resumePage: page,
           active: false,
           totalExpected,
         });
@@ -446,7 +532,18 @@ export async function removeOfflineCollection(collectionId) {
   emit();
 }
 
-export async function getOfflineStorageUsageBytes() {
+export async function clearHadithOfflineData() {
   const all = await idbGetAllCollections();
-  return all.reduce((sum, item) => sum + (item.bytes || 0), 0);
+  await Promise.all(all.map((item) => idbDeleteCollection(item.id)));
+  writeMeta({});
+}
+
+export async function getOfflineStorageUsageBytes() {
+  try {
+    const all = await idbGetAllCollections();
+    return all.reduce((sum, item) => sum + (item.bytes || 0), 0);
+  } catch (error) {
+    logError('hadith:storageUsage', error);
+    return 0;
+  }
 }

@@ -1,4 +1,6 @@
 // Tafseer API — dual backend (alquran.cloud + quran.com v4)
+import { logError } from './logger';
+import { safeGetItem, safeSetItem } from './safeStorage';
 
 export const TAFSEER_EDITIONS = [
   { id: 'en-tafisr-ibn-kathir',        label: 'Ibn Kathir (English)',        lang: 'en', api: 'quran.com' },
@@ -39,7 +41,7 @@ export async function fetchTafseer(surah, ayah, edition, signal) {
   const key = cacheKey(edition, surah, ayah);
 
   // Check localStorage cache
-  const cached = localStorage.getItem(key);
+  const cached = safeGetItem(key, null);
   if (cached) return cached;
 
   const edInfo = TAFSEER_EDITIONS.find(e => e.id === edition);
@@ -63,7 +65,9 @@ export async function fetchTafseer(surah, ayah, edition, signal) {
   }
 
   if (text) {
-    try { localStorage.setItem(key, text); } catch { /* quota exceeded */ }
+    if (!safeSetItem(key, text)) {
+      logError('tafseer:cacheWrite', new Error('Unable to cache tafseer'), { edition, surah, ayah });
+    }
   }
 
   return text;

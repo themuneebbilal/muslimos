@@ -4,6 +4,7 @@ import NAWAWI_DATA from '../data/hadith-nawawi.json';
 import { fetchHadith, fetchChapters, mapApiHadith, getCachedCount, downloadCollection, hasIncludedHadith, isFullyDownloaded, loadAllCached, getCollectionDownloadState, subscribeHadithDownloads, removeOfflineCollection } from '../utils/hadithApi';
 import { IconBack, IconShare, IconBookmark, IconBookmarkFilled, IconCheck, IconImage, IconMenu, IconCopy, IconDownload, IconTrash } from './Icons';
 import { shareHadithAsImage, shareText } from '../utils/shareImage';
+import { safeGetItem, safeGetJSON, safeSetItem, safeSetJSON } from '../utils/safeStorage';
 
 function SkeletonCard() {
   return (
@@ -18,11 +19,9 @@ function SkeletonCard() {
 }
 
 export default function HadithCollection({ collectionId, onBack }) {
-  const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
+  const [lang, setLang] = useState(() => safeGetItem('mos_lang', 'en'));
   const [search, setSearch] = useState('');
-  const [bookmarks, setBookmarks] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('mos_bookmarks') || '[]'); } catch { return []; }
-  });
+  const [bookmarks, setBookmarks] = useState(() => safeGetJSON('mos_bookmarks', []));
 
   // API-driven state
   const [hadithList, setHadithList] = useState([]);
@@ -165,7 +164,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   function toggleBookmark(id) {
     const updated = bookmarks.includes(id) ? bookmarks.filter(b => b !== id) : [...bookmarks, id];
     setBookmarks(updated);
-    localStorage.setItem('mos_bookmarks', JSON.stringify(updated));
+    safeSetJSON('mos_bookmarks', updated);
   }
 
   const [openMenu, setOpenMenu] = useState(null);
@@ -221,6 +220,8 @@ export default function HadithCollection({ collectionId, onBack }) {
   const currentDownloadState = collection ? getCollectionDownloadState(collection.id) : null;
   const cachedCount = collection ? getCachedCount(collection.id) : (isNawawi ? 42 : 0);
   const fullyDownloaded = collection ? (isBundled || isIncluded || isFullyDownloaded(collection.id)) : false;
+  const isQueued = currentDownloadState?.status === 'queued' || currentDownloadState?.status === 'queued_resume';
+  const isPartial = currentDownloadState?.status === 'partial' || (!fullyDownloaded && cachedCount > 0);
 
   return (
     <div className="animate-fade-up hadithv2-collection">
@@ -275,7 +276,7 @@ export default function HadithCollection({ collectionId, onBack }) {
           {!isBundled && !fullyDownloaded && (
             <button
               onClick={handleDownload}
-              disabled={downloading}
+              disabled={downloading || isQueued}
               className="pressable hadithv2-download"
               style={{
                 padding: '6px 12px', borderRadius: 'var(--r-sm)',
@@ -290,7 +291,15 @@ export default function HadithCollection({ collectionId, onBack }) {
               }}
             >
               <IconDownload size={12} />
-              {downloading ? `${dlProgress.done} / ${dlProgress.total}` : currentDownloadState?.status === 'error' ? 'Resume Download' : 'Download All'}
+              {downloading
+                ? `${dlProgress.done} / ${dlProgress.total}`
+                : isQueued
+                  ? 'Queued for Download'
+                  : currentDownloadState?.status === 'error'
+                    ? 'Resume Download'
+                    : isPartial
+                      ? 'Continue Download'
+                      : 'Download All'}
             </button>
           )}
           {!isBundled && fullyDownloaded && !isIncluded && (
@@ -332,8 +341,8 @@ export default function HadithCollection({ collectionId, onBack }) {
 
       {/* Language toggle */}
       <div className="sub-tabs" style={{ marginBottom: 'var(--sp-3)' }}>
-        <button className={`sub-tab${lang === 'en' ? ' active' : ''}`} onClick={() => { setLang('en'); localStorage.setItem('mos_lang', 'en'); }}>English</button>
-        <button className={`sub-tab${lang === 'ur' ? ' active' : ''}`} onClick={() => { setLang('ur'); localStorage.setItem('mos_lang', 'ur'); }}>{'\u0627\u0631\u062F\u0648'}</button>
+        <button className={`sub-tab${lang === 'en' ? ' active' : ''}`} onClick={() => { setLang('en'); safeSetItem('mos_lang', 'en'); }}>English</button>
+        <button className={`sub-tab${lang === 'ur' ? ' active' : ''}`} onClick={() => { setLang('ur'); safeSetItem('mos_lang', 'ur'); }}>{'\u0627\u0631\u062F\u0648'}</button>
       </div>
 
       {/* Chapter filter */}
@@ -362,9 +371,7 @@ export default function HadithCollection({ collectionId, onBack }) {
       {/* Error message */}
       {error && (
         <div className="glass-surface" style={{ padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-3)', color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>
-          {error === 'API key not configured'
-            ? 'Hadith API key not configured. Please set VITE_SUNNAH_API_KEY in environment.'
-            : `Error: ${error}`}
+          {`Error: ${error}`}
         </div>
       )}
 

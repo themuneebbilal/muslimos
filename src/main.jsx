@@ -4,6 +4,16 @@ import './styles/theme.css';
 import './styles/consistency-pass.css';
 import './styles/drawer.css';
 import './styles/performance.css';
+import { logWarn } from './utils/logger';
+
+function validateEnvironment() {
+  const requiredEnvVars = [];
+  requiredEnvVars.forEach((key) => {
+    if (!import.meta.env[key]) {
+      logWarn('env', `Missing env var: ${key}`);
+    }
+  });
+}
 
 function applyRuntimePerformanceProfile() {
   const root = document.documentElement;
@@ -20,6 +30,7 @@ function applyRuntimePerformanceProfile() {
 }
 
 applyRuntimePerformanceProfile();
+validateEnvironment();
 window.addEventListener('resize', applyRuntimePerformanceProfile, { passive: true });
 window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change', applyRuntimePerformanceProfile);
 window.matchMedia?.('(pointer: coarse)').addEventListener?.('change', applyRuntimePerformanceProfile);

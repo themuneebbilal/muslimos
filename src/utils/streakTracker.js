@@ -1,4 +1,6 @@
 // Daily reading streak tracker
+import { safeGetJSON, safeSetJSON } from './safeStorage';
+
 const STORAGE_KEY = 'mos_streak';
 
 function getToday() {
@@ -10,15 +12,11 @@ function daysBetween(a, b) {
 }
 
 function loadData() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { dates: [], current: 0, longest: 0 };
-  } catch {
-    return { dates: [], current: 0, longest: 0 };
-  }
+  return safeGetJSON(STORAGE_KEY, { dates: [], current: 0, longest: 0 }) || { dates: [], current: 0, longest: 0 };
 }
 
 function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  safeSetJSON(STORAGE_KEY, data);
 }
 
 function recalcStreak(dates) {

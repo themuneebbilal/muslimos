@@ -11,6 +11,7 @@ import audioManager from '../utils/audioManager';
 import { ayahAudioUrl } from '../utils/quranAudio';
 import { findSegmentIndex, findTimingIndex, getSurahTimingData } from '../utils/quranTiming';
 import { IconBack, IconForward, IconSettings, IconPlay, IconPause, IconMenu, IconCopy, IconShare, IconBookmark, IconBookmarkFilled, IconAutoScroll, IconSpeed, IconQuran, IconClose, IconSearch, IconImage, IconHeart } from './Icons';
+import { safeGetItem, safeGetJSON, safeSetItem, safeSetJSON } from '../utils/safeStorage';
 import HadithFooter from './HadithFooter';
 
 let searchIndexCache = null;
@@ -84,7 +85,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [activeSurah, setActiveSurah] = useState(null);
   const [search, setSearch] = useState('');
   const [listMode, setListMode] = useState('surahs'); // 'surahs' | 'favorites' | 'juz'
-  const [lang, setLang] = useState(() => localStorage.getItem('mos_lang') || 'en');
+  const [lang, setLang] = useState(() => safeGetItem('mos_lang', 'en'));
 
   // Full-text search
   const [ftSearch, setFtSearch] = useState('');
@@ -94,8 +95,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const ftSentinelRef = useRef(null);
   const [showTrans, setShowTrans] = useState(true);
 
-  const [arabicSize, setArabicSize] = useState(() => parseFloat(localStorage.getItem('mos_arabicSize') || '1.5'));
-  const [transSize, setTransSize] = useState(() => parseFloat(localStorage.getItem('mos_transSize') || '0.9'));
+  const [arabicSize, setArabicSize] = useState(() => parseFloat(safeGetItem('mos_arabicSize', '1.5')));
+  const [transSize, setTransSize] = useState(() => parseFloat(safeGetItem('mos_transSize', '0.9')));
   const [showSettings, setShowSettings] = useState(false);
 
   const [audioState, setAudioState] = useState(audioManager.getState());
@@ -133,12 +134,8 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [activeWordIdx, setActiveWordIdx] = useState(-1);
   const activeWordElRef = useRef(null);
 
-  const [bookmarks, setBookmarks] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('mos_ayah_bm') || '[]'); } catch { return []; }
-  });
-  const [favoriteSurahs, setFavoriteSurahs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('mos_surah_favorites') || '[]'); } catch { return []; }
-  });
+  const [bookmarks, setBookmarks] = useState(() => safeGetJSON('mos_ayah_bm', []));
+  const [favoriteSurahs, setFavoriteSurahs] = useState(() => safeGetJSON('mos_surah_favorites', []));
 
   // ── Collections state ──
   const DEFAULT_COLLECTIONS = [
@@ -148,7 +145,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   ];
   const [collections, setCollections] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('mos_ayah_collections') || 'null');
+      const saved = safeGetJSON('mos_ayah_collections', null);
       return saved?.collections || DEFAULT_COLLECTIONS;
     } catch { return DEFAULT_COLLECTIONS; }
   });
@@ -164,7 +161,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
 
   function saveCollections(cols) {
     setCollections(cols);
-    localStorage.setItem('mos_ayah_collections', JSON.stringify({ collections: cols }));
+    safeSetJSON('mos_ayah_collections', { collections: cols });
   }
 
   function showColToast(msg) {
@@ -257,9 +254,9 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const [tafseerErrors, setTafseerErrors] = useState({});
   const [tafseerExpanded, setTafseerExpanded] = useState(new Set());
   const [tafseerEdition, setTafseerEdition] = useState(() => {
-    const saved = localStorage.getItem('mos_tafseer_edition');
+    const saved = safeGetItem('mos_tafseer_edition', null);
     if (saved && TAFSEER_EDITIONS.find(e => e.id === saved)) return saved;
-    const userLang = localStorage.getItem('mos_lang') || 'en';
+    const userLang = safeGetItem('mos_lang', 'en');
     return getDefaultTafseerForLang(userLang);
   });
   const tafseerAbortRef = useRef(new AbortController());
@@ -301,7 +298,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   const visibleVerses = verses.slice(0, visibleCount);
 
   const lastRead = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('mos_lastRead')); } catch { return null; }
+    return safeGetJSON('mos_lastRead', null);
   }, [view]);
 
   // Full-text search results
@@ -463,7 +460,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
           const dist = Math.abs(rect.top + rect.height / 2 - center);
           if (dist < closestDist) { closestDist = dist; closestVn = v.vn; }
         }
-        localStorage.setItem('mos_lastRead', JSON.stringify({ surah: activeSurah, ayah: closestVn, name: meta.nm, ar: meta.ar }));
+        safeSetJSON('mos_lastRead', { surah: activeSurah, ayah: closestVn, name: meta.nm, ar: meta.ar });
         markTodayRead();
         markSurahProgress(activeSurah, closestVn, meta.v);
       }, 600);
@@ -722,7 +719,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     const { persist = false, syncTafseer = true } = options;
     setLang(nextLang);
     if (persist) {
-      localStorage.setItem('mos_lang', nextLang);
+      safeSetItem('mos_lang', nextLang);
     }
     setTransOnCards(new Set());
     setTransOffCards(new Set());
@@ -732,7 +729,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       tafseerAbortRef.current.abort();
       tafseerAbortRef.current = new AbortController();
       setTafseerEdition(nextEdition);
-      localStorage.setItem('mos_tafseer_edition', nextEdition);
+      safeSetItem('mos_tafseer_edition', nextEdition);
       setTafseerCache({});
       setTafseerLoading(new Set());
       setTafseerErrors({});
@@ -743,20 +740,34 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   function setLangPref(l) {
     applyLanguagePreference(l, { persist: true, syncTafseer: true });
   }
-  function saveArabicSize(v) { setArabicSize(v); localStorage.setItem('mos_arabicSize', v); }
-  function saveTransSize(v) { setTransSize(v); localStorage.setItem('mos_transSize', v); }
+  function saveArabicSize(v) { setArabicSize(v); safeSetItem('mos_arabicSize', v); }
+  function saveTransSize(v) { setTransSize(v); safeSetItem('mos_transSize', v); }
 
   useEffect(() => {
-    function handleLanguageSync() {
-      const nextLang = localStorage.getItem('mos_lang') || 'en';
+    function syncFromStorage() {
+      const nextLang = safeGetItem('mos_lang', 'en');
       if (nextLang !== lang) {
         applyLanguagePreference(nextLang, { persist: false, syncTafseer: true });
       }
+
+      const nextTafseer = safeGetItem('mos_tafseer_edition', tafseerEdition);
+      if (nextTafseer && nextTafseer !== tafseerEdition) {
+        setTafseerEdition(nextTafseer);
+      }
+
+      const nextArabicSize = parseFloat(safeGetItem('mos_arabicSize', String(arabicSize)));
+      const nextTransSize = parseFloat(safeGetItem('mos_transSize', String(transSize)));
+      if (Number.isFinite(nextArabicSize) && nextArabicSize !== arabicSize) setArabicSize(nextArabicSize);
+      if (Number.isFinite(nextTransSize) && nextTransSize !== transSize) setTransSize(nextTransSize);
     }
 
-    window.addEventListener('storage', handleLanguageSync);
-    return () => window.removeEventListener('storage', handleLanguageSync);
-  }, [lang, applyLanguagePreference]);
+    window.addEventListener('storage', syncFromStorage);
+    window.addEventListener('mos-settings-change', syncFromStorage);
+    return () => {
+      window.removeEventListener('storage', syncFromStorage);
+      window.removeEventListener('mos-settings-change', syncFromStorage);
+    };
+  }, [lang, arabicSize, transSize, tafseerEdition, applyLanguagePreference]);
 
   // ── Translation per-card logic ──
   function shouldShowTrans(abs) {
@@ -840,7 +851,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
     tafseerAbortRef.current.abort();
     tafseerAbortRef.current = new AbortController();
     setTafseerEdition(ed);
-    localStorage.setItem('mos_tafseer_edition', ed);
+    safeSetItem('mos_tafseer_edition', ed);
     setTafseerCache({});
     setTafseerLoading(new Set());
     setTafseerErrors({});
@@ -1038,7 +1049,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
   function toggleBookmark(id) {
     const updated = bookmarks.includes(id) ? bookmarks.filter(b => b !== id) : [...bookmarks, id];
     setBookmarks(updated);
-    localStorage.setItem('mos_ayah_bm', JSON.stringify(updated));
+    safeSetJSON('mos_ayah_bm', updated);
     setOpenMenu(null);
   }
 
@@ -1047,7 +1058,7 @@ export default function QuranReader({ onPlaySurah, reciter = 'ar.alafasy', recit
       ? favoriteSurahs.filter((item) => item !== surahNum)
       : [...favoriteSurahs, surahNum];
     setFavoriteSurahs(updated);
-    localStorage.setItem('mos_surah_favorites', JSON.stringify(updated));
+    safeSetJSON('mos_surah_favorites', updated);
   }
 
   function jumpToAyah() {

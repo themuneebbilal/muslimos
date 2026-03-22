@@ -4,6 +4,7 @@ import NAWAWI_DATA from '../data/hadith-nawawi.json';
 import { IconStar, IconBookmarkFilled, IconHadith, IconCheck, IconShare, IconImage, IconMenu, IconCopy, IconDownload } from './Icons';
 import { getCachedCount, getCollectionDownloadState, hasIncludedHadith, isFullyDownloaded, queueCollectionDownload, subscribeHadithDownloads, getDownloadQueue } from '../utils/hadithApi';
 import { shareHadithAsImage, shareText } from '../utils/shareImage';
+import { safeGetJSON } from '../utils/safeStorage';
 import HadithFooter from './HadithFooter';
 
 const TIER_STYLES = {
@@ -16,9 +17,7 @@ export default function HadithPage({ onOpenCollection }) {
   const [search, setSearch] = useState('');
   const [downloadTick, setDownloadTick] = useState(0);
   const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
-  const [bookmarks] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('mos_bookmarks') || '[]'); } catch { return []; }
-  });
+  const [bookmarks] = useState(() => safeGetJSON('mos_bookmarks', []));
 
   // Daily hadith from Nawawi (always available offline)
   const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
@@ -107,6 +106,15 @@ export default function HadithPage({ onOpenCollection }) {
       : `Download ${collection.nameEn}? (${total} hadith · ${approx})`;
     if (!window.confirm(prompt)) return;
     queueCollectionDownload(collection.apiName, collection.id, collection.totalHadith);
+  }
+
+  function getCollectionActionLabel(collection, state) {
+    if (collection.bundled || state.status === 'included' || state.status === 'downloaded') return null;
+    if (state.status === 'downloading') return `Downloading ${Math.min(100, Math.round(((state.downloadedCount || 0) / (state.totalExpected || collection.totalHadith)) * 100))}%`;
+    if (state.status === 'queued' || state.status === 'queued_resume') return 'Queued for download';
+    if (state.status === 'error') return 'Resume download';
+    if (state.status === 'partial') return 'Continue download';
+    return 'Download offline';
   }
 
   return (
@@ -293,6 +301,29 @@ export default function HadithPage({ onOpenCollection }) {
                       <div style={{ marginTop: 'var(--sp-2)', height: 5, borderRadius: 999, background: 'rgba(11,107,79,0.08)', overflow: 'hidden', boxShadow: '0 0 10px rgba(11,107,79,0.08)' }}>
                         <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, var(--emerald-500), var(--gold-400))', boxShadow: '0 0 12px rgba(201,168,76,0.35)' }} />
                       </div>
+                    )}
+                    {getCollectionActionLabel(c, state) && (
+                      <button
+                        type="button"
+                        onClick={(event) => handleDownload(event, c)}
+                        disabled={state.status === 'downloading' || state.status === 'queued' || state.status === 'queued_resume'}
+                        style={{
+                          marginTop: 'var(--sp-3)',
+                          width: '100%',
+                          borderRadius: 999,
+                          border: '1px solid rgba(11,107,79,0.16)',
+                          background: state.status === 'error'
+                            ? 'rgba(201,168,76,0.12)'
+                            : 'rgba(11,107,79,0.08)',
+                          color: state.status === 'error' ? 'var(--gold-600)' : 'var(--emerald-600)',
+                          padding: '8px 10px',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          opacity: state.status === 'queued' || state.status === 'queued_resume' ? 0.7 : 1,
+                        }}
+                      >
+                        {getCollectionActionLabel(c, state)}
+                      </button>
                     )}
                   </div>
                 </div>

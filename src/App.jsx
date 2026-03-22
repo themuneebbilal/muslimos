@@ -3,10 +3,13 @@ import BottomNav from './components/BottomNav';
 import AppDrawer from './components/AppDrawer';
 import HomePage from './components/HomePage';
 import AudioPlayer from './components/AudioPlayer';
+import ErrorBoundary from './components/ErrorBoundary';
 import { IconHamburger, IconBack } from './components/Icons';
 import { calculatePrayerTimes } from './utils/prayerCalc';
 import audioManager from './utils/audioManager';
 import { getSurahAudioUrl } from './utils/quranAudio';
+import { logError } from './utils/logger';
+import { safeGetItem, safeRemoveItem, safeSetItem } from './utils/safeStorage';
 import './styles/ritual-pages.css';
 
 const QuranReader = lazy(() => import('./components/QuranReader'));
@@ -17,6 +20,7 @@ const LearnPage = lazy(() => import('./components/LearnPage'));
 const GuideReader = lazy(() => import('./components/GuideReader'));
 const PrayerTimesPage = lazy(() => import('./components/PrayerTimesPage'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const AboutPage = lazy(() => import('./components/AboutPage'));
 const Qibla = lazy(() => import('./components/Qibla'));
 const JournalPage = lazy(() => import('./components/JournalPage'));
 const IslamicCalendarPage = lazy(() => import('./components/IslamicCalendarPage'));
@@ -27,6 +31,7 @@ function preloadCommonChunks() {
   import('./components/HadithPage');
   import('./components/LearnPage');
   import('./components/SettingsPage');
+  import('./components/AboutPage');
   import('./components/Qibla');
   import('./components/JournalPage');
   import('./components/IslamicCalendarPage');
@@ -53,7 +58,7 @@ export default function App() {
     lat: 31.5204, lng: 74.3587, tz: 5, label: 'Lahore (default)', city: 'Lahore, Pakistan', accuracy: null
   });
   const [calcMethodIdx, setCalcMethodIdx] = useState(() =>
-    parseInt(localStorage.getItem('mos_calc') || '0')
+    parseInt(safeGetItem('mos_calc', '0'), 10)
   );
 
   // Hadith sub-navigation
@@ -67,15 +72,15 @@ export default function App() {
   // Audio state
   const [audioState, setAudioState] = useState(audioManager.getState());
   const [reciter, setReciter] = useState(() =>
-    localStorage.getItem('mos_reciter') || 'ar.alafasy'
+    safeGetItem('mos_reciter', 'ar.alafasy')
   );
   const [ayahAutoplay, setAyahAutoplay] = useState(() =>
-    localStorage.getItem('mos_ayahAutoplay') !== 'false'
+    safeGetItem('mos_ayahAutoplay', 'true') !== 'false'
   );
 
   // Theme state
   const [theme, setTheme] = useState(() =>
-    localStorage.getItem('mos_theme') || 'light'
+    safeGetItem('mos_theme', 'light')
   );
   const pageRef = useRef(page);
   const activeCollectionRef = useRef(activeCollection);
@@ -116,7 +121,7 @@ export default function App() {
 
   function handleThemeChange(t) {
     setTheme(t);
-    localStorage.setItem('mos_theme', t);
+    safeSetItem('mos_theme', t);
   }
 
   useEffect(() => {
@@ -215,7 +220,7 @@ export default function App() {
   function toggleCalcMethod() {
     const next = (calcMethodIdx + 1) % 4;
     setCalcMethodIdx(next);
-    localStorage.setItem('mos_calc', next);
+    safeSetItem('mos_calc', next);
   }
 
   function openQuranSurah(num, shouldPushHistory = true, ayah = null) {
@@ -247,8 +252,10 @@ export default function App() {
           }
         },
       });
-      localStorage.setItem('mos_audio_surah', String(num));
-    } catch {}
+      safeSetItem('mos_audio_surah', String(num));
+    } catch (error) {
+      logError('audio:startSurahPlayback', error, { surah: num, requestedReciter });
+    }
   }
 
   function handlePlaySurah(num) {
@@ -262,7 +269,7 @@ export default function App() {
 
   function handleCloseAudio() {
     audioManager.stop();
-    localStorage.removeItem('mos_audio_surah');
+    safeRemoveItem('mos_audio_surah');
   }
 
   function handleNextSurah() {
@@ -289,12 +296,12 @@ export default function App() {
 
   function handleReciterChange(r) {
     setReciter(r);
-    localStorage.setItem('mos_reciter', r);
+    safeSetItem('mos_reciter', r);
   }
 
   function handleAyahAutoplayChange(enabled) {
     setAyahAutoplay(enabled);
-    localStorage.setItem('mos_ayahAutoplay', String(enabled));
+    safeSetItem('mos_ayahAutoplay', String(enabled));
   }
 
   function handleOpenCollection(id) {
@@ -331,6 +338,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function handleOpenAbout() {
+    pushHistoryState('page:about');
+    setDrawerOpen(false);
+    setActiveCollection(null);
+    setActiveGuide(null);
+    setPage('about');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function handleOpenCalendar() {
     pushHistoryState('page:calendar');
     setDrawerOpen(false);
@@ -351,10 +367,10 @@ export default function App() {
 
   useEffect(() => {
     if (audioState.playbackMode === 'surah' && audioState.currentSurah) {
-      localStorage.setItem('mos_audio_surah', String(audioState.currentSurah));
+      safeSetItem('mos_audio_surah', String(audioState.currentSurah));
       return;
     }
-    localStorage.removeItem('mos_audio_surah');
+    safeRemoveItem('mos_audio_surah');
   }, [audioState.playbackMode, audioState.currentSurah]);
 
   function handleOpenDrawer() {
@@ -363,6 +379,11 @@ export default function App() {
   }
 
   const hasAudio = (!!audioState.sourceUrl || audioState.isPlaying) && !!audioState.currentSurah;
+  const renderWithBoundary = (context, node) => (
+    <ErrorBoundary context={context}>
+      {node}
+    </ErrorBoundary>
+  );
 
   return (
     <div className="app" style={{ paddingBottom: hasAudio ? 'calc(140px + env(safe-area-inset-bottom, 0px))' : 'calc(100px + env(safe-area-inset-bottom, 0px))' }}>
@@ -377,6 +398,7 @@ export default function App() {
         onOpenJournal={handleOpenJournal}
         location={location}
         onOpenSettings={handleOpenSettings}
+        onOpenAbout={handleOpenAbout}
       />
 
       {page !== 'home' && (
@@ -390,29 +412,29 @@ export default function App() {
         </button>
       )}
 
-      {page === 'home' && <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} onOpenDrawer={handleOpenDrawer} />}
+      {page === 'home' && renderWithBoundary('HomePage', <HomePage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} theme={theme} onThemeChange={handleThemeChange} onOpenDrawer={handleOpenDrawer} />)}
       {page !== 'home' && (
         <Suspense fallback={<RouteFallback />}>
-          {page === 'prayers' && <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />}
-          {page === 'quran' && <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} ayahAutoplayEnabled={ayahAutoplay} requestedSurahOpen={requestedSurahOpen} />}
-          {page === 'worship' && <Worship onOpenQuranRef={(surah, ayah) => openQuranSurah(surah, true, ayah)} />}
+          {page === 'prayers' && renderWithBoundary('PrayerTimesPage', <PrayerTimesPage location={location} calcMethodIdx={calcMethodIdx} onNavigate={handleNavigate} onToggleCalcMethod={toggleCalcMethod} />)}
+          {page === 'quran' && renderWithBoundary('QuranReader', <QuranReader onPlaySurah={handlePlaySurah} reciter={reciter} reciters={RECITERS} ayahAutoplayEnabled={ayahAutoplay} requestedSurahOpen={requestedSurahOpen} />)}
+          {page === 'worship' && renderWithBoundary('Worship', <Worship onOpenQuranRef={(surah, ayah) => openQuranSurah(surah, true, ayah)} />)}
           {page === 'hadith' && !activeCollection && (
-            <HadithPage onOpenCollection={handleOpenCollection} />
+            renderWithBoundary('HadithPage', <HadithPage onOpenCollection={handleOpenCollection} />)
           )}
           {page === 'hadith' && activeCollection && (
-            <HadithCollection
+            renderWithBoundary('HadithCollection', <HadithCollection
               collectionId={activeCollection}
               onBack={() => { setActiveCollection(null); window.scrollTo({ top: 0 }); }}
-            />
+            />)
           )}
           {page === 'learn' && !activeGuide && (
-            <LearnPage onOpenGuide={handleOpenGuide} onBack={() => handleNavigate('home')} />
+            renderWithBoundary('LearnPage', <LearnPage onOpenGuide={handleOpenGuide} onBack={() => handleNavigate('home')} />)
           )}
           {page === 'learn' && activeGuide && (
-            <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />
+            renderWithBoundary('GuideReader', <GuideReader guideId={activeGuide} onBack={() => { setActiveGuide(null); window.scrollTo({ top: 0 }); }} />)
           )}
           {page === 'qibla' && (
-            <div className="animate-fade-up">
+            renderWithBoundary('QiblaPage', <div className="animate-fade-up">
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-5) 0 var(--sp-2)' }}>
                 <button className="back-btn" onClick={() => handleNavigate('home')}>
                   <IconBack size={16} />
@@ -420,10 +442,10 @@ export default function App() {
                 <div className="page-title" style={{ padding: 0 }}>Qibla Direction</div>
               </div>
               <Qibla location={location} />
-            </div>
+            </div>)
           )}
           {page === 'settings' && (
-            <SettingsPage
+            renderWithBoundary('SettingsPage', <SettingsPage
               onBack={() => handleNavigate('home')}
               calcMethodIdx={calcMethodIdx}
               onToggleCalcMethod={toggleCalcMethod}
@@ -434,13 +456,16 @@ export default function App() {
               onReciterChange={handleReciterChange}
               ayahAutoplay={ayahAutoplay}
               onAyahAutoplayChange={handleAyahAutoplayChange}
-            />
+            />)
+          )}
+          {page === 'about' && (
+            renderWithBoundary('AboutPage', <AboutPage onBack={() => handleNavigate('home')} />)
           )}
           {page === 'journal' && (
-            <JournalPage onBack={() => handleNavigate('home')} />
+            renderWithBoundary('JournalPage', <JournalPage onBack={() => handleNavigate('home')} />)
           )}
           {page === 'calendar' && (
-            <IslamicCalendarPage location={location} onBack={() => handleNavigate('home')} />
+            renderWithBoundary('IslamicCalendarPage', <IslamicCalendarPage location={location} onBack={() => handleNavigate('home')} />)
           )}
         </Suspense>
       )}

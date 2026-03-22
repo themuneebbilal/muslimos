@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CALC_METHODS } from '../utils/prayerCalc';
-import { getHomeGreeting, formatHomeLocation } from '../utils/homePageUtils';
-import { getStreakData } from '../utils/streakTracker';
+import { formatHomeLocation } from '../utils/homePageUtils';
 import {
-  IconBack,
   IconCalendar,
+  IconChevronDown,
   IconCompass,
   IconHadith,
   IconHeart,
@@ -19,20 +17,16 @@ import {
 
 const MAIN_NAV = [
   { id: 'home', label: 'Home', Icon: IconHome },
-  { id: 'quran', label: 'Quran', Icon: IconQuran },
+  { id: 'quran', label: 'Al-Quran', Icon: IconQuran },
   { id: 'worship', label: 'Worship', Icon: IconWorship },
   { id: 'hadith', label: 'Hadith', Icon: IconHadith },
 ];
 
 const GUIDES = [
   { id: 'salah', label: 'How to Pray' },
+  { id: 'tajweed', label: 'Tajweed', soon: true },
   { id: 'wudu', label: 'Wudu' },
-  { id: 'taraweeh', label: 'Taraweeh' },
-  { id: 'umrah', label: 'Umrah' },
-  { id: 'hajj', label: 'Hajj' },
-  { id: 'janazah', label: 'Janazah' },
-  { id: 'eid', label: 'Eid Prayer' },
-  { id: 'witr', label: 'Witr' },
+  { id: 'umrah', label: 'Umrah & Hajj' },
 ];
 
 export default function AppDrawer({
@@ -46,18 +40,21 @@ export default function AppDrawer({
   onOpenJournal,
   location,
   onOpenSettings,
+  onOpenAbout,
 }) {
   const touchStartX = useRef(null);
-  const greeting = useMemo(() => getHomeGreeting(), []);
   const city = useMemo(() => formatHomeLocation(location.label), [location]);
-  const streak = useMemo(() => getStreakData(), [open]);
+  const [learnOpen, setLearnOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open && window.innerWidth < 1120) return undefined;
     function onKeyDown(event) {
       if (event.key === 'Escape') onClose();
     }
-    document.body.style.overflow = 'hidden';
+    if (window.innerWidth < 1120) {
+      document.body.style.overflow = 'hidden';
+    }
     window.addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = '';
@@ -78,17 +75,17 @@ export default function AppDrawer({
     touchStartX.current = null;
   }
 
-  const drawerRow = (key, icon, tone, label, subtitle, onClick, active = false, trailing = null) => (
+  const drawerRow = (key, icon, tone, label, onClick, active = false, trailing = null) => (
     <button
       key={key}
       type="button"
       onClick={onClick}
       className={`appdrawer-row${active ? ' active' : ''}`}
+      disabled={!onClick}
     >
       <span className={`appdrawer-icon appdrawer-icon-${tone}`}>{icon}</span>
       <span className="appdrawer-copy">
         <strong>{label}</strong>
-        {subtitle ? <small>{subtitle}</small> : null}
       </span>
       {trailing}
     </button>
@@ -101,71 +98,70 @@ export default function AppDrawer({
         className={`appdrawer${open ? ' open' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        aria-hidden={!open}
+        aria-hidden={!open && window.innerWidth < 1120}
       >
         <div className="appdrawer-top">
-          <button type="button" className="appdrawer-close" onClick={onClose} aria-label="Close menu">
-            <IconBack size={18} />
+          <div className="appdrawer-user-card glass-card">
+            <div className="appdrawer-greeting">MuslimOS</div>
+            <div className="appdrawer-city">{city}</div>
+            <div className="appdrawer-streak">14 day streak</div>
+          </div>
+        </div>
+
+        <div className="appdrawer-section">
+          {MAIN_NAV.map((item) => drawerRow(
+            item.id,
+            <item.Icon size={18} />,
+            'emerald',
+            item.label,
+            () => onNavigate(item.id),
+            activePage === item.id
+          ))}
+        </div>
+
+        <div className="appdrawer-section-divider" />
+        <div className="appdrawer-section">
+          <button type="button" className="appdrawer-section-toggle" onClick={() => setLearnOpen((value) => !value)}>
+            <span className="appdrawer-label">Learn</span>
+            <IconChevronDown size={16} className={learnOpen ? 'appdrawer-chevron-open' : ''} />
           </button>
-          <div className="appdrawer-user">
-            <div className="appdrawer-user-card glass-card">
-              <div className="appdrawer-greeting">{greeting}</div>
-              <div className="appdrawer-city">{city}</div>
-              <div className="appdrawer-streak">{streak.current} day streak</div>
-            </div>
-            <div className="appdrawer-hero-note">
-              Quick routes, learning paths, and tools without leaving the flow.
-            </div>
-          </div>
-        </div>
-
-        <div className="appdrawer-section">
-          <div className="appdrawer-label">Navigation</div>
-          <div className="appdrawer-nav-grid">
-            {MAIN_NAV.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`appdrawer-nav-chip${activePage === item.id ? ' active' : ''}`}
-                onClick={() => onNavigate(item.id)}
-              >
-                <span className="appdrawer-nav-icon"><item.Icon size={18} /></span>
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="appdrawer-section">
-          <div className="appdrawer-label">Learn Islam</div>
-          {GUIDES.map((guide) => drawerRow(
+          {learnOpen && GUIDES.map((guide) => drawerRow(
             guide.id,
             <IconLearn size={18} />,
             'gold',
             guide.label,
-            null,
-            () => onOpenGuide(guide.id)
+            guide.soon ? null : () => onOpenGuide(guide.id),
+            false,
+            guide.soon ? <span className="appdrawer-soon">Soon</span> : null
           ))}
         </div>
 
+        <div className="appdrawer-section-divider" />
         <div className="appdrawer-section">
-          <div className="appdrawer-label">Tools</div>
-          {drawerRow('qibla', <IconCompass size={18} />, 'emerald', 'Qibla Compass', 'Direction to the Kaaba', onOpenQibla, activePage === 'qibla')}
-          {drawerRow('calendar', <IconCalendar size={18} />, 'gold', 'Islamic Calendar', 'Hijri dates and sacred events', onOpenCalendar, activePage === 'calendar')}
-          {drawerRow('journal', <IconJournal size={18} />, 'emerald', 'Journal', 'Private reflections and prayer notes', onOpenJournal, activePage === 'journal')}
-          {drawerRow('prayer-history', <IconPrayer size={18} />, 'gold', 'Prayer History', 'Coming soon', undefined, false, <span className="appdrawer-soon">Soon</span>)}
+          <button type="button" className="appdrawer-section-toggle" onClick={() => setToolsOpen((value) => !value)}>
+            <span className="appdrawer-label">Tools</span>
+            <IconChevronDown size={16} className={toolsOpen ? 'appdrawer-chevron-open' : ''} />
+          </button>
+          {toolsOpen && (
+            <>
+              {drawerRow('qibla', <IconCompass size={18} />, 'emerald', 'Qibla Compass', onOpenQibla, activePage === 'qibla')}
+              {drawerRow('calendar', <IconCalendar size={18} />, 'gold', 'Islamic Calendar', onOpenCalendar, activePage === 'calendar')}
+              {drawerRow('journal', <IconJournal size={18} />, 'emerald', 'Journal', onOpenJournal, activePage === 'journal')}
+              {drawerRow('prayer-history', <IconPrayer size={18} />, 'gold', 'Prayer History', null, false, <span className="appdrawer-soon">Soon</span>)}
+            </>
+          )}
         </div>
 
+        <div className="appdrawer-section-divider" />
         <div className="appdrawer-section">
-          <div className="appdrawer-label">System</div>
-          {drawerRow('settings', <IconSettings size={18} />, 'gold', 'Settings', 'Theme, reciter, language, notifications', onOpenSettings, activePage === 'settings')}
-          {drawerRow('about', <IconHeart size={18} />, 'emerald', 'About MuslimOS', 'Open Source · Made for the Ummah')}
+          {drawerRow('settings', <IconSettings size={18} />, 'gold', 'Settings', onOpenSettings, activePage === 'settings')}
+          {drawerRow('about', <IconHeart size={18} />, 'emerald', 'About MuslimOS', onOpenAbout, activePage === 'about')}
         </div>
 
+        <div className="appdrawer-section-divider" />
         <div className="appdrawer-footer">
-          <div className="appdrawer-version">v2.0</div>
-          <div className="appdrawer-meta">Open Source · Made for the Ummah</div>
-          <div className="appdrawer-bismillah">بِسْمِ اللَّهِ</div>
+          <div className="appdrawer-version">v1.0 · Open Source</div>
+          <div className="appdrawer-meta">Made for the Ummah</div>
         </div>
       </aside>
     </>

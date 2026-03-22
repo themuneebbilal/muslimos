@@ -1,18 +1,16 @@
 // Khatm al-Quran progress tracker
 // Tracks which surahs have been fully read (scrolled past 80%+ of ayahs)
+import { safeGetJSON, safeSetJSON } from './safeStorage';
+
 const STORAGE_KEY = 'mos_khatm';
 const TOTAL_SURAHS = 114;
 
 function loadData() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { surahs: {}, startedAt: null, completedAt: null };
-  } catch {
-    return { surahs: {}, startedAt: null, completedAt: null };
-  }
+  return safeGetJSON(STORAGE_KEY, { surahs: {}, startedAt: null, completedAt: null }) || { surahs: {}, startedAt: null, completedAt: null };
 }
 
 function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  safeSetJSON(STORAGE_KEY, data);
 }
 
 export function markSurahProgress(surahNum, maxAyahReached, totalAyahs) {

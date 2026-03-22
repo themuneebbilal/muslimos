@@ -11,6 +11,7 @@ import { calculateQibla } from '../utils/qiblaCalc';
 import { getStreakData } from '../utils/streakTracker';
 import { getKhatmData } from '../utils/khatmTracker';
 import { getUpcomingEvents } from '../data/islamicCalendar';
+import { safeGetJSON } from '../utils/safeStorage';
 import {
   IconCalendar,
   IconCompass,
@@ -70,35 +71,28 @@ const HOME_FOLD_ACTIONS = [
   {
     id: 'prayers',
     title: 'Prayer Times',
-    subtitle: 'See the next prayer, full windows, and daily timings',
+    subtitle: 'Next salah, today\'s full schedule, and time windows',
     tone: 'gold',
     Icon: IconPrayer,
   },
   {
     id: 'worship',
     title: 'Tasbeeh',
-    subtitle: 'Daily dhikr, adhkar, and reset routines',
+    subtitle: 'Dhikr counter, daily adhkar, and worship routines',
     tone: 'emerald',
     Icon: IconWorship,
   },
   {
-    id: 'learn',
-    title: 'Learning',
-    subtitle: 'Guides, hadith, and practical study',
-    tone: 'gold',
-    Icon: IconLearn,
-  },
-  {
     id: 'journal',
     title: 'Journal',
-    subtitle: 'Reflect, save duas, and track the day',
+    subtitle: 'Reflect on the day and save personal notes or duas',
     tone: 'rose',
     Icon: IconJournal,
   },
   {
     id: 'calendar',
     title: 'Islamic Calendar',
-    subtitle: 'Hijri month, events, and planning',
+    subtitle: 'Hijri month, key dates, and upcoming events',
     tone: 'emerald',
     Icon: IconCalendar,
   },
@@ -187,11 +181,7 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
   const locationLabel = useMemo(() => formatHomeLocation(location), [location]);
 
   const lastReadInfo = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem('mos_lastRead'));
-    } catch {
-      return null;
-    }
+    return safeGetJSON('mos_lastRead', null);
   }, []);
 
   const streak = useMemo(() => getStreakData(), []);
@@ -403,11 +393,10 @@ export default function HomePage({ location, calcMethodIdx, onNavigate, onOpenDr
       </section>
 
       <section className="homev2-fold glass-card homev2-reveal-6">
-        <div className="homev2-fold-header">
-          <div>
-            <div className="homev2-sub-head homev2-sub-head-lightless">Quick access</div>
-            <h2 className="homev2-fold-title">Open what you need next</h2>
-          </div>
+        <div className="homev2-section-header homev2-fold-header">
+          <h2 className="homev2-arabic-title homev2-arabic-title-light">وُصُولٌ سَرِيع</h2>
+          <div className="homev2-sub-head homev2-sub-head-lightless">Quick Access</div>
+          <HomeDivider />
         </div>
 
         <div className="homev2-fold-list">

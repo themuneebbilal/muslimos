@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { loadGuide } from '../data/guides/index.js';
 import GuideIllustration from './GuideIllustrations';
 import { IconBack, IconForward } from './Icons';
+import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
 export default function GuideReader({ guideId, onBack }) {
   const [guide, setGuide] = useState(null);
+  const [guidedMode, setGuidedMode] = useState(() => safeGetItem(`mos_guide_${guideId}_mode`, 'reference') === 'guided');
   const [step, setStep] = useState(() => {
-    const saved = localStorage.getItem(`mos_guide_${guideId}_step`);
-    return saved ? Math.max(0, parseInt(saved) - 1) : 0;
+    const saved = safeGetItem(`mos_guide_${guideId}_last_step`, null);
+    return saved ? Math.max(0, parseInt(saved, 10) - 1) : 0;
   });
   const touchRef = useRef({ startX: 0, startY: 0 });
   const contentRef = useRef(null);
@@ -18,9 +20,24 @@ export default function GuideReader({ guideId, onBack }) {
 
   useEffect(() => {
     if (guide) {
-      localStorage.setItem(`mos_guide_${guideId}_step`, step + 1);
+      safeSetItem(`mos_guide_${guideId}_last_step`, step + 1);
+      if (guidedMode) {
+        safeSetItem(`mos_guide_${guideId}_guided_step`, step + 1);
+      }
     }
-  }, [step, guide, guideId]);
+  }, [step, guide, guideId, guidedMode]);
+
+  useEffect(() => {
+    safeSetItem(`mos_guide_${guideId}_mode`, guidedMode ? 'guided' : 'reference');
+  }, [guideId, guidedMode]);
+
+  useEffect(() => {
+    if (!guide || !guidedMode) return;
+    const saved = safeGetItem(`mos_guide_${guideId}_guided_step`, null);
+    if (saved) {
+      setStep(Math.max(0, parseInt(saved, 10) - 1));
+    }
+  }, [guideId, guide, guidedMode]);
 
   const goNext = useCallback(() => {
     if (guide && step < guide.steps.length - 1) {
@@ -86,7 +103,7 @@ export default function GuideReader({ guideId, onBack }) {
             {guide.title}
           </div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
-            Step {step + 1} of {total}
+            {guidedMode ? `Guided mode · step ${step + 1} of ${total}` : `Reference mode · section ${step + 1} of ${total}`}
           </div>
         </div>
         <div className="font-amiri" style={{ fontSize: 'var(--text-sm)', color: 'var(--gold-400)', flexShrink: 0 }}>
@@ -94,9 +111,53 @@ export default function GuideReader({ guideId, onBack }) {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="guide-progress-bar" style={{ marginBottom: 'var(--sp-4)' }}>
-        <div className="guide-progress-fill" style={{ width: `${pct}%` }} />
+      <div className="glass-card" style={{ padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--sp-3)' }}>
+          <button
+            type="button"
+            className={`sub-tab${!guidedMode ? ' active' : ''}`}
+            onClick={() => setGuidedMode(false)}
+          >
+            Reference Mode
+          </button>
+          <button
+            type="button"
+            className={`sub-tab${guidedMode ? ' active' : ''}`}
+            onClick={() => setGuidedMode(true)}
+          >
+            Guided Mode
+          </button>
+        </div>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+          {guidedMode
+            ? 'Sequential walkthrough with remembered progress.'
+            : 'Open-ended reading. Jump anywhere without the guide feeling like a daily task.'}
+        </div>
+        {guidedMode && (
+          <div className="guide-progress-bar" style={{ marginTop: 'var(--sp-3)' }}>
+            <div className="guide-progress-fill" style={{ width: `${pct}%` }} />
+          </div>
+        )}
+      </div>
+
+      <div className="glass-card" style={{ padding: 'var(--sp-3)', marginBottom: 'var(--sp-4)', display: 'grid', gap: 8 }}>
+        <div className="section-label">Sections</div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          {guide.steps.map((guideStep, index) => (
+            <button
+              key={guideStep.id}
+              type="button"
+              className={`sub-tab${index === step ? ' active' : ''}`}
+              onClick={() => {
+                setStep(index);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {guideStep.id}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Step card */}
@@ -193,7 +254,7 @@ export default function GuideReader({ guideId, onBack }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
           }}
         >
-          {step === total - 1 ? 'Finish' : 'Next'} {step < total - 1 && <IconForward size={14} />}
+          {step === total - 1 ? (guidedMode ? 'Finish Guided Path' : 'Back to Guide') : 'Next'} {step < total - 1 && <IconForward size={14} />}
         </button>
       </div>
     </div>

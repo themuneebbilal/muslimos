@@ -1,42 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { calculateQibla } from '../utils/qiblaCalc';
+import { logError } from '../utils/logger';
+
+function normalizeDegrees(value) {
+  return ((value % 360) + 360) % 360;
+}
+
+function shortestAngleDelta(from, to) {
+  return ((to - from + 540) % 360) - 180;
+}
+
+function getScreenAngle() {
+  const angle = window.screen?.orientation?.angle;
+  if (typeof angle === 'number') return angle;
+  if (typeof window.orientation === 'number') return window.orientation;
+  return 0;
+}
+
+function headingFromOrientation(event) {
+  if (typeof event.webkitCompassHeading === 'number' && !Number.isNaN(event.webkitCompassHeading)) {
+    return normalizeDegrees(event.webkitCompassHeading + getScreenAngle());
+  }
+
+  const { alpha, beta, gamma } = event;
+  if ([alpha, beta, gamma].some((value) => typeof value !== 'number' || Number.isNaN(value))) {
+    return null;
+  }
+
+  const alphaRad = alpha * (Math.PI / 180);
+  const betaRad = beta * (Math.PI / 180);
+  const gammaRad = gamma * (Math.PI / 180);
+
+  const cX = Math.cos(betaRad) * Math.sin(gammaRad);
+  const cY = Math.sin(betaRad) * Math.sin(gammaRad) * Math.cos(alphaRad) - Math.cos(gammaRad) * Math.sin(alphaRad);
+
+  if (cX === 0 && cY === 0) return null;
+
+  const heading = Math.atan2(cX, cY) * (180 / Math.PI);
+  return normalizeDegrees(heading + getScreenAngle());
+}
 
 export default function Qibla({ location }) {
   const [heading, setHeading] = useState(0);
   const [compassActive, setCompassActive] = useState(false);
+  const [permissionState, setPermissionState] = useState('idle');
+  const [statusText, setStatusText] = useState('Enable compass access for live Qibla alignment.');
+  const headingRef = useRef(0);
+  const listenerRef = useRef(null);
   const qiblaAngle = calculateQibla(location.lat, location.lng);
+  const relativeQibla = useMemo(() => normalizeDegrees(qiblaAngle - heading), [qiblaAngle, heading]);
+  const aligned = Math.abs(shortestAngleDelta(heading, qiblaAngle)) <= 8;
+
+  function detachListener() {
+    if (listenerRef.current) {
+      window.removeEventListener('deviceorientationabsolute', listenerRef.current, true);
+      window.removeEventListener('deviceorientation', listenerRef.current, true);
+      listenerRef.current = null;
+    }
+  }
+
+  function attachListener() {
+    detachListener();
+
+    const handleOrientation = (event) => {
+      const nextHeading = headingFromOrientation(event);
+      if (nextHeading === null) {
+        setStatusText('Move the phone in a gentle figure-eight to calibrate the compass.');
+        return;
+      }
+
+      const smoothedHeading = normalizeDegrees(
+        headingRef.current + shortestAngleDelta(headingRef.current, nextHeading) * 0.22
+      );
+      headingRef.current = smoothedHeading;
+      setHeading(smoothedHeading);
+      setCompassActive(true);
+      setPermissionState('granted');
+      setStatusText('Live compass active. Hold the phone flat or upright and turn until the marker aligns.');
+    };
+
+    listenerRef.current = handleOrientation;
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    }
+    window.addEventListener('deviceorientation', handleOrientation, true);
+  }
 
   useEffect(() => {
-    function handleOrientation(e) {
-      let h = e.alpha;
-      if (e.webkitCompassHeading) h = e.webkitCompassHeading;
-      if (h !== null) {
-        setHeading(h);
-        setCompassActive(true);
-      }
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+      attachListener();
+      setPermissionState('granted');
     }
 
-    if (window.DeviceOrientationEvent) {
+    const handleOrientationChange = () => {
+      if (compassActive) {
+        setStatusText('Orientation changed. Re-align the phone for an updated heading.');
+      }
+    };
+
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.screen?.orientation?.addEventListener?.('change', handleOrientationChange);
+
+    return () => {
+      detachListener();
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.screen?.orientation?.removeEventListener?.('change', handleOrientationChange);
+    };
+  }, [compassActive]);
+
+  async function requestPermission() {
+    try {
+      if (!window.DeviceOrientationEvent) {
+        setPermissionState('unsupported');
+        setStatusText('Compass sensors are not available on this device.');
+        return;
+      }
+
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS 13+ requires permission
-      } else {
-        window.addEventListener('deviceorientation', handleOrientation);
-      }
-    }
-
-    return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, []);
-
-  function requestPermission() {
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission().then(r => {
-        if (r === 'granted') {
-          window.addEventListener('deviceorientation', (e) => {
-            let h = e.webkitCompassHeading || e.alpha;
-            if (h !== null) { setHeading(h); setCompassActive(true); }
-          });
+        const result = await DeviceOrientationEvent.requestPermission();
+        if (result !== 'granted') {
+          setPermissionState('denied');
+          setStatusText('Compass permission was denied. Allow motion access in browser settings.');
+          return;
         }
-      });
+      }
+
+      attachListener();
+      setPermissionState('granted');
+    } catch (error) {
+      logError('qibla:permission', error);
+      setPermissionState('error');
+      setStatusText('Unable to access the compass on this device.');
     }
   }
 
@@ -70,17 +164,22 @@ export default function Qibla({ location }) {
         <div className="qibla-degree">{Math.round(qiblaAngle)}°</div>
         <div className="qibla-sub">from North</div>
         <div className="qibla-location">{location.label}</div>
+        <div className="qibla-copy" style={{ marginTop: 12 }}>
+          Device heading: {Math.round(heading)}° · Qibla offset: {Math.round(relativeQibla)}°
+        </div>
 
         {!compassActive ? (
           <button onClick={requestPermission} className="qibla-cta">
-            Enable Compass
+            {permissionState === 'denied' ? 'Retry Compass Access' : 'Enable Compass'}
           </button>
         ) : (
-          <div className="qibla-status">Compass active — point phone North</div>
+          <div className="qibla-status" style={aligned ? { color: 'var(--gold-600)', borderColor: 'rgba(201,168,76,0.22)', background: 'rgba(201,168,76,0.08)' } : undefined}>
+            {aligned ? 'Aligned with the Qibla' : 'Turn the phone until the Kaaba marker points straight ahead'}
+          </div>
         )}
 
         <div className="qibla-copy">
-          Point the top of your phone toward North. The arrow and Ka'bah marker show the direction to the Ka'bah.
+          {statusText}
         </div>
       </div>
     </div>

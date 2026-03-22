@@ -1,3 +1,6 @@
+import { logError } from './logger';
+import { safeGetJSON, safeSetJSON } from './safeStorage';
+
 export const FALLBACK_QURAN_COM_RECITER_ID = 7;
 
 const QURAN_COM_RECITER_IDS = {
@@ -49,10 +52,8 @@ function normalizeTimingItem(item) {
 export async function getChapterRecitationData(surah, reciter) {
   const key = cacheKey(surah, reciter);
 
-  try {
-    const cached = JSON.parse(localStorage.getItem(key) || 'null');
-    if (cached?.audioUrl || cached?.timings?.length) return cached;
-  } catch {}
+  const cached = safeGetJSON(key, null);
+  if (cached?.audioUrl || cached?.timings?.length) return cached;
 
   const reciterId = getQuranComReciterId(reciter);
   const res = await fetch(
@@ -77,6 +78,8 @@ export async function getChapterRecitationData(surah, reciter) {
       : [],
   };
 
-  localStorage.setItem(key, JSON.stringify(data));
+  if (!safeSetJSON(key, data)) {
+    logError('quranRecitation:cacheWrite', new Error('Unable to cache recitation data'), { surah, reciter });
+  }
   return data;
 }

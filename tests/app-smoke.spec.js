@@ -1,5 +1,35 @@
 import { test, expect } from '@playwright/test';
 
+async function isDesktopLayout(page) {
+  return page.evaluate(() => window.innerWidth >= 1120);
+}
+
+async function navigatePrimary(page, pageName) {
+  if (await isDesktopLayout(page)) {
+    const drawerLabels = {
+      Home: 'Home',
+      Quran: 'Al-Quran',
+      Worship: 'Worship',
+      Hadith: 'Hadith',
+    };
+
+    await page.locator('.appdrawer').getByRole('button', { name: drawerLabels[pageName], exact: true }).click();
+    return;
+  }
+
+  await page.locator('.bottom-nav').getByRole('button', { name: pageName, exact: true }).click();
+}
+
+async function openSettings(page) {
+  if (await isDesktopLayout(page)) {
+    await page.locator('.appdrawer').getByRole('button', { name: 'Settings', exact: true }).click();
+    return;
+  }
+
+  await page.getByRole('button', { name: 'Open menu' }).first().click();
+  await page.getByRole('button', { name: /Settings/i }).click();
+}
+
 async function installAudioHarness(page) {
   await page.addInitScript(() => {
     class MockAudio extends EventTarget {
@@ -98,21 +128,28 @@ test('home page renders promoted sections', async ({ page }) => {
 test('bottom nav reaches all main tabs', async ({ page }) => {
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await expect(page.locator('.page-title').filter({ hasText: 'Al-Quran' })).toBeVisible();
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Worship', exact: true }).click();
+  await navigatePrimary(page, 'Worship');
   await expect(page.locator('.page-title').filter({ hasText: 'Worship' })).toBeVisible();
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Hadith', exact: true }).click();
+  await navigatePrimary(page, 'Hadith');
   await expect(page.locator('.page-title').filter({ hasText: 'Hadith' })).toBeVisible();
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Home', exact: true }).click();
+  await navigatePrimary(page, 'Home');
   await expect(page.getByRole('heading', { name: 'MuslimOS' })).toBeVisible();
 });
 
 test('hamburger menu opens and closes from the home header', async ({ page }) => {
   await page.goto('/');
+
+  if (await isDesktopLayout(page)) {
+    await expect(page.locator('.appdrawer')).toBeVisible();
+    await expect(page.locator('.appdrawer-overlay')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden();
+    return;
+  }
 
   const menuButton = page.getByRole('button', { name: 'Open menu' }).first();
   await expect(menuButton).toBeVisible();
@@ -129,7 +166,7 @@ test('surah and ayah playback never run together', async ({ page }) => {
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByText('Al-Fatihah').first().click();
   await page.evaluate(async () => {
     await window.__mosAudioManager.playSource({
@@ -178,7 +215,7 @@ test('ayah highlight stays in sync after play and seek', async ({ page }) => {
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByText('Al-Fatihah').first().click();
   await page.evaluate(async () => {
     await window.__mosAudioManager.playSource({
@@ -216,7 +253,7 @@ test('ayah highlight only appears after playing and clears on pause', async ({ p
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByText('Al-Fatihah').first().click();
   await page.locator('.ayah-card button').nth(3).click({ force: true });
 
@@ -239,7 +276,7 @@ test('long surah timing stays aligned through at least twenty ayahs', async ({ p
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByText('Al-Baqarah').first().click();
   await page.evaluate(async () => {
     await window.__mosAudioManager.playSource({
@@ -265,7 +302,7 @@ test('playing a surah from the list opens the reader view', async ({ page }) => 
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByRole('button', { name: 'Play Al-Fatihah' }).click();
 
   await expect(page.locator('.surah-banner')).toBeVisible();
@@ -276,9 +313,15 @@ test('surah playback advances reader to the next surah when one finishes', async
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByRole('button', { name: 'Play Al-Fatihah' }).click();
   await expect(page.locator('.surah-banner')).toContainText('Al-Fatihah');
+  await expect.poll(async () => {
+    return page.evaluate(() => {
+      const state = window.__mosAudioManager.getState();
+      return `${state.playbackMode}:${state.currentSurah}`;
+    });
+  }).toBe('surah:1');
 
   await page.evaluate(() => {
     window.__mosAudioManager.audio.dispatchEvent(new Event('ended'));
@@ -293,11 +336,10 @@ test('ayah autoplay setting advances to the next ayah', async ({ page }) => {
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.getByRole('button', { name: 'Open menu' }).first().click();
-  await page.getByRole('button', { name: /Settings/i }).click();
+  await openSettings(page);
   await page.getByRole('button', { name: 'On', exact: true }).click();
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByText('Al-Fatihah').first().click();
   await page.locator('.ayah-card button').nth(3).click({ force: true });
 
@@ -313,7 +355,7 @@ test('ayah autoplay setting advances to the next ayah', async ({ page }) => {
 test('browser back returns to home instead of leaving the app', async ({ page }) => {
   await page.goto('/');
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Hadith', exact: true }).click();
+  await navigatePrimary(page, 'Hadith');
   await expect(page.locator('.page-title').filter({ hasText: 'Hadith' })).toBeVisible();
 
   await page.goBack();
@@ -325,11 +367,10 @@ test('floating player next button advances to next ayah during ayah playback', a
   await installAudioHarness(page);
   await page.goto('/');
 
-  await page.getByRole('button', { name: 'Open menu' }).first().click();
-  await page.getByRole('button', { name: /Settings/i }).click();
+  await openSettings(page);
   await page.getByRole('button', { name: 'On', exact: true }).click();
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Quran', exact: true }).click();
+  await navigatePrimary(page, 'Quran');
   await page.getByText('Al-Fatihah').first().click();
   await page.locator('.ayah-card button').nth(3).click({ force: true });
 
