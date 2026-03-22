@@ -80,7 +80,8 @@ export default function HadithCollection({ collectionId, onBack }) {
       }
 
       if (collection && (isIncluded || isFullyDownloaded(collection.id))) {
-        const all = await loadAllCached(collection.id);
+        const cacheKey = isIncluded && !isFullyDownloaded(collection.id) ? (collection.apiName || collection.id) : collection.id;
+        const all = await loadAllCached(cacheKey);
         const mapped = all.map(h => mapApiHadith(h, collection.id, collection.nameEn));
         if (!cancelled) {
           setHadithList(mapped);
@@ -189,7 +190,7 @@ export default function HadithCollection({ collectionId, onBack }) {
   }
 
   async function handleDownload() {
-    if (!collection?.apiName || downloading || isIncluded) return;
+    if (!collection?.apiName || downloading) return;
     setDownloading(true);
     setDlProgress({ done: 0, total: collection.totalHadith });
     try {
@@ -218,8 +219,10 @@ export default function HadithCollection({ collectionId, onBack }) {
   }
 
   const currentDownloadState = collection ? getCollectionDownloadState(collection.id) : null;
-  const cachedCount = collection ? getCachedCount(collection.id) : (isNawawi ? 42 : 0);
-  const fullyDownloaded = collection ? (isBundled || isIncluded || isFullyDownloaded(collection.id)) : false;
+  const includedCount = collection && isIncluded ? getCachedCount(collection.apiName || collection.id) : 0;
+  const offlineCount = collection ? getCachedCount(collection.id) : 0;
+  const cachedCount = collection ? Math.max(includedCount, offlineCount) : (isNawawi ? 42 : 0);
+  const fullyDownloaded = collection ? (isBundled || isFullyDownloaded(collection.id)) : false;
   const isQueued = currentDownloadState?.status === 'queued' || currentDownloadState?.status === 'queued_resume';
   const isPartial = currentDownloadState?.status === 'partial' || (!fullyDownloaded && cachedCount > 0);
 
@@ -263,7 +266,7 @@ export default function HadithCollection({ collectionId, onBack }) {
             {cachedCount > 0 && (
               <div style={{ fontSize: '0.6rem', color: 'var(--success)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 'var(--sp-1)' }}>
                 {isIncluded ? (
-                  <><IconCheck size={10} /> {cachedCount} included in app</>
+                  <><IconCheck size={10} /> {includedCount} included in app</>
                 ) : fullyDownloaded ? (
                   <><IconCheck size={10} /> Fully available offline</>
                 ) : (
@@ -297,6 +300,8 @@ export default function HadithCollection({ collectionId, onBack }) {
                   ? 'Queued for Download'
                   : currentDownloadState?.status === 'error'
                     ? 'Resume Download'
+                    : isIncluded
+                      ? 'Download Full Collection'
                     : isPartial
                       ? 'Continue Download'
                       : 'Download All'}

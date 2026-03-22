@@ -494,7 +494,6 @@ async function processQueue() {
 }
 
 export async function queueCollectionDownload(collectionApiName, collectionId, totalExpected) {
-  if (hasIncludedHadith(collectionApiName) || hasIncludedHadith(collectionId)) return;
   setQueuedState(collectionId, totalExpected);
   enqueue({ collectionApiName, collectionId, totalExpected });
   processQueue();

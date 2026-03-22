@@ -40,14 +40,20 @@ export default function HadithPage({ onOpenCollection }) {
     HADITH_COLLECTIONS.forEach(c => {
       if (c.bundled) {
         states[c.id] = { status: 'bundled', cached: c.totalHadith };
-      } else if (hasIncludedHadith(c.apiName || c.id)) {
-        states[c.id] = { status: 'included', cached: getCachedCount(c.apiName || c.id) };
       } else if (isFullyDownloaded(c.id)) {
         states[c.id] = { ...getCollectionDownloadState(c.id), status: 'downloaded', cached: getCachedCount(c.id) };
       } else {
         const meta = getCollectionDownloadState(c.id);
-        const count = getCachedCount(c.id);
-        states[c.id] = { ...meta, status: meta.status || (count > 0 ? 'partial' : 'remote'), cached: count };
+        const includedCount = hasIncludedHadith(c.apiName || c.id) ? getCachedCount(c.apiName || c.id) : 0;
+        const offlineCount = getCachedCount(c.id);
+        const effectiveCount = Math.max(includedCount, offlineCount);
+        states[c.id] = {
+          ...meta,
+          status: meta.status || (includedCount > 0 ? 'included' : effectiveCount > 0 ? 'partial' : 'remote'),
+          cached: effectiveCount,
+          includedCount,
+          offlineCount,
+        };
       }
     });
     return states;
@@ -109,11 +115,12 @@ export default function HadithPage({ onOpenCollection }) {
   }
 
   function getCollectionActionLabel(collection, state) {
-    if (collection.bundled || state.status === 'included' || state.status === 'downloaded') return null;
+    if (collection.bundled || state.status === 'downloaded') return null;
     if (state.status === 'downloading') return `Downloading ${Math.min(100, Math.round(((state.downloadedCount || 0) / (state.totalExpected || collection.totalHadith)) * 100))}%`;
     if (state.status === 'queued' || state.status === 'queued_resume') return 'Queued for download';
     if (state.status === 'error') return 'Resume download';
     if (state.status === 'partial') return 'Continue download';
+    if (state.status === 'included') return 'Download full collection';
     return 'Download offline';
   }
 
@@ -231,7 +238,7 @@ export default function HadithPage({ onOpenCollection }) {
                     </div>
                   )}
 
-                  {!c.bundled && !hasIncludedHadith(c.apiName || c.id) && (
+                  {!c.bundled && state.status !== 'downloaded' && (
                     <button
                       type="button"
                       onClick={(event) => handleDownload(event, c)}
@@ -279,7 +286,7 @@ export default function HadithPage({ onOpenCollection }) {
                         <><IconCheck size={10} style={{ color: 'var(--success)' }} /> Available offline</>
                       )}
                       {state.status === 'included' && (
-                        <><IconCheck size={10} style={{ color: 'var(--success)' }} /> {state.cached} included in app</>
+                        <><IconCheck size={10} style={{ color: 'var(--success)' }} /> {state.includedCount || state.cached} included in app</>
                       )}
                       {(state.status === 'queued' || state.status === 'queued_resume') && (
                         <>Queued · {Math.max(queueCount - 1, 0)} remaining</>
