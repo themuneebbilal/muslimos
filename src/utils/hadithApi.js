@@ -25,16 +25,46 @@ const LOCAL_COLLECTION_ALIASES = {
 };
 
 const REMOTE_EDITIONS = {
-  riyad: ['eng-riyadussalihin', 'eng-riyadusshaliheen', 'eng-riyadussaliheen'],
-  bukhari: ['eng-bukhari'],
-  muslim: ['eng-muslim'],
-  tirmidhi: ['eng-tirmidhi'],
-  abu_dawud: ['eng-abudawud'],
-  abudawud: ['eng-abudawud'],
-  nasai: ['eng-nasai'],
-  ibnmajah: ['eng-ibnmajah'],
-  malik: ['eng-malik'],
-  ahmad: ['eng-ahmad'],
+  riyad: {
+    english: ['eng-riyadussalihin', 'eng-riyadusshaliheen', 'eng-riyadussaliheen'],
+    arabic: [],
+  },
+  bukhari: {
+    english: ['eng-bukhari'],
+    arabic: ['ara-bukhari', 'ara-bukhari1'],
+  },
+  muslim: {
+    english: ['eng-muslim'],
+    arabic: ['ara-muslim', 'ara-muslim1'],
+  },
+  tirmidhi: {
+    english: ['eng-tirmidhi'],
+    arabic: ['ara-tirmidhi', 'ara-tirmidhi1'],
+  },
+  abu_dawud: {
+    english: ['eng-abudawud'],
+    arabic: ['ara-abudawud', 'ara-abudawud1'],
+  },
+  abudawud: {
+    english: ['eng-abudawud'],
+    arabic: ['ara-abudawud', 'ara-abudawud1'],
+  },
+  nasai: {
+    english: ['eng-nasai'],
+    arabic: ['ara-nasai', 'ara-nasai1'],
+  },
+  ibnmajah: {
+    english: ['eng-ibnmajah'],
+    arabic: ['ara-ibnmajah', 'ara-ibnmajah1'],
+  },
+  malik: {
+    english: ['eng-malik'],
+    arabic: ['ara-malik', 'ara-malik1'],
+  },
+  ahmad: {
+    english: ['eng-ahmad'],
+    arabic: [],
+  },
 };
 
 const listeners = new Set();
@@ -227,7 +257,7 @@ function measureBytes(data) {
 
 function getEditionCandidates(collectionId) {
   const normalized = normalizeLocalCollectionId(collectionId);
-  return REMOTE_EDITIONS[normalized] || [`eng-${normalized}`];
+  return REMOTE_EDITIONS[normalized] || { english: [`eng-${normalized}`], arabic: [`ara-${normalized}`, `ara-${normalized}1`] };
 }
 
 async function fetchJsonWithFallback(endpoint) {
@@ -250,6 +280,21 @@ async function fetchJsonWithFallback(endpoint) {
   }
 
   throw lastError || new Error(`Unable to fetch ${endpoint}`);
+}
+
+async function fetchFirstAvailableEdition(candidates = []) {
+  let lastError = null;
+  for (const edition of candidates) {
+    try {
+      const bundle = await fetchJsonWithFallback(`editions/${edition}`);
+      return { edition, bundle };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (candidates.length === 0) return null;
+  throw lastError || new Error(`Unable to fetch editions: ${candidates.join(', ')}`);
 }
 
 function inferChapterLabel(item, sectionsMap) {
@@ -299,6 +344,40 @@ function normalizeRemoteBundle(bundle, collectionId) {
   };
 }
 
+function mergeNormalizedBundles(collectionId, englishBundle, arabicBundle) {
+  if (!englishBundle && !arabicBundle) {
+    return { items: [], chapters: [], metadata: {} };
+  }
+  if (!englishBundle) return arabicBundle;
+  if (!arabicBundle) return englishBundle;
+
+  const makeKey = (item) => `${item.hadithNumber}:${item.reference?.book ?? ''}:${item.reference?.hadith ?? ''}`;
+  const englishByKey = new Map(englishBundle.items.map((item) => [makeKey(item), item]));
+  const arabicByKey = new Map(arabicBundle.items.map((item) => [makeKey(item), item]));
+  const mergedKeys = new Set([...englishByKey.keys(), ...arabicByKey.keys()]);
+
+  const items = Array.from(mergedKeys)
+    .map((key) => {
+      const englishItem = englishByKey.get(key);
+      const arabicItem = arabicByKey.get(key);
+      const base = englishItem || arabicItem;
+      return {
+        ...base,
+        text: englishItem?.text || base?.text || '',
+        arab: arabicItem?.text || arabicItem?.arab || base?.arab || '',
+        grades: englishItem?.grades?.length ? englishItem.grades : (arabicItem?.grades || base?.grades || []),
+        chapterTitle: englishItem?.chapterTitle || arabicItem?.chapterTitle || base?.chapterTitle || '',
+      };
+    })
+    .sort((a, b) => a.hadithNumber - b.hadithNumber);
+
+  return {
+    items,
+    chapters: englishBundle.chapters?.length ? englishBundle.chapters : arabicBundle.chapters,
+    metadata: englishBundle.metadata || arabicBundle.metadata || {},
+  };
+}
+
 async function fetchRemoteCollectionBundle(collectionId) {
   const cacheKey = normalizeLocalCollectionId(collectionId);
   if (remoteCollectionCache.has(cacheKey)) {
@@ -306,16 +385,30 @@ async function fetchRemoteCollectionBundle(collectionId) {
   }
 
   const promise = (async () => {
-    let lastError = null;
-    for (const edition of getEditionCandidates(cacheKey)) {
-      try {
-        const bundle = await fetchJsonWithFallback(`editions/${edition}`);
-        return normalizeRemoteBundle(bundle, cacheKey);
-      } catch (error) {
-        lastError = error;
-      }
+    const editionConfig = getEditionCandidates(cacheKey);
+
+    let englishResult = null;
+    let englishError = null;
+    try {
+      englishResult = await fetchFirstAvailableEdition(editionConfig.english);
+    } catch (error) {
+      englishError = error;
     }
-    throw lastError || new Error(`Unsupported hadith collection: ${collectionId}`);
+
+    let arabicResult = null;
+    try {
+      arabicResult = await fetchFirstAvailableEdition(editionConfig.arabic);
+    } catch (error) {
+      logWarn('hadith:arabicEdition', `Arabic edition unavailable for ${cacheKey}`, error);
+    }
+
+    if (!englishResult && !arabicResult) {
+      throw englishError || new Error(`Unsupported hadith collection: ${collectionId}`);
+    }
+
+    const normalizedEnglish = englishResult ? normalizeRemoteBundle(englishResult.bundle, cacheKey) : null;
+    const normalizedArabic = arabicResult ? normalizeRemoteBundle(arabicResult.bundle, cacheKey) : null;
+    return mergeNormalizedBundles(cacheKey, normalizedEnglish, normalizedArabic);
   })();
 
   remoteCollectionCache.set(cacheKey, promise);
