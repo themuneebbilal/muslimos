@@ -20,3 +20,9 @@ login-credentials.txt
 # Release binaries (built locally, not stored in git)
 playstore/apk/
 playstore/aab/
+
+# secrets (added during Mac->PC migration)
+.env
+.env.*
+!.env.example
+

@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MuslimOS Android Play Store Launch Guide</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+      @bottom-center {
+        content: "MuslimOS · Android Launch Guide · March 2026";
+        color: #8A8A8A;
+        font-size: 9pt;
+      }
+    }
+
+    @font-face {
+      font-family: "MuslimOSArabic";
+      src: url("file:///System/Library/Fonts/NotoNastaliq.ttc");
+    }
+
+    :root {
+      --emerald: #0B6B4F;
+      --emerald-deep: #064A37;
+      --emerald-dark: #053928;
+      --emerald-light: #E8F5F0;
+      --gold: #C9A84C;
+      --gold-dark: #8B7330;
+      --gold-light: #F5EDD6;
+      --cream: #FBF8F1;
+      --cream-mid: #F0EDE4;
+      --cream-dark: #E4DED3;
+      --ink: #1A1A1A;
+      --ink-soft: #4A4A4A;
+      --ink-muted: #8A8A8A;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.55;
+      background:
+        radial-gradient(circle at top right, rgba(201, 168, 76, 0.08), transparent 22%),
+        linear-gradient(180deg, #fdfbf6 0%, var(--cream) 55%, var(--cream-mid) 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='0.45' opacity='0.7'%3E%3Cpolygon points='36,0 72,18 72,54 36,72 0,54 0,18'/%3E%3Cpolygon points='36,10 58,21 58,51 36,62 14,51 14,21'/%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cover {
+      min-height: 250mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+    }
+
+    .cover-band {
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.7fr;
+      gap: 8px;
+      margin-bottom: 18mm;
+    }
+
+    .cover-band span {
+      height: 11px;
+      border-radius: 999px;
+      display: block;
+    }
+
+    .cover-band .e1 { background: linear-gradient(90deg, var(--emerald-dark), var(--emerald)); }
+    .cover-band .e2 { background: linear-gradient(90deg, var(--emerald), #0D7D5C); }
+    .cover-band .g1 { background: linear-gradient(90deg, var(--gold), #E8D5A8); }
+
+    .cover-card {
+      position: relative;
+      padding: 24mm 18mm;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(201, 168, 76, 0.14), transparent 28%),
+        linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68));
+      border: 1px solid rgba(228, 222, 211, 0.95);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.65);
+      overflow: hidden;
+    }
+
+    .cover-card::after {
+      content: "بِسْمِ اللَّهِ";
+      position: absolute;
+      right: 18mm;
+      bottom: 16mm;
+      font-family: "MuslimOSArabic", "Times New Roman", serif;
+      font-size: 26pt;
+      color: rgba(11, 107, 79, 0.08);
+    }
+
+    .eyebrow {
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      font-size: 9pt;
+      font-weight: 700;
+    }
+
+    .brand {
+      margin: 10px 0 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30pt;
+      line-height: 1;
+      color: var(--emerald-deep);
+      font-weight: 700;
+    }
+
+    .title {
+      margin: 8px 0 0;
+      font-size: 21pt;
+      line-height: 1.08;
+      color: var(--ink);
+      font-weight: 800;
+      max-width: 15cm;
+    }
+
+    .subtitle {
+      margin-top: 8mm;
+      max-width: 13.5cm;
+      color: var(--ink-soft);
+      font-size: 12pt;
+      line-height: 1.6;
+    }
+
+    .callout {
+      margin-top: 11mm;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(245, 237, 214, 0.92), rgba(255,255,255,0.75));
+      border: 1px solid rgba(201, 168, 76, 0.18);
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--emerald-deep);
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-top: 18mm;
+      color: var(--ink-muted);
+      font-size: 9.5pt;
+    }
+
+    .section {
+      margin-bottom: 10mm;
+      page-break-inside: avoid;
+    }
+
+    .section-head {
+      margin-bottom: 5mm;
+    }
+
+    .section-head .kicker {
+      color: var(--gold-dark);
+      font-size: 8.5pt;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .section-head h2 {
+      margin: 4px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--emerald-deep);
+      font-size: 18pt;
+      line-height: 1.08;
+    }
+
+    .section-head p {
+      margin: 5px 0 0;
+      color: var(--ink-soft);
+      font-size: 10.5pt;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      position: relative;
+      padding: 14px 15px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.62));
+      border: 1px solid rgba(228, 222, 211, 0.92);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+
+    .card.gold {
+      background: linear-gradient(145deg, rgba(245,237,214,0.92), rgba(255,255,255,0.74));
+      border-color: rgba(201,168,76,0.14);
+    }
+
+    .card.emerald {
+      color: white;
+      background:
+        radial-gradient(circle at 95% 5%, rgba(201,168,76,0.15), transparent 25%),
+        linear-gradient(145deg, #053928, #064A37 30%, #0B6B4F 65%, #0D7D5C);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    .card .label {
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 700;
+      color: var(--gold-dark);
+    }
+
+    .card.emerald .label { color: rgba(255,255,255,0.7); }
+
+    .card h3 {
+      margin: 6px 0 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14pt;
+      line-height: 1.1;
+      color: var(--emerald-deep);
+    }
+
+    .card.emerald h3 { color: white; }
+
+    .card p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 10pt;
+      line-height: 1.55;
+    }
+
+    .card.emerald p { color: rgba(255,255,255,0.75); }
+
+    .decision {
+      padding: 14px 16px;
+      border-left: 4px solid var(--emerald);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(232,245,240,0.9), rgba(255,255,255,0.72));
+      color: var(--ink);
+      page-break-inside: avoid;
+    }
+
+    .decision strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--emerald-deep);
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .list li {
+      margin: 0 0 6px;
+      color: var(--ink-soft);
+    }
+
+    .matrix, .check-table, .phase-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border-radius: 18px;
+      page-break-inside: avoid;
+    }
+
+    .matrix th, .check-table th, .phase-table th {
+      padding: 11px 12px;
+      background: linear-gradient(145deg, rgba(232,245,240,0.96), rgba(255,255,255,0.8));
+      color: var(--emerald-deep);
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      text-align: left;
+      border: 1px solid rgba(196, 232, 218, 0.8);
+    }
+
+    .matrix td, .check-table td, .phase-table td {
+      padding: 11px 12px;
+      font-size: 10pt;
+      vertical-align: top;
+      border: 1px solid rgba(228, 222, 211, 0.8);
+      background: rgba(255,255,255,0.72);
+      color: var(--ink-soft);
+    }
+
+    .matrix td:first-child, .phase-table td:first-child {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .check-table td:first-child {
+      width: 26px;
+      text-align: center;
+      color: var(--gold-dark);
+      background: rgba(245,237,214,0.72);
+      font-weight: 700;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+    }
+
+    .pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(11,107,79,0.08);
+      color: var(--emerald-deep);
+      font-size: 8.7pt;
+      font-weight: 700;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(228, 222, 211, 0.8);
+    }
+
+    .timeline-item:last-child { border-bottom: none; }
+
+    .timeline-phase {
+      color: var(--gold-dark);
+      font-size: 8.5pt;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .timeline-item strong {
+      display: block;
+      color: var(--emerald-deep);
+      font-size: 11pt;
+    }
+
+    .timeline-item p {
+      margin: 3px 0 0;
+      color: var(--ink-soft);
+      font-size: 10pt;
+    }
+
+    .code {
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(245,237,214,0.88), rgba(255,255,255,0.7));
+      border: 1px solid rgba(201,168,76,0.16);
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 9.5pt;
+      line-height: 1.7;
+      color: var(--emerald-deep);
+      white-space: pre-wrap;
+    }
+
+    .closing {
+      margin-top: 8mm;
+      padding: 18px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(201,168,76,0.14), transparent 26%),
+        linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.66));
+      border: 1px solid rgba(228, 222, 211, 0.92);
+      page-break-inside: avoid;
+    }
+
+    .closing h3 {
+      margin: 0 0 6px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--emerald-deep);
+      font-size: 15pt;
+    }
+
+    .closing p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 10.5pt;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="cover">
+      <div>
+        <div class="cover-band">
+          <span class="e1"></span>
+          <span class="e2"></span>
+          <span class="g1"></span>
+        </div>
+
+        <div class="cover-card">
+          <div class="eyebrow">MuslimOS Brand Guide Alignment</div>
+          <div class="brand">MuslimOS</div>
+          <h1 class="title">Android Play Store Launch Guide</h1>
+          <p class="subtitle">
+            A practical, brand-aligned roadmap for turning MuslimOS into a proper Android app
+            on the Play Store without wrecking the current product quality.
+          </p>
+
+          <div class="callout">
+            <strong>Recommended Path</strong>
+            Keep the current app, package it with Capacitor, ship Android first, and only add
+            SQLite when offline content scale or search genuinely demands it.
+          </div>
+
+          <div class="meta">
+            <span>Prayer times · Quran · Hadith · Dhikr · Qibla</span>
+            <span>March 2026</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">Executive Summary</div>
+        <h2>Ship MuslimOS to Android without losing the product’s elegance.</h2>
+        <p>The right move here is disciplined, not dramatic: protect the current app, harden it for mobile, and only introduce heavier architecture when the product earns it.</p>
+      </div>
+      <div class="grid">
+        <article class="card emerald">
+          <div class="label">Best Fit</div>
+          <h3>Capacitor + current app</h3>
+          <p>Fastest route to release, lowest rewrite risk, and the cleanest way to preserve the UI quality already built into MuslimOS.</p>
+        </article>
+        <article class="card gold">
+          <div class="label">SQLite</div>
+          <h3>Optional, not mandatory</h3>
+          <p>Useful later for heavy offline content and structured storage. Not a reason to block a first Android release.</p>
+        </article>
+      </div>
+      <div class="decision" style="margin-top:10px">
+        <strong>MuslimOS Recommendation</strong>
+        Treat Android launch as a product packaging project first, not a rewrite project. Ship the current experience in a native shell, then deepen native infrastructure later.
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">Architecture</div>
+        <h2>Choose the least destructive path.</h2>
+        <p>The elegant solution is the one that protects visual quality and shipping velocity at the same time.</p>
+      </div>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>Why it fits</th>
+            <th>Use when</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Capacitor + current app</td>
+            <td>Keeps the existing Vite + React codebase alive and avoids rebuilding the UI from scratch.</td>
+            <td>You want a serious Android release soon with minimal technical waste.</td>
+          </tr>
+          <tr>
+            <td>Flutter rewrite</td>
+            <td>Strong native control, but it resets product velocity and forces a full UI rebuild.</td>
+            <td>You are planning a larger platform rewrite anyway.</td>
+          </tr>
+          <tr>
+            <td>React Native rewrite</td>
+            <td>Shared JavaScript skills, but still a major migration with a lot of integration churn.</td>
+            <td>You need deeper native UI later and accept a rewrite cost now.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">Storage Strategy</div>
+        <h2>Only add a database when the product truly needs one.</h2>
+        <p>Don’t burden v1 with infrastructure that sounds mature but slows delivery without improving the user experience.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="label">Keep simple storage for now</div>
+          <h3>Good for v1</h3>
+          <ul class="list">
+            <li>settings and language</li>
+            <li>streaks and bookmarks</li>
+            <li>last-read position</li>
+            <li>checklists and tasbeeh state</li>
+            <li>light journal entries</li>
+          </ul>
+        </article>
+        <article class="card gold">
+          <div class="label">Add SQLite later</div>
+          <h3>Use when scale becomes real</h3>
+          <ul class="list">
+            <li>offline hadith bundles</li>
+            <li>downloaded tafseer packs</li>
+            <li>large search indexes</li>
+            <li>sync-ready local data models</li>
+            <li>heavier long-term journaling data</li>
+          </ul>
+        </article>
+      </div>
+      <div class="pill-row">
+        <span class="pill">Phase 1: no SQLite block</span>
+        <span class="pill">Phase 2: migrate if needed</span>
+        <span class="pill">Phase 3: optimize for scale</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">Implementation</div>
+        <h2>Move from web app to Android product in practical phases.</h2>
+        <p>The sequence below is built for MuslimOS specifically: protect what already works, then add native polish deliberately.</p>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-phase">Phase 1</div>
+          <div>
+            <strong>Stabilize the existing app for mobile shell use</strong>
+            <p>Audit mobile viewport quality, audio behavior, Android back handling, safe areas, and persistence across all major flows.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-phase">Phase 2</div>
+          <div>
+            <strong>Add Capacitor and Android Studio release flow</strong>
+            <p>Package the built app, configure Android, and establish a proper release pipeline around signed bundles.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-phase">Phase 3</div>
+          <div>
+            <strong>Add native polish where users feel it</strong>
+            <p>Splash, icons, status bar, notifications, and permission flows should feel deliberate and trustworthy.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-phase">Phase 4</div>
+          <div>
+            <strong>Ship internal, then public</strong>
+            <p>Use internal and closed testing first, then move to production once crash-free behavior and QA confidence are strong enough.</p>
+          </div>
+        </div>
+      </div>
+      <div class="code">npm install @capacitor/core @capacitor/cli
+npx cap init
+npx cap add android
+npm run build
+npx cap sync android
+npx cap open android</div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">Native Scope</div>
+        <h2>Add native polish where Android users will actually feel it.</h2>
+        <p>This is the layer that makes MuslimOS feel like an app, not a website inside a frame.</p>
+      </div>
+      <div class="grid">
+        <article class="card emerald">
+          <div class="label">High priority</div>
+          <h3>What should be native early</h3>
+          <ul class="list" style="color:rgba(255,255,255,0.8)">
+            <li>splash screen</li>
+            <li>icons and launch branding</li>
+            <li>status bar styling</li>
+            <li>Android back behavior</li>
+            <li>local notifications</li>
+          </ul>
+        </article>
+        <article class="card">
+          <div class="label">Optional later</div>
+          <h3>Only when product scope grows</h3>
+          <ul class="list">
+            <li>SQLite-backed offline content</li>
+            <li>background jobs</li>
+            <li>sync/account architecture</li>
+            <li>biometric privacy for journal</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">QA</div>
+        <h2>Do not submit a worship app with unstable basics.</h2>
+        <p>MuslimOS should feel calm, clear, and dependable on real Android devices.</p>
+      </div>
+      <table class="check-table">
+        <tbody>
+          <tr><td>□</td><td>Home, Quran, Worship, Hadith, and drawer navigation all behave correctly on device</td></tr>
+          <tr><td>□</td><td>Surah and ayah audio remain stable across background, resume, pause, and seek</td></tr>
+          <tr><td>□</td><td>Tafseer language follows the global app language every time</td></tr>
+          <tr><td>□</td><td>Islamic Calendar and Hijri date resolve correctly for the user’s local region</td></tr>
+          <tr><td>□</td><td>Journal and Worship tracker persist local state without loss</td></tr>
+          <tr><td>□</td><td>Qibla permission failures show a graceful and understandable fallback</td></tr>
+          <tr><td>□</td><td>No horizontal scroll, broken safe areas, or awkward bottom-nav collisions on Android</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="kicker">Play Store</div>
+        <h2>Prepare the release like a product, not just a build artifact.</h2>
+        <p>The listing itself is part of the MuslimOS brand experience.</p>
+      </div>
+      <table class="phase-table">
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>What you need</th>
+            <th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Build</td>
+            <td>Signed Android App Bundle (.aab)</td>
+            <td>Required for Play Store release</td>
+          </tr>
+          <tr>
+            <td>Assets</td>
+            <td>Icon, screenshots, feature graphic, store copy</td>
+            <td>Defines first impression and trust</td>
+          </tr>
+          <tr>
+            <td>Compliance</td>
+            <td>Privacy policy, Data Safety, content rating</td>
+            <td>Required because the app uses location, notifications, and personal content</td>
+          </tr>
+          <tr>
+            <td>Rollout</td>
+            <td>Internal test → closed test → controlled production release</td>
+            <td>Reduces risk before public scale</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section closing">
+      <h3>The most elegant move</h3>
+      <p>
+        Keep the current MuslimOS app. Package it with Capacitor. Ship Android first.
+        Add SQLite only when offline structured data genuinely becomes a product requirement.
+        That path is technically sound, fast to market, and aligned with the quality already present in the product.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
